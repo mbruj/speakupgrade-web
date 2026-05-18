@@ -21,7 +21,8 @@ async function get<T>(path: string): Promise<T> {
 
 // Auth
 export interface AuthResponse {
-  exists: boolean
+  exists?: boolean
+  status?: string
   plan: 'free' | 'pro'
   sessions_count: number
   sessions_reset_date: string
@@ -76,8 +77,9 @@ export interface GradingResult {
 }
 
 export interface GradePayload {
-  audioBase64: string
-  frames: string[]  // base64 JPEG strings
+  audio: string
+  audioType: string
+  frames: string
   topic: string
   goal: string
   audience: string

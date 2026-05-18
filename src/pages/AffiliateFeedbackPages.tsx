@@ -16,7 +16,6 @@ const HOW_IT_WORKS = [
 export function AffiliatePage() {
   const navigate = useNavigate()
   const { email } = useAuthStore()
-  const [name, setName] = useState('')
   const [audienceText, setAudienceText] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -32,7 +31,7 @@ export function AffiliatePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim() || email,
+          name: email,
           email: email,
           audience: audienceText.trim(),
         }),

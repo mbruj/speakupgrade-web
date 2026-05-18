@@ -105,8 +105,6 @@ function HighlightedTranscript({ transcript, fillerWords }: { transcript: string
 function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestamps: any[]; actualSeconds: number; isPro: boolean }) {
   const [scrubPos, setScrubPos] = useState<number | null>(null)
   const [scrubInfo, setScrubInfo] = useState<any>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-
   const duration = actualSeconds || wordTimestamps[wordTimestamps.length - 1]?.end || 60
   const chunkSize = 5
   const numChunks = Math.ceil(duration / chunkSize)

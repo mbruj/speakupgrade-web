@@ -17,7 +17,7 @@ const TIPS = [
 export default function GradingPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { audioBase64, audioType, frames, actualSeconds } = location.state ?? {}
+  const { audioBase64, audioType, frames } = location.state ?? {}
 
   const { email, plan, decrementSessions } = useAuthStore()
   const { params, setResults } = useSessionStore()
