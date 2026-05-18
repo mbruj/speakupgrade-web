@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html, body, #root { height: 100%; margin: 0; padding: 0; }
+  body { background-color: #09090B !important; color: #ffffff; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  input, textarea, select { background-color: #1A1A1E; color: #ffffff; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 14px; font-family: inherit; font-size: 15px; width: 100%; outline: none; transition: border-color 0.15s; }
+  input:focus, textarea:focus, select:focus { border-color: #3B82F6; }
+  input::placeholder, textarea::placeholder { color: #52525B; }
+}
+
+@layer components {
+  .page { min-height: 100dvh; background-color: #09090B !important; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 20px; }
+  .page-top { min-height: 100dvh; background-color: #09090B !important; display: flex; flex-direction: column; padding: 24px 20px; padding-top: 48px; }
+  .container { width: 100%; max-width: 480px; margin: 0 auto; }
+  .card { background-color: #1A1A1E; border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px; }
+  .btn-primary { background-color: #3B82F6; color: #ffffff; font-weight: 600; font-size: 15px; padding: 14px 24px; border-radius: 12px; border: none; cursor: pointer; width: 100%; transition: opacity 0.15s, transform 0.1s; font-family: inherit; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost { background-color: transparent; color: #A1A1AA; font-size: 14px; padding: 10px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); cursor: pointer; width: 100%; transition: background-color 0.15s; font-family: inherit; }
+  .btn-ghost:hover { background-color: rgba(255,255,255,0.05); }
+  .logo { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .blurred { filter: blur(6px); user-select: none; pointer-events: none; }
+}
