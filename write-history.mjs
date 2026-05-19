@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { writeFileSync } from 'fs'
+
+const content = `import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore, useSessionStore } from '../store'
 import { API_URL } from '../lib/constants'
@@ -183,4 +185,7 @@ export default function HistoryPage() {
       )}
     </div>
   )
-}
+}`
+
+writeFileSync('src/pages/HistoryPage.tsx', content, 'utf8')
+console.log('✓ HistoryPage.tsx written')
