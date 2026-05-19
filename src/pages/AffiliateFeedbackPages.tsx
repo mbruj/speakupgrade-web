@@ -32,9 +32,9 @@ export function AffiliatePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim() || email,
+          name: email,
           email: email,
-          audience: audienceText.trim(),
+          context: audienceText.trim(),
         }),
       })
       if (!res.ok) throw new Error(await res.text())
