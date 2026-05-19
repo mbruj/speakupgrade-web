@@ -89,7 +89,7 @@ export default function HistoryPage() {
     if (!email) { navigate('/'); return }
     if (!isPro) { setLoading(false); return }
 
-    fetch(`${API_URL}/sessions?email=${encodeURIComponent(email)}`)
+    fetch(`${API_URL}/history?email=${encodeURIComponent(email)}`)
       .then(async (r) => {
         if (!r.ok) throw new Error('Failed to load')
         const data = await r.json()
