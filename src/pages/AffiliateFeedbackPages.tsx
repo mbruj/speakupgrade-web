@@ -16,6 +16,7 @@ const HOW_IT_WORKS = [
 export function AffiliatePage() {
   const navigate = useNavigate()
   const { email } = useAuthStore()
+  const [name, setName] = useState('')
   const [audienceText, setAudienceText] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -31,7 +32,7 @@ export function AffiliatePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: email,
+          name: name.trim() || email,
           email: email,
           audience: audienceText.trim(),
         }),
@@ -142,7 +143,7 @@ export function FeedbackPage() {
       const res = await fetch(`${API_URL}/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, message: message.trim() }),
+        body: JSON.stringify({ email, feedback: message.trim() }),
       })
       if (!res.ok) throw new Error(await res.text())
       setSent(true)

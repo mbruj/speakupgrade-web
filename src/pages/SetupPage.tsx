@@ -163,15 +163,24 @@ export default function SetupPage() {
               {targetMinutes} min
             </span>
           </div>
-          <input
-            type="range"
-            min={2}
-            max={10}
-            step={1}
-            value={targetMinutes}
-            onChange={(e) => setTargetMinutes(Number(e.target.value))}
-            style={{ width: '100%', accentColor: '#3B82F6', cursor: 'pointer', display: 'block', height: 4 }}
-          />
+          <div style={{ position: 'relative', padding: '8px 0' }}>
+            <input
+              type="range"
+              min={2}
+              max={10}
+              step={1}
+              value={targetMinutes}
+              onChange={(e) => setTargetMinutes(Number(e.target.value))}
+              style={{
+                width: '100%',
+                accentColor: '#3B82F6',
+                cursor: 'pointer',
+                display: 'block',
+                height: 4,
+                margin: 0,
+              }}
+            />
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
             <span style={{ fontSize: 12, color: '#52525B' }}>2 min</span>
             <span style={{ fontSize: 12, color: '#52525B' }}>10 min</span>
