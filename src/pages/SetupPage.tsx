@@ -155,6 +155,7 @@ export default function SetupPage() {
       </div>
 
       {/* Daily challenge */}
+      {!challengeDoneToday ? (
       <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 16, marginBottom: 28 }}>
         <div style={{ marginBottom: 10 }}>
           <span style={{ background: '#1E3A5F', color: '#3B82F6', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, border: '1px solid rgba(59,130,246,0.3)', letterSpacing: '0.08em' }}>
@@ -180,6 +181,15 @@ export default function SetupPage() {
           </button>
         </div>
       </div>
+      ) : (
+      <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 14, padding: 16, marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 20 }}>🔥</span>
+        <div>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#22C55E', marginBottom: 2 }}>Challenge done for today</p>
+          <p style={{ fontSize: 12, color: '#A1A1AA' }}>Come back tomorrow to keep your streak going.</p>
+        </div>
+      </div>
+      )}
 
       {/* Form */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 24 }}>
