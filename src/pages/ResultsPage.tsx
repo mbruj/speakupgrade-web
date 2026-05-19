@@ -105,6 +105,8 @@ function HighlightedTranscript({ transcript, fillerWords }: { transcript: string
 function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestamps: any[]; actualSeconds: number; isPro: boolean }) {
   const [scrubPos, setScrubPos] = useState<number | null>(null)
   const [scrubInfo, setScrubInfo] = useState<any>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
   const duration = actualSeconds || wordTimestamps[wordTimestamps.length - 1]?.end || 60
   const chunkSize = 5
   const numChunks = Math.ceil(duration / chunkSize)
@@ -328,6 +330,13 @@ export default function ResultsPage() {
           coachSummary: data.coach_summary || '',
           confidenceLanguage: data.confidence_language || null,
           blScores: bl.scores || null, blFeedback: bl.feedback || null,
+          scores: {
+            relevance: scores.relevance || 0,
+            pace: scores.pace || 0,
+            filler: scores.filler || 0,
+            structure: scores.structure || 0,
+            confidence: scores.confidence || 0,
+          },
         }),
       })
       setEmailSent(true)
