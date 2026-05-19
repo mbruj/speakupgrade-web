@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore, useSessionStore } from '../store'
 import { checkUsage } from '../lib/api'
-import { FREE_SESSION_LIMIT } from '../lib/constants'
+import { FREE_SESSION_LIMIT, API_URL } from '../lib/constants'
+
+function getTodayKey() {
+  const now = new Date()
+  return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`
+}
 
 // Exact list from Android setup.tsx — 30 challenges, same order
 // Rotation: dayOfYear % 30 — identical formula to Android
@@ -77,11 +82,24 @@ export default function SetupPage() {
 
   const challenge = todaysChallenge()
 
+  const [streak, setStreak] = useState(0)
+  const [challengeDoneToday, setChallengeDoneToday] = useState(false)
+
   useEffect(() => {
     if (!email) { navigate('/'); return }
     checkUsage(email).then((u) => {
       setUsageData({ remaining: u.sessions_remaining })
     }).catch(console.error)
+
+    // Load streak from backend
+    fetch(`${API_URL}/streak?email=${encodeURIComponent(email)}`)
+      .then(r => r.json())
+      .then(data => {
+        setStreak(data.streak || 0)
+        const todayKey = getTodayKey()
+        if (data.streak_last_day === todayKey) setChallengeDoneToday(true)
+      })
+      .catch(console.error)
   }, [email])
 
   const canRecord = plan === 'pro' || (usageData?.remaining ?? sessionsRemaining) > 0
@@ -90,6 +108,19 @@ export default function SetupPage() {
     const finalTopic = isChallenge ? challenge.topic : topic.trim()
     const finalGoal = isChallenge ? challenge.goal : goal.trim()
     if (!finalTopic || !finalGoal) return
+
+    // Increment streak if challenge accepted and not done today
+    if (isChallenge && !challengeDoneToday && email) {
+      fetch(`${API_URL}/streak/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      }).then(r => r.json()).then(data => {
+        if (data.streak) setStreak(data.streak)
+        setChallengeDoneToday(true)
+      }).catch(console.error)
+    }
+
     setParams({
       topic: finalTopic,
       goal: finalGoal,
@@ -110,9 +141,17 @@ export default function SetupPage() {
           <span style={{ color: '#3B82F6' }}>SPEAKUP</span>
           <span style={{ color: '#ffffff' }}>GRADE</span>
         </span>
-        <button onClick={() => { logout(); navigate('/') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A1A1AA', fontSize: 14, fontFamily: 'inherit' }}>
-          Log out
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {streak > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 20, padding: '4px 10px' }}>
+              <span style={{ fontSize: 13 }}>🔥</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>{streak}</span>
+            </div>
+          )}
+          <button onClick={() => { logout(); navigate('/') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A1A1AA', fontSize: 14, fontFamily: 'inherit' }}>
+            Log out
+          </button>
+        </div>
       </div>
 
       {/* Daily challenge */}
