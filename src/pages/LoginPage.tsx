@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { checkAuth, checkUsage } from '../lib/api'
 import { useAuthStore } from '../store'
+import LegalFooter from '../components/LegalFooter'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -80,11 +81,16 @@ export default function LoginPage() {
 
         <p style={{ color: '#52525B', fontSize: 12, textAlign: 'center', marginTop: 20, lineHeight: 1.6 }}>
           By continuing you agree to our{' '}
+          <a href="https://www.speakupgrade.com/terms-of-use/" target="_blank" rel="noreferrer" style={{ color: '#A1A1AA', textDecoration: 'underline' }}>
+            Terms of Service
+          </a>
+          {' '}and{' '}
           <a href="https://www.speakupgrade.com/privacy-policy/" target="_blank" rel="noreferrer" style={{ color: '#A1A1AA', textDecoration: 'underline' }}>
             Privacy Policy
           </a>
         </p>
       </div>
+      <LegalFooter />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { checkAuth, checkUsage } from '../lib/api'
 import { useAuthStore } from '../store'
+import LegalFooter from '../components/LegalFooter'
 
 const MAILERLITE_FORM =
   'https://assets.mailerlite.com/jsonp/2217559/forms/184376458520561428/subscribe'
@@ -135,6 +136,7 @@ export default function RegisterPage() {
           </a>
         </p>
       </div>
+      <LegalFooter />
     </div>
   )
 }
