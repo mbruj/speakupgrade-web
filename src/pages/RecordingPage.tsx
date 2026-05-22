@@ -120,11 +120,11 @@ export default function RecordingPage() {
         if (secs >= MAX_SECONDS) handleStop()
       }, 500)
 
-      // Frame capture
+      // Frame capture: first frame immediately, then every 5s, max 6 frames
       captureFrame()
       frameTimerRef.current = setInterval(() => {
-        if (_frames.length < 3) captureFrame()
-      }, 10_000)
+        if (_frames.length < 6) captureFrame()
+      }, 5_000)
 
     } catch (err) {
       console.error('Recording init error:', err)
