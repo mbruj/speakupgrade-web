@@ -2,14 +2,14 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSessionStore, useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+import LegalFooter from '../components/LegalFooter'
 
 function scoreColor(v: number) {
   return v >= 70 ? '#22C55E' : v >= 50 ? '#F59E0B' : '#EF4444'
 }
 
 function fmt(s: number) {
+  if (!s) return '0:00'
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')
 }
 
@@ -21,38 +21,34 @@ function getVerdict(score: number) {
   return { label: 'Keep going', emoji: '🔥' }
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function ScoreBar({ label, value }: { label: string; value: number }) {
-  const color = scoreColor(value)
+function SectionCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ fontSize: 14, color: '#ffffff' }}>{label}</span>
-        <span style={{ fontSize: 14, fontWeight: 700, color }}>{value}</span>
-      </div>
-      <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${value}%`, background: color, borderRadius: 2, transition: 'width 0.6s ease' }} />
-      </div>
+    <div style={{
+      background: '#1A1A1E',
+      borderRadius: 14,
+      padding: '18px 16px',
+      border: '1px solid rgba(255,255,255,0.05)',
+      marginBottom: 14,
+      ...style,
+    }}>
+      {children}
     </div>
+  )
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{ fontSize: 10, fontWeight: 700, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
+      {children}
+    </p>
   )
 }
 
 function BulletItem({ text, color = '#22C55E' }: { text: string; color?: string }) {
   return (
     <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
-      <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, marginTop: 8, flexShrink: 0 }} />
-      <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65, margin: 0 }}>{text}</p>
-    </div>
-  )
-}
-
-function FeedbackCard({ label, text }: { label: string; text: string }) {
-  if (!text) return null
-  return (
-    <div style={{ paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-      <p style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</p>
-      <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65, margin: 0 }}>{text}</p>
+      <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, marginTop: 7, flexShrink: 0 }} />
+      <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.7, margin: 0 }}>{text}</p>
     </div>
   )
 }
@@ -105,7 +101,6 @@ function HighlightedTranscript({ transcript, fillerWords }: { transcript: string
 function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestamps: any[]; actualSeconds: number; isPro: boolean }) {
   const [scrubPos, setScrubPos] = useState<number | null>(null)
   const [scrubInfo, setScrubInfo] = useState<any>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   const duration = actualSeconds || wordTimestamps[wordTimestamps.length - 1]?.end || 60
   const chunkSize = 5
@@ -148,24 +143,19 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestam
 
   return (
     <SectionCard>
-      <SectionTitle>Speech timeline</SectionTitle>
+      <SectionLabel>Speech timeline</SectionLabel>
       <div style={{ display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 16, height: 8, borderRadius: 2, background: 'rgba(34,197,94,0.3)' }} />
-          <span style={{ fontSize: 11, color: '#A1A1AA' }}>Ideal pace zone</span>
-        </div>
-        {isPro && <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 8, height: 8, background: 'rgba(34,197,94,0.6)' }} />
-            <span style={{ fontSize: 11, color: '#A1A1AA' }}>Strategic pause</span>
+        {[
+          { color: 'rgba(34,197,94,0.3)', label: 'Ideal pace zone' },
+          isPro ? { color: 'rgba(34,197,94,0.6)', label: 'Strategic pause' } : null,
+          isPro ? { color: 'rgba(245,158,11,0.6)', label: 'Unplanned pause' } : null,
+        ].filter(Boolean).map((item: any) => (
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 14, height: 8, borderRadius: 2, background: item.color }} />
+            <span style={{ fontSize: 11, color: '#A1A1AA' }}>{item.label}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 8, height: 8, background: 'rgba(245,158,11,0.6)' }} />
-            <span style={{ fontSize: 11, color: '#A1A1AA' }}>Unplanned pause</span>
-          </div>
-        </>}
+        ))}
       </div>
-
       <svg
         width="100%"
         viewBox={`0 0 ${width} ${graphH}`}
@@ -174,29 +164,23 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestam
         onMouseMove={handleMouseMove}
         onMouseLeave={() => { setScrubPos(null); setScrubInfo(null) }}
       >
-        {/* Ideal pace zone */}
         <rect x={0} y={yFor(150)} width={width} height={yFor(110) - yFor(150)} fill="rgba(34,197,94,0.08)" />
-        {/* Pause markers */}
         {isPro && pauses.map((p, i) => (
           <rect key={i} x={xFor(p.start)} y={padTop} width={Math.max(3, xFor(p.end) - xFor(p.start))} height={plotH}
             fill={p.type === 'strategic' ? 'rgba(34,197,94,0.25)' : 'rgba(245,158,11,0.25)'} />
         ))}
-        {/* WPM line */}
         {points.slice(1).map((p, i) => (
           <line key={i} x1={points[i].x} y1={points[i].y!} x2={p.x} y2={p.y!} stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" />
         ))}
-        {/* Scrubber */}
         {isPro && scrubPos !== null && <line x1={scrubPos} y1={padTop} x2={scrubPos} y2={graphH - padBot} stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" />}
-        {/* Y labels */}
         <text x={4} y={padTop + 10} fill="rgba(255,255,255,0.3)" fontSize="9">200</text>
         <text x={4} y={yFor(150) + 4} fill="rgba(34,197,94,0.6)" fontSize="9">150</text>
         <text x={4} y={yFor(110) + 4} fill="rgba(34,197,94,0.6)" fontSize="9">110</text>
       </svg>
-
       {isPro ? (
         <>
           <p style={{ fontSize: 11, color: '#52525B', textAlign: 'center', margin: '4px 0' }}>Drag to explore your speech</p>
-          <div style={{ background: '#111316', borderRadius: 8, padding: 12, minHeight: 60, marginTop: 4 }}>
+          <div style={{ background: '#111316', borderRadius: 8, padding: 12, minHeight: 48, marginTop: 4 }}>
             {!scrubInfo && <p style={{ fontSize: 13, color: '#52525B', fontStyle: 'italic' }}>{segments[Math.floor(segments.length / 2)]?.text || ''}</p>}
             {scrubInfo?.isPause && <p style={{ fontSize: 13, color: '#A1A1AA' }}>{scrubInfo.type === 'strategic' ? 'Strategic pause' : 'Unplanned pause'} — {scrubInfo.duration?.toFixed(1)}s</p>}
             {scrubInfo && !scrubInfo.isPause && (
@@ -209,8 +193,7 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestam
         </>
       ) : (
         <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(59,130,246,0.2)', textAlign: 'center', marginTop: 8 }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>Interactive timeline is Pro</p>
-          <p style={{ fontSize: 12, color: '#A1A1AA', marginBottom: 10 }}>Drag to explore your speech moment by moment.</p>
+          <p style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 10 }}>Drag to explore your speech moment by moment — Pro feature</p>
           <button onClick={() => {}} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
             Unlock with Pro
           </button>
@@ -220,48 +203,41 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestam
   )
 }
 
-function SectionCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return (
-    <div style={{
-      background: '#1A1A1E',
-      borderRadius: 12,
-      padding: 16,
-      border: '1px solid rgba(255,255,255,0.05)',
-      marginBottom: 14,
-      ...style,
-    }}>
-      {children}
-    </div>
-  )
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
-      {children}
-    </p>
-  )
-}
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
 export default function ResultsPage() {
   const navigate = useNavigate()
   const { results: raw, params, clearSession } = useSessionStore()
   const { email, plan } = useAuthStore()
   const isPro = plan === 'pro'
 
-  const [breakdownOpen, setBreakdownOpen] = useState(false)
   const [emailSending, setEmailSending] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [voiceEnabled, setVoiceEnabled] = useState(true)
+
+  const data = raw as any
+  const scores = data?.scores || {}
+  const bl = data?.body_language || {}
+  const blScores = bl.scores || {}
+  const blFeedback = bl.feedback || {}
+  const feedback = data?.feedback || {}
+  const strengths = data?.strengths || []
+  const improvements = data?.improvements || []
+  const overall = scores.overall || 0
+  const color = scoreColor(overall)
+  const verdict = getVerdict(overall)
+  const wpm = data?.words_per_minute || 0
+  const wpmColor = wpm === 0 ? '#A1A1AA' : wpm < 110 ? '#F59E0B' : wpm > 160 ? '#F59E0B' : '#22C55E'
+  const wpmLabel = wpm === 0 ? 'WPM' : wpm < 110 ? 'Too slow' : wpm > 160 ? 'Too fast' : 'Good pace'
+  const fillerWords: Record<string, number> = data?.filler_words || {}
+  const fillerEntries = Object.entries(fillerWords).filter(([, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number))
+  const conviction = data?.conviction || null
+  const hasBodyLanguage = blScores.eye_contact > 0 || blScores.posture > 0
 
   const speakResults = () => {
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
     const parts = [
       verdict.label + '.',
-      data.coach_summary || '',
+      data?.coach_summary || '',
       improvements[0] ? 'The one thing to focus on next: ' + improvements[0] : '',
     ].filter(Boolean).join(' ')
     const utterance = new SpeechSynthesisUtterance(parts)
@@ -272,41 +248,15 @@ export default function ResultsPage() {
 
   const toggleVoice = (enabled: boolean) => {
     setVoiceEnabled(enabled)
-    if (!enabled) {
-      window.speechSynthesis?.cancel()
-    } else {
-      speakResults()
-    }
+    if (!enabled) window.speechSynthesis?.cancel()
+    else speakResults()
   }
 
   useEffect(() => {
     if (!raw) { navigate('/setup'); return }
-    // Auto-play voice on load
     setTimeout(() => { if (voiceEnabled) speakResults() }, 800)
     return () => { window.speechSynthesis?.cancel() }
   }, [])
-
-  if (!raw || !params) return null
-
-  // Use raw backend response directly — same paths as Android
-  const data = raw as any
-  const scores = data.scores || {}
-  const bl = data.body_language || {}
-  const blScores = bl.scores || {}
-  const blFeedback = bl.feedback || {}
-  const feedback = data.feedback || {}
-  const strengths = data.strengths || []
-  const improvements = data.improvements || []
-  const overall = scores.overall || 0
-  const color = scoreColor(overall)
-  const verdict = getVerdict(overall)
-  const wpm = data.words_per_minute || 0
-  const wpmColor = wpm === 0 ? '#A1A1AA' : wpm < 110 ? '#F59E0B' : wpm > 160 ? '#F59E0B' : '#22C55E'
-  const wpmLabel = wpm === 0 ? 'WPM' : wpm < 110 ? 'Too slow' : wpm > 160 ? 'Too fast' : 'Good pace'
-  const fillerWords: Record<string, number> = data.filler_words || {}
-  const fillerEntries = Object.entries(fillerWords).filter(([, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number))
-  const conviction = data.conviction || null
-  const confidenceLanguage = data.confidence_language || null
 
   const handleEmailResults = async () => {
     if (emailSending || emailSent || !email) return
@@ -316,7 +266,7 @@ export default function ResultsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email, topic: params.topic, goal: params.goal || '', overall,
+          email, topic: params!.topic, goal: params!.goal || '', overall,
           duration: fmt(data.actual_seconds || 0), wpm, wpmLabel,
           fillerTotal: data.filler_total || 0,
           strengths, improvements,
@@ -348,37 +298,33 @@ export default function ResultsPage() {
     }
   }
 
+  if (!raw || !params) return null
+
   return (
     <div style={{ minHeight: '100dvh', background: '#09090B', padding: '48px 20px 40px', maxWidth: 480, margin: '0 auto' }}>
 
-      {/* Header */}
+      {/* Header — topic + voice toggle */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
         <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', flex: 1, marginRight: 12, lineHeight: 1.4 }}>{params.topic}</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {voiceEnabled && (
-            <button
-              onClick={speakResults}
-              style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', color: '#3B82F6', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}
-            >
+            <button onClick={speakResults} style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', color: '#3B82F6', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>
               ▶ Replay
             </button>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 12, color: '#52525B' }}>Voice</span>
-            <div
-              onClick={() => toggleVoice(!voiceEnabled)}
-              style={{ width: 44, height: 24, borderRadius: 12, background: voiceEnabled ? 'rgba(59,130,246,0.5)' : '#27272A', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}
-            >
+            <div onClick={() => toggleVoice(!voiceEnabled)} style={{ width: 44, height: 24, borderRadius: 12, background: voiceEnabled ? 'rgba(59,130,246,0.5)' : '#27272A', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
               <div style={{ position: 'absolute', top: 2, left: voiceEnabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: voiceEnabled ? '#3B82F6' : '#52525B', transition: 'left 0.2s' }} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Verdict hero card */}
-      <SectionCard style={{ textAlign: 'center', padding: 24, border: '1px solid rgba(255,255,255,0.06)', marginBottom: 14 }}>
+      {/* 1. Overall score */}
+      <SectionCard style={{ textAlign: 'center', padding: 24, border: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ fontSize: 36, marginBottom: 4 }}>{verdict.emoji}</div>
-        <p style={{ fontSize: 24, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>{verdict.label}</p>
+        <p style={{ fontSize: 22, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>{verdict.label}</p>
         <p style={{ fontSize: 56, fontWeight: 700, color, lineHeight: 1.1, marginBottom: 4 }}>
           {overall}<span style={{ fontSize: 20, color: '#52525B', fontWeight: 400 }}>/100</span>
         </p>
@@ -398,21 +344,21 @@ export default function ResultsPage() {
         </div>
       </SectionCard>
 
-      {/* Coach summary */}
+      {/* 2. Coach summary */}
       {data.coach_summary && (
         <SectionCard style={{ border: '1px solid rgba(59,130,246,0.2)' }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Your coach says</p>
+          <SectionLabel>Your coach says</SectionLabel>
           <p style={{ fontSize: 15, color: '#d4d4d8', lineHeight: 1.7, margin: 0 }}>{data.coach_summary}</p>
         </SectionCard>
       )}
 
-      {/* Your goal / conviction */}
+      {/* 3. Goal */}
       {params.goal && (
-        <SectionCard style={{ border: '1px solid rgba(59,130,246,0.2)' }}>
-          <SectionTitle>Your goal</SectionTitle>
+        <SectionCard>
+          <SectionLabel>Your goal</SectionLabel>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#ffffff', marginBottom: 10 }}>{params.goal}</p>
-          <div style={{ display: 'inline-block', padding: '6px 12px', borderRadius: 8, background: conviction?.convinced ? 'rgba(34,197,94,0.1)' : 'rgba(161,161,170,0.1)', marginBottom: 8 }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: conviction?.convinced ? '#22C55E' : '#A1A1AA' }}>
+          <div style={{ display: 'inline-block', padding: '6px 14px', borderRadius: 8, background: conviction?.convinced ? 'rgba(34,197,94,0.1)' : 'rgba(161,161,170,0.1)', marginBottom: conviction?.reasoning ? 10 : 0 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: conviction?.convinced ? '#22C55E' : '#A1A1AA' }}>
               {conviction?.convinced ? 'You made a strong case' : 'Room to grow here'}
             </span>
           </div>
@@ -420,23 +366,23 @@ export default function ResultsPage() {
         </SectionCard>
       )}
 
-      {/* Focus on this next */}
-      {improvements.length > 0 && (
-        <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.3)', marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Focus on this next</p>
-          <p style={{ fontSize: 15, color: '#ffffff', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>{improvements[0]}</p>
-        </div>
-      )}
-
-      {/* What you did well */}
+      {/* 4. What you did well */}
       {strengths.length > 0 && (
         <SectionCard>
-          <SectionTitle>What you did well</SectionTitle>
+          <SectionLabel>What you did well</SectionLabel>
           {strengths.map((s: string, i: number) => <BulletItem key={i} text={s} color="#22C55E" />)}
         </SectionCard>
       )}
 
-      {/* Speech timeline */}
+      {/* 5. Focus on this next */}
+      {improvements.length > 0 && (
+        <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 14, padding: 18, border: '1px solid rgba(245,158,11,0.3)', marginBottom: 14 }}>
+          <SectionLabel>Focus on this next</SectionLabel>
+          <p style={{ fontSize: 15, color: '#ffffff', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>{improvements[0]}</p>
+        </div>
+      )}
+
+      {/* 6. Speech timeline */}
       {data.word_timestamps && data.word_timestamps.length > 2 && (
         <SpeechTimeline
           wordTimestamps={data.word_timestamps}
@@ -445,146 +391,60 @@ export default function ResultsPage() {
         />
       )}
 
-      {/* Body language card */}
-      {(blScores.eye_contact > 0 || blScores.posture > 0) && (
+      {/* 7. Body language — written comments only */}
+      {hasBodyLanguage && (
         <SectionCard>
-          <SectionTitle>Body language</SectionTitle>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-            {[
-              { label: 'Eye Contact', value: blScores.eye_contact || 0 },
-              { label: 'Posture', value: blScores.posture || 0 },
-              { label: 'Movement', value: blScores.movement || 0 },
-              { label: 'Gestures', value: blScores.gestures || 0 },
-            ].map(({ label, value }) => value > 0 ? (
-              <div key={label} style={{ flex: '1 1 calc(50% - 10px)', minWidth: 120, background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <p style={{ fontSize: 11, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{label}</p>
-                <p style={{ fontSize: 24, fontWeight: 700, color: scoreColor(value), marginBottom: 2 }}>{value}</p>
-                <p style={{ fontSize: 11, color: scoreColor(value) }}>{value >= 70 ? 'Good' : value >= 50 ? 'Needs work' : 'Struggling'}</p>
-              </div>
-            ) : null)}
-          </div>
+          <SectionLabel>Body language</SectionLabel>
           {[
-            { label: 'Eye Contact', text: blFeedback.eye_contact },
+            { label: 'Eye contact', text: blFeedback.eye_contact },
             { label: 'Posture', text: blFeedback.posture },
             { label: 'Movement', text: blFeedback.movement },
             { label: 'Gestures', text: blFeedback.gestures },
-          ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }) => (
-            <div key={label} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <p style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</p>
-              <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65 }}>{text}</p>
+          ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }, i, arr) => (
+            <div key={label} style={{ paddingBottom: i < arr.length - 1 ? 12 : 0, marginBottom: i < arr.length - 1 ? 12 : 0, borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>{label}</p>
+              <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65, margin: 0 }}>{text}</p>
             </div>
           ))}
         </SectionCard>
       )}
 
-      {/* Full breakdown collapsible */}
-      <button
-        onClick={() => setBreakdownOpen(!breakdownOpen)}
-        style={{ width: '100%', background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: 14, fontFamily: 'inherit' }}
-      >
-        <span style={{ fontSize: 14, fontWeight: 600, color: '#ffffff' }}>Full breakdown</span>
-        <span style={{ fontSize: 12, color: '#A1A1AA' }}>{breakdownOpen ? '▲' : '▼'}</span>
-      </button>
-
-      {breakdownOpen && (
-        <div>
-          {/* Scores */}
-          <SectionCard>
-            <SectionTitle>Scores</SectionTitle>
-            <ScoreBar label="Relevance" value={scores.relevance || 0} />
-            <ScoreBar label="Pace" value={scores.pace || 0} />
-            <ScoreBar label="Fillers" value={scores.filler || 0} />
-            <ScoreBar label="Structure" value={scores.structure || 0} />
-            <ScoreBar label="Confidence" value={scores.confidence || 0} />
-            {blScores.eye_contact > 0 && <>
-              <ScoreBar label="Eye Contact" value={blScores.eye_contact || 0} />
-              <ScoreBar label="Posture" value={blScores.posture || 0} />
-            </>}
-          </SectionCard>
-
-          {/* All improvements */}
-          {improvements.length > 1 && (
-            <SectionCard>
-              <SectionTitle>All improvements</SectionTitle>
-              {improvements.map((s: string, i: number) => <BulletItem key={i} text={s} color="#F59E0B" />)}
-            </SectionCard>
+      {/* 8. All improvements */}
+      {improvements.length > 1 && (
+        <SectionCard>
+          <SectionLabel>All improvements</SectionLabel>
+          {(isPro ? improvements : improvements.slice(0, 1)).map((s: string, i: number) => (
+            <BulletItem key={i} text={s} color="#F59E0B" />
+          ))}
+          {!isPro && improvements.length > 1 && (
+            <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(59,130,246,0.2)', textAlign: 'center', marginTop: 8 }}>
+              <p style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 10 }}>{improvements.length - 1} more improvements unlocked with Pro</p>
+              <button onClick={() => navigate('/upgrade')} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                Unlock with Pro
+              </button>
+            </div>
           )}
+        </SectionCard>
+      )}
 
-          {/* Feedback */}
-          <SectionCard>
-            <SectionTitle>Feedback</SectionTitle>
-            <FeedbackCard label="Pace" text={feedback.pace || ''} />
-            {isPro ? (
-              <>
-                <FeedbackCard label="Filler Words" text={feedback.filler || ''} />
-                <FeedbackCard label="Structure" text={feedback.structure || ''} />
-                <FeedbackCard label="Confidence" text={feedback.confidence || ''} />
-                {blFeedback.eye_contact && <FeedbackCard label="Eye Contact" text={blFeedback.eye_contact} />}
-              </>
-            ) : (
-              <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(59,130,246,0.2)', textAlign: 'center' }}>
-                <p style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 10 }}>Full feedback is a Pro feature</p>
-                <button onClick={() => navigate('/upgrade')} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Unlock with Pro
-                </button>
-              </div>
-            )}
-          </SectionCard>
+      {/* 9. Filler words */}
+      {fillerEntries.length > 0 && (
+        <SectionCard>
+          <SectionLabel>Filler words</SectionLabel>
+          <div>
+            {fillerEntries.map(([word, count]) => (
+              <FillerChip key={word} word={word} count={count as number} />
+            ))}
+          </div>
+        </SectionCard>
+      )}
 
-          {/* Weak language */}
-          {confidenceLanguage && confidenceLanguage.total > 0 && (
-            <SectionCard>
-              <SectionTitle>Weak language detected</SectionTitle>
-              {isPro ? (
-                <>
-                  <div style={{ textAlign: 'center', marginBottom: 12 }}>
-                    <p style={{ fontSize: 28, fontWeight: 700, color: confidenceLanguage.total >= 5 ? '#EF4444' : '#F59E0B' }}>{confidenceLanguage.total}</p>
-                    <p style={{ fontSize: 10, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Instances</p>
-                  </div>
-                  <div style={{ marginBottom: 10 }}>
-                    {(confidenceLanguage.phrases || []).map((phrase: string, i: number) => (
-                      <span key={i} style={{ display: 'inline-block', padding: '5px 10px', borderRadius: 6, fontSize: 13, background: '#222228', color: '#A1A1AA', marginRight: 6, marginBottom: 6 }}>"{phrase}"</span>
-                    ))}
-                  </div>
-                  {confidenceLanguage.examples && confidenceLanguage.examples.length > 0 && (
-                    <>
-                      <p style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>From your speech</p>
-                      {confidenceLanguage.examples.slice(0, 2).map((ex: string, i: number) => (
-                        <p key={i} style={{ fontSize: 14, color: '#d4d4d8', fontStyle: 'italic', marginBottom: 4 }}>"{ex}"</p>
-                      ))}
-                    </>
-                  )}
-                </>
-              ) : (
-                <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(59,130,246,0.2)', textAlign: 'center' }}>
-                  <button onClick={() => navigate('/upgrade')} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                    Unlock with Pro
-                  </button>
-                </div>
-              )}
-            </SectionCard>
-          )}
-
-          {/* Filler words */}
-          {fillerEntries.length > 0 && (
-            <SectionCard>
-              <SectionTitle>Filler words</SectionTitle>
-              <div>
-                {fillerEntries.map(([word, count]) => (
-                  <FillerChip key={word} word={word} count={count as number} />
-                ))}
-              </div>
-            </SectionCard>
-          )}
-
-          {/* Transcript */}
-          {data.transcript && (
-            <SectionCard>
-              <SectionTitle>Transcript</SectionTitle>
-              <HighlightedTranscript transcript={data.transcript} fillerWords={fillerWords} />
-            </SectionCard>
-          )}
-        </div>
+      {/* 10. Transcript */}
+      {data.transcript && (
+        <SectionCard>
+          <SectionLabel>Transcript</SectionLabel>
+          <HighlightedTranscript transcript={data.transcript} fillerWords={fillerWords} />
+        </SectionCard>
       )}
 
       {/* Action buttons */}
@@ -610,6 +470,7 @@ export default function ResultsPage() {
         </button>
       </div>
 
+      <LegalFooter />
     </div>
   )
 }
