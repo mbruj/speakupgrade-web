@@ -445,6 +445,38 @@ export default function ResultsPage() {
         />
       )}
 
+      {/* Body language card */}
+      {(blScores.eye_contact > 0 || blScores.posture > 0) && (
+        <SectionCard>
+          <SectionTitle>Body language</SectionTitle>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+            {[
+              { label: 'Eye Contact', value: blScores.eye_contact || 0 },
+              { label: 'Posture', value: blScores.posture || 0 },
+              { label: 'Movement', value: blScores.movement || 0 },
+              { label: 'Gestures', value: blScores.gestures || 0 },
+            ].map(({ label, value }) => value > 0 ? (
+              <div key={label} style={{ flex: '1 1 calc(50% - 10px)', minWidth: 120, background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <p style={{ fontSize: 11, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{label}</p>
+                <p style={{ fontSize: 24, fontWeight: 700, color: scoreColor(value), marginBottom: 2 }}>{value}</p>
+                <p style={{ fontSize: 11, color: scoreColor(value) }}>{value >= 70 ? 'Good' : value >= 50 ? 'Needs work' : 'Struggling'}</p>
+              </div>
+            ) : null)}
+          </div>
+          {[
+            { label: 'Eye Contact', text: blFeedback.eye_contact },
+            { label: 'Posture', text: blFeedback.posture },
+            { label: 'Movement', text: blFeedback.movement },
+            { label: 'Gestures', text: blFeedback.gestures },
+          ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }) => (
+            <div key={label} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <p style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</p>
+              <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65 }}>{text}</p>
+            </div>
+          ))}
+        </SectionCard>
+      )}
+
       {/* Full breakdown collapsible */}
       <button
         onClick={() => setBreakdownOpen(!breakdownOpen)}
