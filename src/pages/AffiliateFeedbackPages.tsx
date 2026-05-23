@@ -74,25 +74,6 @@ export function AffiliatePage() {
             </div>
           </div>
 
-          {/* Earnings reference */}
-          <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>What you earn per referral</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center' }}>
-              <div>
-                <p style={{ fontSize: 10, color: '#52525B', marginBottom: 4 }}>Monthly (30%)</p>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>3 EUR</p>
-              </div>
-              <div>
-                <p style={{ fontSize: 10, color: '#52525B', marginBottom: 4 }}>Annual (30%)</p>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>30 EUR</p>
-              </div>
-              <div style={{ background: 'rgba(34,197,94,0.06)', borderRadius: 8, padding: '4px 0' }}>
-                <p style={{ fontSize: 10, color: '#22C55E', marginBottom: 4 }}>Annual (50%)</p>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#22C55E' }}>50 EUR</p>
-              </div>
-            </div>
-          </div>
-
           {/* How it works */}
           <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '18px 16px', marginBottom: 20 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', marginBottom: 16, textTransform: 'uppercase' }}>How it works</p>
