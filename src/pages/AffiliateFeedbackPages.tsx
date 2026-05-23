@@ -5,18 +5,9 @@ import { API_URL } from '../lib/constants'
 
 // ─── Affiliate Page ───────────────────────────────────────────────────────────
 
-const HOW_IT_WORKS = [
-  'Apply below. We will send your unique referral code within 48 hours.',
-  'Share your code on social media, in your newsletter, or at events.',
-  'When someone subscribes using your code, you earn 50% of their payment.',
-  'Monthly plan: 5 EUR per referral. Annual plan: 50 EUR per referral.',
-  'Commissions are held for 30 days then paid via bank transfer or PayPal.',
-]
-
 export function AffiliatePage() {
   const navigate = useNavigate()
   const { email } = useAuthStore()
-  const [name, setName] = useState('')
   const [audienceText, setAudienceText] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -63,17 +54,56 @@ export function AffiliatePage() {
       <h1 style={{ fontSize: 28, fontWeight: 800, color: '#ffffff', marginBottom: 12, lineHeight: 1.2 }}>
         Earn with SpeakUPgrade
       </h1>
-      <p style={{ fontSize: 15, color: '#A1A1AA', lineHeight: 1.65, marginBottom: 28 }}>
-        Share SpeakUPgrade with your audience and earn 50% commission on every paid subscription you refer.
+      <p style={{ fontSize: 15, color: '#A1A1AA', lineHeight: 1.65, marginBottom: 24 }}>
+        Refer users and earn recurring commission every month they stay subscribed. The more you bring, the more you earn.
       </p>
 
       {!sent ? (
         <>
+          {/* Commission tiers */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+            <div style={{ flex: 1, background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '16px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Standard</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: '#3B82F6', lineHeight: 1, marginBottom: 6 }}>30%</div>
+              <div style={{ fontSize: 12, color: '#52525B', lineHeight: 1.5 }}>Starting rate for all affiliates</div>
+            </div>
+            <div style={{ flex: 1, background: '#1A1A1E', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: '16px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#22C55E', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Performance</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: '#22C55E', lineHeight: 1, marginBottom: 6 }}>50%</div>
+              <div style={{ fontSize: 12, color: '#52525B', lineHeight: 1.5 }}>Bring 5 paid users in a month</div>
+            </div>
+          </div>
+
+          {/* Earnings reference */}
+          <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>What you earn per referral</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center' }}>
+              <div>
+                <p style={{ fontSize: 10, color: '#52525B', marginBottom: 4 }}>Monthly (30%)</p>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>3 EUR</p>
+              </div>
+              <div>
+                <p style={{ fontSize: 10, color: '#52525B', marginBottom: 4 }}>Annual (30%)</p>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>30 EUR</p>
+              </div>
+              <div style={{ background: 'rgba(34,197,94,0.06)', borderRadius: 8, padding: '4px 0' }}>
+                <p style={{ fontSize: 10, color: '#22C55E', marginBottom: 4 }}>Annual (50%)</p>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#22C55E' }}>50 EUR</p>
+              </div>
+            </div>
+          </div>
+
           {/* How it works */}
-          <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '18px 16px', marginBottom: 28 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', marginBottom: 16 }}>HOW IT WORKS</p>
-            {HOW_IT_WORKS.map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: 14, marginBottom: i < HOW_IT_WORKS.length - 1 ? 16 : 0, alignItems: 'flex-start' }}>
+          <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '18px 16px', marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', marginBottom: 16, textTransform: 'uppercase' }}>How it works</p>
+            {[
+              'Apply below. We will send your unique referral code and link within 48 hours.',
+              'Share your link or code on social media, in your newsletter, or at events.',
+              'When someone subscribes using your code, you earn commission every month they stay subscribed.',
+              'Commissions are confirmed after 30 days and paid monthly via PayPal, Wise, bank transfer, or crypto.',
+              'Minimum payout is 50 EUR. No cap on how much you can earn.',
+            ].map((item, i, arr) => (
+              <div key={i} style={{ display: 'flex', gap: 14, marginBottom: i < arr.length - 1 ? 16 : 0, alignItems: 'flex-start' }}>
                 <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#1E3A5F', border: '1px solid rgba(59,130,246,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6' }}>{i + 1}</span>
                 </div>
@@ -81,6 +111,15 @@ export function AffiliatePage() {
               </div>
             ))}
           </div>
+
+          <a
+            href="https://www.speakupgrade.com/affiliate-rules/"
+            target="_blank"
+            rel="noreferrer"
+            style={{ fontSize: 13, color: '#3B82F6', textDecoration: 'none', marginBottom: 24, display: 'block' }}
+          >
+            Read full program rules →
+          </a>
 
           <h2 style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', marginBottom: 14 }}>Tell us about your audience</h2>
 
@@ -113,7 +152,7 @@ export function AffiliatePage() {
         <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '40px 24px', textAlign: 'center', marginTop: 20 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#ffffff', marginBottom: 10 }}>Application received</h2>
           <p style={{ fontSize: 14, color: '#A1A1AA', lineHeight: 1.7 }}>
-            We'll review your application and reply to {email} within 48 hours.
+            We will review your application and reply to {email} within 48 hours.
           </p>
           <button onClick={() => navigate('/setup')} style={{ marginTop: 24, background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: '#A1A1AA', fontSize: 14, fontWeight: 600, padding: '12px 24px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
             Back to app
