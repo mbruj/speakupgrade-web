@@ -1,8 +1,21 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSessionStore, useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
 import LegalFooter from '../components/LegalFooter'
+
+const LANGUAGES = [
+  { code: 'en', label: '🇬🇧 English' },
+  { code: 'pl', label: '🇵🇱 Polish' },
+  { code: 'es', label: '🇪🇸 Spanish' },
+  { code: 'de', label: '🇩🇪 German' },
+  { code: 'fr', label: '🇫🇷 French' },
+  { code: 'pt', label: '🇵🇹 Portuguese' },
+  { code: 'it', label: '🇮🇹 Italian' },
+  { code: 'nl', label: '🇳🇱 Dutch' },
+  { code: 'uk', label: '🇺🇦 Ukrainian' },
+  { code: 'ru', label: '🇷🇺 Russian' },
+]
 
 function scoreColor(v: number) {
   return v >= 70 ? '#22C55E' : v >= 50 ? '#F59E0B' : '#EF4444'
@@ -18,8 +31,6 @@ function getVerdict(score: number) {
   if (score >= 35) return { label: 'Getting there', emoji: '🎯' }
   return { label: 'Keep going', emoji: '🔥' }
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Section({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
@@ -232,6 +243,11 @@ export default function ResultsPage() {
   const [emailSent, setEmailSent] = useState(false)
   const [voiceEnabled, setVoiceEnabled] = useState(true)
 
+  // Translation state
+  const [selectedLang, setSelectedLang] = useState('en')
+  const [translating, setTranslating] = useState(false)
+  const [translated, setTranslated] = useState<any>(null)
+
   const data = raw as any
   const bl = data?.body_language || {}
   const blFeedback = bl.feedback || {}
@@ -250,13 +266,65 @@ export default function ResultsPage() {
   const fillerEntries = Object.entries(fillerWords).filter(([, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number))
   const hasBodyLanguage = blFeedback && Object.values(blFeedback).some((v: any) => v && v !== 'No video data available.')
 
+  // Use translated content if available, fallback to original
+  const t = translated || {}
+  const coachSummary = t.coach_summary ?? data?.coach_summary
+  const convictionReasoning = t.conviction_reasoning ?? conviction?.reasoning
+  const convictionConvinced = conviction?.convinced
+  const displayStrengths: string[] = t.strengths ?? strengths
+  const displayImprovements: string[] = t.improvements ?? improvements
+  const feedbackPace = t.feedback_pace ?? feedback.pace
+  const feedbackFiller = t.feedback_filler ?? feedback.filler
+  const feedbackStructure = t.feedback_structure ?? feedback.structure
+  const feedbackConfidence = t.feedback_confidence ?? feedback.confidence
+  const blEye = t.bl_eye_contact ?? blFeedback.eye_contact
+  const blPosture = t.bl_posture ?? blFeedback.posture
+  const blMovement = t.bl_movement ?? blFeedback.movement
+  const blGestures = t.bl_gestures ?? blFeedback.gestures
+
+  const handleLanguageChange = async (lang: string) => {
+    setSelectedLang(lang)
+    if (lang === 'en') { setTranslated(null); return }
+
+    setTranslating(true)
+    try {
+      const langLabel = LANGUAGES.find(l => l.code === lang)?.label.replace(/^.{2,3}\s/, '') || lang
+      const fields: Record<string, any> = {}
+      if (data?.coach_summary) fields.coach_summary = data.coach_summary
+      if (conviction?.reasoning) fields.conviction_reasoning = conviction.reasoning
+      if (strengths?.length) fields.strengths = strengths
+      if (improvements?.length) fields.improvements = improvements
+      if (feedback.pace) fields.feedback_pace = feedback.pace
+      if (feedback.filler) fields.feedback_filler = feedback.filler
+      if (feedback.structure) fields.feedback_structure = feedback.structure
+      if (feedback.confidence) fields.feedback_confidence = feedback.confidence
+      if (blFeedback.eye_contact && blFeedback.eye_contact !== 'No video data available.') fields.bl_eye_contact = blFeedback.eye_contact
+      if (blFeedback.posture && blFeedback.posture !== 'No video data available.') fields.bl_posture = blFeedback.posture
+      if (blFeedback.movement && blFeedback.movement !== 'No video data available.') fields.bl_movement = blFeedback.movement
+      if (blFeedback.gestures && blFeedback.gestures !== 'No video data available.') fields.bl_gestures = blFeedback.gestures
+
+      const res = await fetch(`${API_URL}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields, language: langLabel }),
+      })
+      const result = await res.json()
+      setTranslated(result)
+    } catch (e) {
+      console.error('Translation error:', e)
+      setTranslated(null)
+    } finally {
+      setTranslating(false)
+    }
+  }
+
   const speakResults = () => {
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
     const parts = [
       verdict.label + '.',
-      data?.coach_summary || '',
-      improvements[0] ? 'The one thing to focus on next: ' + improvements[0] : '',
+      coachSummary || '',
+      displayImprovements[0] ? 'The one thing to focus on next: ' + displayImprovements[0] : '',
     ].filter(Boolean).join(' ')
     const utterance = new SpeechSynthesisUtterance(parts)
     utterance.rate = 0.9; utterance.lang = 'en-US'
@@ -286,13 +354,12 @@ export default function ResultsPage() {
           email, topic: params!.topic, goal: params!.goal || '', overall,
           duration: fmt(data.actual_seconds || 0), wpm, wpmLabel,
           fillerTotal: data.filler_total || 0,
-          strengths, improvements,
-          feedbackPace: feedback.pace || '',
-          feedbackFiller: isPro ? (feedback.filler || '') : '',
-          feedbackStructure: isPro ? (feedback.structure || '') : '',
-          feedbackConfidence: isPro ? (feedback.confidence || '') : '',
+          strengths: displayStrengths, improvements: displayImprovements,
+          feedbackPace, feedbackFiller: isPro ? feedbackFiller : '',
+          feedbackStructure: isPro ? feedbackStructure : '',
+          feedbackConfidence: isPro ? feedbackConfidence : '',
           fillerWords, transcript: data.transcript || '',
-          isPro, conviction, coachSummary: data.coach_summary || '',
+          isPro, conviction, coachSummary,
           confidenceLanguage, blScores: bl.scores || null, blFeedback: bl.feedback || null,
           scores: { relevance: data.scores?.relevance || 0, pace: data.scores?.pace || 0, filler: data.scores?.filler || 0, structure: data.scores?.structure || 0, confidence: data.scores?.confidence || 0 },
         }),
@@ -326,6 +393,30 @@ export default function ResultsPage() {
         </div>
       </div>
 
+      {/* Language selector */}
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <select
+          value={selectedLang}
+          onChange={e => handleLanguageChange(e.target.value)}
+          disabled={translating}
+          style={{
+            background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
+            color: '#d4d4d8', fontSize: 13, padding: '7px 12px', fontFamily: 'inherit',
+            cursor: 'pointer', flex: 1, appearance: 'none', outline: 'none',
+          }}
+        >
+          {LANGUAGES.map(l => (
+            <option key={l.code} value={l.code}>{l.label}</option>
+          ))}
+        </select>
+        {translating && (
+          <span style={{ fontSize: 12, color: '#A1A1AA' }}>Translating...</span>
+        )}
+        {translated && !translating && (
+          <span style={{ fontSize: 12, color: '#22C55E' }}>✓ Translated</span>
+        )}
+      </div>
+
       {/* 1. Overall score */}
       <div style={{ background: '#1A1A1E', borderRadius: 16, padding: 24, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', marginBottom: 14 }}>
         <div style={{ fontSize: 36, marginBottom: 4 }}>{verdict.emoji}</div>
@@ -350,10 +441,10 @@ export default function ResultsPage() {
       </div>
 
       {/* 2. Coach summary */}
-      {data.coach_summary && (
+      {coachSummary && (
         <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Your coach says</p>
-          <p style={{ fontSize: 15, color: '#d4d4d8', lineHeight: 1.7, margin: 0 }}>{data.coach_summary}</p>
+          <p style={{ fontSize: 15, color: '#d4d4d8', lineHeight: 1.7, margin: 0 }}>{coachSummary}</p>
         </div>
       )}
 
@@ -362,28 +453,28 @@ export default function ResultsPage() {
         <Section>
           <SectionTitle>Your goal</SectionTitle>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#ffffff', marginBottom: 10 }}>{params.goal}</p>
-          <div style={{ display: 'inline-block', padding: '6px 12px', borderRadius: 8, background: conviction?.convinced ? 'rgba(34,197,94,0.1)' : 'rgba(161,161,170,0.1)', marginBottom: conviction?.reasoning ? 10 : 0 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: conviction?.convinced ? '#22C55E' : '#A1A1AA' }}>
-              {conviction?.convinced ? 'You made a strong case' : 'Room to grow here'}
+          <div style={{ display: 'inline-block', padding: '6px 12px', borderRadius: 8, background: convictionConvinced ? 'rgba(34,197,94,0.1)' : 'rgba(161,161,170,0.1)', marginBottom: convictionReasoning ? 10 : 0 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: convictionConvinced ? '#22C55E' : '#A1A1AA' }}>
+              {convictionConvinced ? 'You made a strong case' : 'Room to grow here'}
             </span>
           </div>
-          {conviction?.reasoning && <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65, margin: 0 }}>{conviction.reasoning}</p>}
+          {convictionReasoning && <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65, margin: 0 }}>{convictionReasoning}</p>}
         </Section>
       )}
 
       {/* 4. What you did well */}
-      {strengths.length > 0 && (
+      {displayStrengths.length > 0 && (
         <Section>
           <SectionTitle>What you did well</SectionTitle>
-          {strengths.map((s: string, i: number) => <BulletItem key={i} text={s} color="#22C55E" />)}
+          {displayStrengths.map((s: string, i: number) => <BulletItem key={i} text={s} color="#22C55E" />)}
         </Section>
       )}
 
       {/* 5. Focus on this next */}
-      {improvements.length > 0 && (
+      {displayImprovements.length > 0 && (
         <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.3)', marginBottom: 14 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Focus on this next</p>
-          <p style={{ fontSize: 15, color: '#ffffff', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>{improvements[0]}</p>
+          <p style={{ fontSize: 15, color: '#ffffff', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>{displayImprovements[0]}</p>
         </div>
       )}
 
@@ -397,16 +488,16 @@ export default function ResultsPage() {
         />
       )}
 
-      {/* 7. Body language — Pro gate */}
+      {/* 7. Body language */}
       {hasBodyLanguage && (
         isPro ? (
           <Section>
             <SectionTitle>Body language</SectionTitle>
             {[
-              { label: 'Eye contact', text: blFeedback.eye_contact },
-              { label: 'Posture', text: blFeedback.posture },
-              { label: 'Movement', text: blFeedback.movement },
-              { label: 'Gestures', text: blFeedback.gestures },
+              { label: 'Eye contact', text: blEye },
+              { label: 'Posture', text: blPosture },
+              { label: 'Movement', text: blMovement },
+              { label: 'Gestures', text: blGestures },
             ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }, i, arr) => (
               <FeedbackRow key={label} label={label} text={text} last={i === arr.length - 1} />
             ))}
@@ -420,14 +511,14 @@ export default function ResultsPage() {
       )}
 
       {/* 8. All improvements */}
-      {improvements.length > 1 && (
+      {displayImprovements.length > 1 && (
         <Section>
           <SectionTitle>All improvements</SectionTitle>
-          {(isPro ? improvements : improvements.slice(0, 1)).map((s: string, i: number) => (
+          {(isPro ? displayImprovements : displayImprovements.slice(0, 1)).map((s: string, i: number) => (
             <BulletItem key={i} text={s} color="#F59E0B" />
           ))}
-          {!isPro && improvements.length > 1 && (
-            <ProGate text={`${improvements.length - 1} more improvements unlocked with Pro`} onUnlock={() => navigate('/upgrade')} />
+          {!isPro && displayImprovements.length > 1 && (
+            <ProGate text={`${displayImprovements.length - 1} more improvements unlocked with Pro`} onUnlock={() => navigate('/upgrade')} />
           )}
         </Section>
       )}
@@ -435,16 +526,14 @@ export default function ResultsPage() {
       {/* 9. Feedback */}
       <Section>
         <SectionTitle>Feedback</SectionTitle>
-        {feedback.pace && (
-          <FeedbackRow label="Pace" text={feedback.pace} last={!isPro} />
-        )}
+        {feedbackPace && <FeedbackRow label="Pace" text={feedbackPace} last={!isPro} />}
         {isPro ? (
           <>
-            {feedback.filler && <FeedbackRow label="Filler Words" text={feedback.filler} />}
-            {feedback.structure && <FeedbackRow label="Structure" text={feedback.structure} />}
-            {feedback.confidence && <FeedbackRow label="Confidence" text={feedback.confidence} />}
-            {blFeedback.eye_contact && blFeedback.eye_contact !== 'No video data available.' && (
-              <FeedbackRow label="Eye Contact" text={blFeedback.eye_contact} last />
+            {feedbackFiller && <FeedbackRow label="Filler Words" text={feedbackFiller} />}
+            {feedbackStructure && <FeedbackRow label="Structure" text={feedbackStructure} />}
+            {feedbackConfidence && <FeedbackRow label="Confidence" text={feedbackConfidence} />}
+            {blEye && blEye !== 'No video data available.' && (
+              <FeedbackRow label="Eye Contact" text={blEye} last />
             )}
           </>
         ) : (
@@ -452,7 +541,7 @@ export default function ResultsPage() {
         )}
       </Section>
 
-      {/* 10. Weak language — Pro gate */}
+      {/* 10. Weak language */}
       {confidenceLanguage && confidenceLanguage.total > 0 && (
         isPro ? (
           <Section>
