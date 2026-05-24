@@ -7,12 +7,10 @@ import LegalFooter from '../components/LegalFooter'
 function scoreColor(v: number) {
   return v >= 70 ? '#22C55E' : v >= 50 ? '#F59E0B' : '#EF4444'
 }
-
 function fmt(s: number) {
   if (!s) return '0:00'
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')
 }
-
 function getVerdict(score: number) {
   if (score >= 80) return { label: 'Outstanding session', emoji: '🌟' }
   if (score >= 65) return { label: 'Strong performance', emoji: '💪' }
@@ -21,34 +19,62 @@ function getVerdict(score: number) {
   return { label: 'Keep going', emoji: '🔥' }
 }
 
-function SectionCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function Section({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{
-      background: '#1A1A1E',
-      borderRadius: 14,
-      padding: '18px 16px',
-      border: '1px solid rgba(255,255,255,0.05)',
-      marginBottom: 14,
-      ...style,
-    }}>
+    <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.05)', marginBottom: 14, ...style }}>
       {children}
     </div>
   )
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{ fontSize: 10, fontWeight: 700, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-      {children}
-    </p>
-  )
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <p style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>{children}</p>
 }
 
 function BulletItem({ text, color = '#22C55E' }: { text: string; color?: string }) {
   return (
     <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
       <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, marginTop: 7, flexShrink: 0 }} />
-      <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.7, margin: 0 }}>{text}</p>
+      <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65, margin: 0 }}>{text}</p>
+    </div>
+  )
+}
+
+function FeedbackRow({ label, text, last = false }: { label: string; text: string; last?: boolean }) {
+  if (!text) return null
+  return (
+    <div style={{ paddingBottom: last ? 0 : 12, marginBottom: last ? 0 : 12, borderBottom: last ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
+      <p style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65, margin: 0 }}>{text}</p>
+    </div>
+  )
+}
+
+function ProGate({ text, onUnlock }: { text: string; onUnlock: () => void }) {
+  return (
+    <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(59,130,246,0.2)', textAlign: 'center', marginTop: 8 }}>
+      <p style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 10 }}>{text}</p>
+      <button onClick={onUnlock} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+        Unlock with Pro
+      </button>
+    </div>
+  )
+}
+
+function BlurredRows({ onUnlock }: { onUnlock: () => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+      {[85, 70, 80].map((w, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+          <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, width: `${w}%` }} />
+        </div>
+      ))}
+      <button onClick={onUnlock} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 11, padding: '8px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'flex-start', marginTop: 4 }}>
+        Unlock with Pro
+      </button>
     </div>
   )
 }
@@ -56,17 +82,7 @@ function BulletItem({ text, color = '#22C55E' }: { text: string; color?: string 
 function FillerChip({ word, count }: { word: string; count: number }) {
   const isHigh = count >= 5
   return (
-    <span style={{
-      display: 'inline-block',
-      padding: '5px 10px',
-      borderRadius: 6,
-      fontSize: 13,
-      marginRight: 6,
-      marginBottom: 6,
-      background: isHigh ? 'rgba(239,68,68,0.12)' : '#222228',
-      color: isHigh ? '#EF4444' : '#A1A1AA',
-      border: isHigh ? '1px solid rgba(239,68,68,0.3)' : 'none',
-    }}>
+    <span style={{ display: 'inline-block', padding: '5px 10px', borderRadius: 6, fontSize: 13, marginRight: 6, marginBottom: 6, background: isHigh ? 'rgba(239,68,68,0.12)' : '#222228', color: isHigh ? '#EF4444' : '#A1A1AA', border: isHigh ? '1px solid rgba(239,68,68,0.3)' : 'none' }}>
       {word} x{count}
     </span>
   )
@@ -74,13 +90,10 @@ function FillerChip({ word, count }: { word: string; count: number }) {
 
 function HighlightedTranscript({ transcript, fillerWords }: { transcript: string; fillerWords: Record<string, number> }) {
   const fillers = Object.keys(fillerWords).filter(w => fillerWords[w] > 0)
-  if (fillers.length === 0) {
-    return <p style={{ fontSize: 14, color: '#A1A1AA', lineHeight: 1.7 }}>{transcript}</p>
-  }
+  if (fillers.length === 0) return <p style={{ fontSize: 14, color: '#A1A1AA', lineHeight: 1.7 }}>{transcript}</p>
   const pattern = new RegExp('\\b(' + fillers.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'gi')
   const parts: { text: string; isFiller: boolean }[] = []
-  let lastIndex = 0
-  let match
+  let lastIndex = 0; let match
   while ((match = pattern.exec(transcript)) !== null) {
     if (match.index > lastIndex) parts.push({ text: transcript.slice(lastIndex, match.index), isFiller: false })
     parts.push({ text: match[0], isFiller: true })
@@ -98,7 +111,7 @@ function HighlightedTranscript({ transcript, fillerWords }: { transcript: string
   )
 }
 
-function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestamps: any[]; actualSeconds: number; isPro: boolean }) {
+function SpeechTimeline({ wordTimestamps, actualSeconds, isPro, onUpgrade }: { wordTimestamps: any[]; actualSeconds: number; isPro: boolean; onUpgrade: () => void }) {
   const [scrubPos, setScrubPos] = useState<number | null>(null)
   const [scrubInfo, setScrubInfo] = useState<any>(null)
 
@@ -108,10 +121,10 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestam
   const minWpm = 60, maxWpm = 200
   const graphH = 120, padTop = 10, padBot = 20
   const plotH = graphH - padTop - padBot
+  const width = 320
 
   const segments = Array.from({ length: numChunks }, (_, i) => {
-    const start = i * chunkSize
-    const end = start + chunkSize
+    const start = i * chunkSize; const end = start + chunkSize
     const words = wordTimestamps.filter(w => w.start >= start && w.start < end)
     const wpm = words.length > 0 ? Math.round((words.length / chunkSize) * 60) : 0
     return { start, end, wpm, text: words.map(w => w.word).join(' ') }
@@ -123,10 +136,8 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestam
     if (gap >= 0.8) pauses.push({ start: wordTimestamps[i - 1].end, end: wordTimestamps[i].start, duration: gap, type: gap >= 2 ? 'strategic' : 'hesitation' })
   }
 
-  const width = 320
   const xFor = (t: number) => (t / duration) * width
   const yFor = (wpm: number) => padTop + plotH - ((Math.min(wpm, maxWpm) - minWpm) / (maxWpm - minWpm)) * plotH
-
   const points = segments.map(s => ({ x: xFor((s.start + s.end) / 2), y: s.wpm > 0 ? yFor(s.wpm) : null })).filter(p => p.y !== null)
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -136,34 +147,34 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestam
     const t = (x / rect.width) * duration
     setScrubPos(x / rect.width * width)
     const onPause = pauses.find(p => t >= p.start && t <= p.end)
-    if (onPause) { setScrubInfo({ isPause: true, ...onPause }); return }
+    if (onPause) { setScrubInfo({ isPause: true, duration: onPause.duration.toFixed(1), type: onPause.type }); return }
     const seg = segments.find(s => t >= s.start && t < s.end) || segments[segments.length - 1]
-    setScrubInfo({ isPause: false, ...seg })
+    setScrubInfo({ isPause: false, wpm: seg.wpm, text: seg.text, wpmLabel: seg.wpm > 160 ? 'Too fast' : seg.wpm < 110 ? 'Too slow' : 'Good pace', time: fmt(Math.round(t)) })
   }
 
+  if (!segments || segments.length < 2) return null
+
   return (
-    <SectionCard>
-      <SectionLabel>Speech timeline</SectionLabel>
+    <Section>
+      <SectionTitle>Speech timeline</SectionTitle>
       <div style={{ display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
-        {[
-          { color: 'rgba(34,197,94,0.3)', label: 'Ideal pace zone' },
-          isPro ? { color: 'rgba(34,197,94,0.6)', label: 'Strategic pause' } : null,
-          isPro ? { color: 'rgba(245,158,11,0.6)', label: 'Unplanned pause' } : null,
-        ].filter(Boolean).map((item: any) => (
-          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 14, height: 8, borderRadius: 2, background: item.color }} />
-            <span style={{ fontSize: 11, color: '#A1A1AA' }}>{item.label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 16, height: 8, borderRadius: 2, background: 'rgba(34,197,94,0.3)' }} />
+          <span style={{ fontSize: 11, color: '#A1A1AA' }}>Ideal pace zone</span>
+        </div>
+        {isPro && <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 8, height: 8, background: 'rgba(34,197,94,0.6)' }} />
+            <span style={{ fontSize: 11, color: '#A1A1AA' }}>Strategic pause</span>
           </div>
-        ))}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 8, height: 8, background: 'rgba(245,158,11,0.6)' }} />
+            <span style={{ fontSize: 11, color: '#A1A1AA' }}>Unplanned pause</span>
+          </div>
+        </>}
       </div>
-      <svg
-        width="100%"
-        viewBox={`0 0 ${width} ${graphH}`}
-        preserveAspectRatio="none"
-        style={{ display: 'block', cursor: isPro ? 'crosshair' : 'default' }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={() => { setScrubPos(null); setScrubInfo(null) }}
-      >
+      <svg width="100%" viewBox={`0 0 ${width} ${graphH}`} preserveAspectRatio="none" style={{ display: 'block', cursor: isPro ? 'crosshair' : 'default' }}
+        onMouseMove={handleMouseMove} onMouseLeave={() => { setScrubPos(null); setScrubInfo(null) }}>
         <rect x={0} y={yFor(150)} width={width} height={yFor(110) - yFor(150)} fill="rgba(34,197,94,0.08)" />
         {isPro && pauses.map((p, i) => (
           <rect key={i} x={xFor(p.start)} y={padTop} width={Math.max(3, xFor(p.end) - xFor(p.start))} height={plotH}
@@ -180,12 +191,17 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestam
       {isPro ? (
         <>
           <p style={{ fontSize: 11, color: '#52525B', textAlign: 'center', margin: '4px 0' }}>Drag to explore your speech</p>
-          <div style={{ background: '#111316', borderRadius: 8, padding: 12, minHeight: 48, marginTop: 4 }}>
+          <div style={{ background: '#111316', borderRadius: 8, padding: 12, minHeight: 60, marginTop: 4 }}>
             {!scrubInfo && <p style={{ fontSize: 13, color: '#52525B', fontStyle: 'italic' }}>{segments[Math.floor(segments.length / 2)]?.text || ''}</p>}
-            {scrubInfo?.isPause && <p style={{ fontSize: 13, color: '#A1A1AA' }}>{scrubInfo.type === 'strategic' ? 'Strategic pause' : 'Unplanned pause'} — {scrubInfo.duration?.toFixed(1)}s</p>}
+            {scrubInfo?.isPause && (
+              <>
+                <p style={{ fontSize: 11, color: '#A1A1AA', marginBottom: 4 }}>{scrubInfo.type === 'strategic' ? 'Strategic pause' : 'Unplanned pause'} — {scrubInfo.duration}s</p>
+                <p style={{ fontSize: 13, color: '#d4d4d8', lineHeight: 1.5 }}>{scrubInfo.type === 'strategic' ? 'Good — a deliberate pause for effect' : 'Watch out — unplanned mid-speech pause'}</p>
+              </>
+            )}
             {scrubInfo && !scrubInfo.isPause && (
               <>
-                <p style={{ fontSize: 11, color: '#A1A1AA', marginBottom: 4 }}>{scrubInfo.wpm} WPM — {scrubInfo.wpm > 160 ? 'Too fast' : scrubInfo.wpm < 110 ? 'Too slow' : 'Good pace'}</p>
+                <p style={{ fontSize: 11, color: '#A1A1AA', marginBottom: 4 }}>{scrubInfo.time} — {scrubInfo.wpm} WPM — {scrubInfo.wpmLabel}</p>
                 <p style={{ fontSize: 13, color: '#d4d4d8', lineHeight: 1.5 }}>{scrubInfo.text}</p>
               </>
             )}
@@ -193,15 +209,18 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro }: { wordTimestam
         </>
       ) : (
         <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(59,130,246,0.2)', textAlign: 'center', marginTop: 8 }}>
-          <p style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 10 }}>Drag to explore your speech moment by moment — Pro feature</p>
-          <button onClick={() => {}} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>Interactive timeline is Pro</p>
+          <p style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 10 }}>Drag to explore your speech moment by moment.</p>
+          <button onClick={onUpgrade} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
             Unlock with Pro
           </button>
         </div>
       )}
-    </SectionCard>
+    </Section>
   )
 }
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ResultsPage() {
   const navigate = useNavigate()
@@ -214,23 +233,22 @@ export default function ResultsPage() {
   const [voiceEnabled, setVoiceEnabled] = useState(true)
 
   const data = raw as any
-  const scores = data?.scores || {}
   const bl = data?.body_language || {}
-  const blScores = bl.scores || {}
   const blFeedback = bl.feedback || {}
   const feedback = data?.feedback || {}
   const strengths = data?.strengths || []
   const improvements = data?.improvements || []
-  const overall = scores.overall || 0
+  const overall = data?.scores?.overall || 0
   const color = scoreColor(overall)
   const verdict = getVerdict(overall)
   const wpm = data?.words_per_minute || 0
   const wpmColor = wpm === 0 ? '#A1A1AA' : wpm < 110 ? '#F59E0B' : wpm > 160 ? '#F59E0B' : '#22C55E'
   const wpmLabel = wpm === 0 ? 'WPM' : wpm < 110 ? 'Too slow' : wpm > 160 ? 'Too fast' : 'Good pace'
+  const conviction = data?.conviction || null
+  const confidenceLanguage = data?.confidence_language || null
   const fillerWords: Record<string, number> = data?.filler_words || {}
   const fillerEntries = Object.entries(fillerWords).filter(([, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number))
-  const conviction = data?.conviction || null
-  const hasBodyLanguage = blScores.eye_contact > 0 || blScores.posture > 0
+  const hasBodyLanguage = blFeedback && Object.values(blFeedback).some((v: any) => v && v !== 'No video data available.')
 
   const speakResults = () => {
     if (!('speechSynthesis' in window)) return
@@ -241,8 +259,7 @@ export default function ResultsPage() {
       improvements[0] ? 'The one thing to focus on next: ' + improvements[0] : '',
     ].filter(Boolean).join(' ')
     const utterance = new SpeechSynthesisUtterance(parts)
-    utterance.rate = 0.9
-    utterance.lang = 'en-US'
+    utterance.rate = 0.9; utterance.lang = 'en-US'
     window.speechSynthesis.speak(utterance)
   }
 
@@ -274,28 +291,16 @@ export default function ResultsPage() {
           feedbackFiller: isPro ? (feedback.filler || '') : '',
           feedbackStructure: isPro ? (feedback.structure || '') : '',
           feedbackConfidence: isPro ? (feedback.confidence || '') : '',
-          fillerWords: data.filler_words || {},
-          transcript: data.transcript || '',
-          isPro, conviction: data.conviction || null,
-          coachSummary: data.coach_summary || '',
-          confidenceLanguage: data.confidence_language || null,
-          blScores: bl.scores || null, blFeedback: bl.feedback || null,
-          scores: {
-            relevance: scores.relevance || 0,
-            pace: scores.pace || 0,
-            filler: scores.filler || 0,
-            structure: scores.structure || 0,
-            confidence: scores.confidence || 0,
-          },
+          fillerWords, transcript: data.transcript || '',
+          isPro, conviction, coachSummary: data.coach_summary || '',
+          confidenceLanguage, blScores: bl.scores || null, blFeedback: bl.feedback || null,
+          scores: { relevance: data.scores?.relevance || 0, pace: data.scores?.pace || 0, filler: data.scores?.filler || 0, structure: data.scores?.structure || 0, confidence: data.scores?.confidence || 0 },
         }),
       })
       setEmailSent(true)
       setTimeout(() => setEmailSent(false), 3000)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setEmailSending(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setEmailSending(false) }
   }
 
   if (!raw || !params) return null
@@ -303,8 +308,8 @@ export default function ResultsPage() {
   return (
     <div style={{ minHeight: '100dvh', background: '#09090B', padding: '48px 20px 40px', maxWidth: 480, margin: '0 auto' }}>
 
-      {/* Header — topic + voice toggle */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', flex: 1, marginRight: 12, lineHeight: 1.4 }}>{params.topic}</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {voiceEnabled && (
@@ -322,9 +327,9 @@ export default function ResultsPage() {
       </div>
 
       {/* 1. Overall score */}
-      <SectionCard style={{ textAlign: 'center', padding: 24, border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ background: '#1A1A1E', borderRadius: 16, padding: 24, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', marginBottom: 14 }}>
         <div style={{ fontSize: 36, marginBottom: 4 }}>{verdict.emoji}</div>
-        <p style={{ fontSize: 22, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>{verdict.label}</p>
+        <p style={{ fontSize: 24, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>{verdict.label}</p>
         <p style={{ fontSize: 56, fontWeight: 700, color, lineHeight: 1.1, marginBottom: 4 }}>
           {overall}<span style={{ fontSize: 20, color: '#52525B', fontWeight: 400 }}>/100</span>
         </p>
@@ -342,42 +347,42 @@ export default function ResultsPage() {
             <p style={{ fontSize: 10, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>Fillers</p>
           </div>
         </div>
-      </SectionCard>
+      </div>
 
       {/* 2. Coach summary */}
       {data.coach_summary && (
-        <SectionCard style={{ border: '1px solid rgba(59,130,246,0.2)' }}>
-          <SectionLabel>Your coach says</SectionLabel>
+        <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Your coach says</p>
           <p style={{ fontSize: 15, color: '#d4d4d8', lineHeight: 1.7, margin: 0 }}>{data.coach_summary}</p>
-        </SectionCard>
+        </div>
       )}
 
       {/* 3. Goal */}
       {params.goal && (
-        <SectionCard>
-          <SectionLabel>Your goal</SectionLabel>
+        <Section>
+          <SectionTitle>Your goal</SectionTitle>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#ffffff', marginBottom: 10 }}>{params.goal}</p>
-          <div style={{ display: 'inline-block', padding: '6px 14px', borderRadius: 8, background: conviction?.convinced ? 'rgba(34,197,94,0.1)' : 'rgba(161,161,170,0.1)', marginBottom: conviction?.reasoning ? 10 : 0 }}>
+          <div style={{ display: 'inline-block', padding: '6px 12px', borderRadius: 8, background: conviction?.convinced ? 'rgba(34,197,94,0.1)' : 'rgba(161,161,170,0.1)', marginBottom: conviction?.reasoning ? 10 : 0 }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: conviction?.convinced ? '#22C55E' : '#A1A1AA' }}>
               {conviction?.convinced ? 'You made a strong case' : 'Room to grow here'}
             </span>
           </div>
           {conviction?.reasoning && <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65, margin: 0 }}>{conviction.reasoning}</p>}
-        </SectionCard>
+        </Section>
       )}
 
       {/* 4. What you did well */}
       {strengths.length > 0 && (
-        <SectionCard>
-          <SectionLabel>What you did well</SectionLabel>
+        <Section>
+          <SectionTitle>What you did well</SectionTitle>
           {strengths.map((s: string, i: number) => <BulletItem key={i} text={s} color="#22C55E" />)}
-        </SectionCard>
+        </Section>
       )}
 
       {/* 5. Focus on this next */}
       {improvements.length > 0 && (
-        <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 14, padding: 18, border: '1px solid rgba(245,158,11,0.3)', marginBottom: 14 }}>
-          <SectionLabel>Focus on this next</SectionLabel>
+        <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.3)', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Focus on this next</p>
           <p style={{ fontSize: 15, color: '#ffffff', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>{improvements[0]}</p>
         </div>
       )}
@@ -388,63 +393,108 @@ export default function ResultsPage() {
           wordTimestamps={data.word_timestamps}
           actualSeconds={data.actual_seconds || params.targetSeconds}
           isPro={isPro}
+          onUpgrade={() => navigate('/upgrade')}
         />
       )}
 
-      {/* 7. Body language — written comments only */}
+      {/* 7. Body language — Pro gate */}
       {hasBodyLanguage && (
-        <SectionCard>
-          <SectionLabel>Body language</SectionLabel>
-          {[
-            { label: 'Eye contact', text: blFeedback.eye_contact },
-            { label: 'Posture', text: blFeedback.posture },
-            { label: 'Movement', text: blFeedback.movement },
-            { label: 'Gestures', text: blFeedback.gestures },
-          ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }, i, arr) => (
-            <div key={label} style={{ paddingBottom: i < arr.length - 1 ? 12 : 0, marginBottom: i < arr.length - 1 ? 12 : 0, borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>{label}</p>
-              <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65, margin: 0 }}>{text}</p>
-            </div>
-          ))}
-        </SectionCard>
+        isPro ? (
+          <Section>
+            <SectionTitle>Body language</SectionTitle>
+            {[
+              { label: 'Eye contact', text: blFeedback.eye_contact },
+              { label: 'Posture', text: blFeedback.posture },
+              { label: 'Movement', text: blFeedback.movement },
+              { label: 'Gestures', text: blFeedback.gestures },
+            ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }, i, arr) => (
+              <FeedbackRow key={label} label={label} text={text} last={i === arr.length - 1} />
+            ))}
+          </Section>
+        ) : (
+          <Section>
+            <SectionTitle>Body language</SectionTitle>
+            <BlurredRows onUnlock={() => navigate('/upgrade')} />
+          </Section>
+        )
       )}
 
       {/* 8. All improvements */}
       {improvements.length > 1 && (
-        <SectionCard>
-          <SectionLabel>All improvements</SectionLabel>
+        <Section>
+          <SectionTitle>All improvements</SectionTitle>
           {(isPro ? improvements : improvements.slice(0, 1)).map((s: string, i: number) => (
             <BulletItem key={i} text={s} color="#F59E0B" />
           ))}
           {!isPro && improvements.length > 1 && (
-            <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(59,130,246,0.2)', textAlign: 'center', marginTop: 8 }}>
-              <p style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 10 }}>{improvements.length - 1} more improvements unlocked with Pro</p>
-              <button onClick={() => navigate('/upgrade')} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                Unlock with Pro
-              </button>
-            </div>
+            <ProGate text={`${improvements.length - 1} more improvements unlocked with Pro`} onUnlock={() => navigate('/upgrade')} />
           )}
-        </SectionCard>
+        </Section>
       )}
 
-      {/* 9. Filler words */}
+      {/* 9. Feedback */}
+      <Section>
+        <SectionTitle>Feedback</SectionTitle>
+        {feedback.pace && (
+          <FeedbackRow label="Pace" text={feedback.pace} last={!isPro} />
+        )}
+        {isPro ? (
+          <>
+            {feedback.filler && <FeedbackRow label="Filler Words" text={feedback.filler} />}
+            {feedback.structure && <FeedbackRow label="Structure" text={feedback.structure} />}
+            {feedback.confidence && <FeedbackRow label="Confidence" text={feedback.confidence} />}
+            {blFeedback.eye_contact && blFeedback.eye_contact !== 'No video data available.' && (
+              <FeedbackRow label="Eye Contact" text={blFeedback.eye_contact} last />
+            )}
+          </>
+        ) : (
+          <ProGate text="Full feedback unlocked with Pro" onUnlock={() => navigate('/upgrade')} />
+        )}
+      </Section>
+
+      {/* 10. Weak language — Pro gate */}
+      {confidenceLanguage && confidenceLanguage.total > 0 && (
+        isPro ? (
+          <Section>
+            <SectionTitle>Weak language detected</SectionTitle>
+            <p style={{ fontSize: 24, fontWeight: 700, color: confidenceLanguage.total >= 5 ? '#EF4444' : '#F59E0B', marginBottom: 10 }}>
+              {confidenceLanguage.total} instances
+            </p>
+            <div style={{ marginBottom: 10 }}>
+              {(confidenceLanguage.phrases || []).map((p: string, i: number) => (
+                <span key={i} style={{ display: 'inline-block', background: '#222228', color: '#A1A1AA', fontSize: 12, padding: '5px 10px', borderRadius: 6, margin: '2px' }}>"{p}"</span>
+              ))}
+            </div>
+            {confidenceLanguage.examples && confidenceLanguage.examples.slice(0, 2).map((ex: string, i: number) => (
+              <p key={i} style={{ fontSize: 14, color: '#d4d4d8', fontStyle: 'italic', marginTop: 6 }}>"{ex}"</p>
+            ))}
+          </Section>
+        ) : (
+          <Section>
+            <SectionTitle>Weak language detected</SectionTitle>
+            <BlurredRows onUnlock={() => navigate('/upgrade')} />
+          </Section>
+        )
+      )}
+
+      {/* 11. Filler words */}
       {fillerEntries.length > 0 && (
-        <SectionCard>
-          <SectionLabel>Filler words</SectionLabel>
+        <Section>
+          <SectionTitle>Filler words</SectionTitle>
           <div>
             {fillerEntries.map(([word, count]) => (
               <FillerChip key={word} word={word} count={count as number} />
             ))}
           </div>
-        </SectionCard>
+        </Section>
       )}
 
-      {/* 10. Transcript */}
+      {/* 12. Transcript */}
       {data.transcript && (
-        <SectionCard>
-          <SectionLabel>Transcript</SectionLabel>
+        <Section>
+          <SectionTitle>Transcript</SectionTitle>
           <HighlightedTranscript transcript={data.transcript} fillerWords={fillerWords} />
-        </SectionCard>
+        </Section>
       )}
 
       {/* Action buttons */}
