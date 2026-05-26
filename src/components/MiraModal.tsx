@@ -47,11 +47,11 @@ export default function MiraModal({ onComplete, onSkip }: Props) {
 
         {/* Mira avatar */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
-            margin: '0 auto 12px',
-          }} />
+          <img
+            src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png"
+            alt="Mira"
+            style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 12px', display: 'block', border: '2px solid rgba(59,130,246,0.4)' }}
+          />
           <p style={{ fontSize: 13, fontWeight: 700, color: '#3B82F6', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             Meet Mira
           </p>
