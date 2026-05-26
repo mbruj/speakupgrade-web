@@ -262,8 +262,8 @@ export default function ResultsPage() {
       setPendingNavigation(path)
       setShowMiraModal(true)
     } else {
-      if (path === '/setup') clearSession()
       navigate(path)
+      if (path === '/setup') setTimeout(() => clearSession(), 100)
     }
   }
 
@@ -385,6 +385,7 @@ export default function ResultsPage() {
         if (!result.is_onboarded || isTestAccount) setShowMiraOnExit(true)
       } catch (e) {
         console.error('Mira error:', e)
+        if (email === 'm@bruj.com') setShowMiraOnExit(true)
       } finally {
         setMiraLoading(false)
       }
@@ -498,14 +499,18 @@ export default function ResultsPage() {
             setShowMiraModal(false)
             setShowMiraOnExit(false)
             setIsOnboarded(true)
-            if (pendingNavigation === '/setup') clearSession()
-            if (pendingNavigation) navigate(pendingNavigation)
+            if (pendingNavigation) {
+              navigate(pendingNavigation)
+              if (pendingNavigation === '/setup') setTimeout(() => clearSession(), 100)
+            }
           }}
           onSkip={() => {
             setShowMiraModal(false)
             setShowMiraOnExit(false)
-            if (pendingNavigation === '/setup') clearSession()
-            if (pendingNavigation) navigate(pendingNavigation)
+            if (pendingNavigation) {
+              navigate(pendingNavigation)
+              if (pendingNavigation === '/setup') setTimeout(() => clearSession(), 100)
+            }
           }}
         />
       )}
