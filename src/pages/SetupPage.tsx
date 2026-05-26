@@ -170,46 +170,34 @@ export default function SetupPage() {
         </div>
       </div>
 
-      {/* Mira motivational message */}
-      {miraOnboarded && miraMessage && (
-        <div style={{ background: '#1A1A1E', borderRadius: 12, padding: '14px 16px', border: '1px solid rgba(59,130,246,0.2)', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <img
-            src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png"
-            alt="Mira"
-            style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(59,130,246,0.3)', marginTop: 2 }}
-          />
-          <div>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Mira</p>
-            <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.6, margin: 0 }}>{miraMessage}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Daily challenge — compact */}
-      {!challengeDoneToday ? (
-        <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <span style={{ background: '#1E3A5F', color: '#3B82F6', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(59,130,246,0.3)', letterSpacing: '0.08em', display: 'inline-block', marginBottom: 6 }}>
-              DAILY CHALLENGE
-            </span>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', lineHeight: 1.4, margin: 0 }}>
-              {challenge.topic}
+      {/* Mira — always visible, fixed height warm box */}
+      <div style={{
+        background: 'rgba(245,158,11,0.07)',
+        border: '1px solid rgba(245,158,11,0.25)',
+        borderRadius: 14,
+        padding: '14px 16px',
+        marginBottom: 20,
+        minHeight: 96,
+        display: 'flex',
+        gap: 12,
+        alignItems: 'flex-start',
+      }}>
+        <img
+          src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png"
+          alt="Mira"
+          style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid rgba(245,158,11,0.4)', marginTop: 2 }}
+        />
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Mira — your coach</p>
+          {miraMessage ? (
+            <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>{miraMessage}</p>
+          ) : (
+            <p style={{ fontSize: 13, color: 'rgba(228,213,176,0.4)', lineHeight: 1.65, margin: 0, fontStyle: 'italic' }}>
+              {miraOnboarded ? 'Thinking about your progress...' : 'Complete your first session so I can start coaching you.'}
             </p>
-          </div>
-          <button
-            onClick={() => handleStart(true)}
-            disabled={!canRecord}
-            style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0 }}
-          >
-            Accept
-          </button>
+          )}
         </div>
-      ) : (
-        <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 12, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 16 }}>🔥</span>
-          <p style={{ fontSize: 13, fontWeight: 600, color: '#22C55E', margin: 0 }}>Challenge done — come back tomorrow</p>
-        </div>
-      )}
+      </div>
 
       {/* Form */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 24 }}>
@@ -267,8 +255,34 @@ export default function SetupPage() {
         Start Recording
       </button>
 
+      {/* Daily challenge — below Start Recording */}
+      {!challengeDoneToday ? (
+        <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <span style={{ background: '#1E3A5F', color: '#3B82F6', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(59,130,246,0.3)', letterSpacing: '0.08em', display: 'inline-block', marginBottom: 6 }}>
+              DAILY CHALLENGE
+            </span>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', lineHeight: 1.4, margin: 0 }}>
+              {challenge.topic}
+            </p>
+          </div>
+          <button
+            onClick={() => handleStart(true)}
+            disabled={!canRecord}
+            style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0 }}
+          >
+            Accept
+          </button>
+        </div>
+      ) : (
+        <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 12, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 16 }}>🔥</span>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#22C55E', margin: 0 }}>Challenge done — come back tomorrow</p>
+        </div>
+      )}
+
       <NavCard title="Session History" subtitle="View your past sessions and track your progress." onClick={() => navigate('/history')} />
-      <NavCard title="My Mira Profile" subtitle="Update your focus and coaching preferences." onClick={() => navigate('/mira-edit')} />
+      <NavCard title="Visit my coach" subtitle="Update your focus and coaching preferences." onClick={() => navigate('/mira-edit')} />
       <NavCard title="Give Feedback" subtitle="Tell us what you would improve." onClick={() => navigate('/feedback')} />
       <NavCard title="Become an Affiliate" subtitle="Earn 50% commission on every referral." onClick={() => navigate('/affiliate')} />
     </div>
