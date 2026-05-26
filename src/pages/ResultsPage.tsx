@@ -262,6 +262,7 @@ export default function ResultsPage() {
       setPendingNavigation(path)
       setShowMiraModal(true)
     } else {
+      if (path === '/setup') clearSession()
       navigate(path)
     }
   }
@@ -497,11 +498,13 @@ export default function ResultsPage() {
             setShowMiraModal(false)
             setShowMiraOnExit(false)
             setIsOnboarded(true)
+            if (pendingNavigation === '/setup') clearSession()
             if (pendingNavigation) navigate(pendingNavigation)
           }}
           onSkip={() => {
             setShowMiraModal(false)
             setShowMiraOnExit(false)
+            if (pendingNavigation === '/setup') clearSession()
             if (pendingNavigation) navigate(pendingNavigation)
           }}
         />
