@@ -9,8 +9,6 @@ function getTodayKey() {
   return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`
 }
 
-// Exact list from Android setup.tsx — 30 challenges, same order
-// Rotation: dayOfYear % 30 — identical formula to Android
 const DAILY_CHALLENGES = [
   { topic: 'Why public speaking matters', goal: 'Convince the audience that speaking skills change careers' },
   { topic: 'A product you love', goal: 'Make the audience want to buy it immediately' },
@@ -44,7 +42,6 @@ const DAILY_CHALLENGES = [
   { topic: 'What you wish you knew at 20', goal: 'Give the audience something they can use today' },
 ]
 
-// Same formula as Android
 function todaysChallenge() {
   const now = new Date()
   const start = new Date(now.getFullYear(), 0, 0)
@@ -85,19 +82,39 @@ export default function SetupPage() {
   const [streak, setStreak] = useState(0)
   const [challengeDoneToday, setChallengeDoneToday] = useState(false)
 
+  // Mira state
+  const [miraMessage, setMiraMessage] = useState<string | null>(null)
+  const [miraOnboarded, setMiraOnboarded] = useState(false)
+
   useEffect(() => {
     if (!email) { navigate('/'); return }
     checkUsage(email).then((u) => {
       setUsageData({ remaining: u.sessions_remaining })
     }).catch(console.error)
 
-    // Load streak from backend
     fetch(`${API_URL}/streak?email=${encodeURIComponent(email)}`)
       .then(r => r.json())
       .then(data => {
         setStreak(data.streak || 0)
         const todayKey = getTodayKey()
         if (data.streak_last_day === todayKey) setChallengeDoneToday(true)
+      })
+      .catch(console.error)
+
+    // Fetch Mira motivational message
+    fetch(`${API_URL}/coach/insight`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        currentSession: null,
+        contextType: 'motivation',
+      }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.message) setMiraMessage(data.message)
+        setMiraOnboarded(data.is_onboarded || false)
       })
       .catch(console.error)
   }, [email])
@@ -109,7 +126,6 @@ export default function SetupPage() {
     const finalGoal = isChallenge ? challenge.goal : goal.trim()
     if (!finalTopic || !finalGoal) return
 
-    // Increment streak if challenge accepted and not done today
     if (isChallenge && !challengeDoneToday && email) {
       fetch(`${API_URL}/streak/complete`, {
         method: 'POST',
@@ -136,7 +152,7 @@ export default function SetupPage() {
     <div style={{ minHeight: '100dvh', background: '#09090B', display: 'flex', flexDirection: 'column', padding: '48px 20px 48px', maxWidth: 480, margin: '0 auto' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>
           <span style={{ color: '#3B82F6' }}>SPEAKUP</span>
           <span style={{ color: '#ffffff' }}>GRADE</span>
@@ -154,41 +170,45 @@ export default function SetupPage() {
         </div>
       </div>
 
-      {/* Daily challenge */}
-      {!challengeDoneToday ? (
-      <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 16, marginBottom: 28 }}>
-        <div style={{ marginBottom: 10 }}>
-          <span style={{ background: '#1E3A5F', color: '#3B82F6', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, border: '1px solid rgba(59,130,246,0.3)', letterSpacing: '0.08em' }}>
-            DAILY CHALLENGE
-          </span>
+      {/* Mira motivational message */}
+      {miraOnboarded && miraMessage && (
+        <div style={{ background: '#1A1A1E', borderRadius: 12, padding: '14px 16px', border: '1px solid rgba(59,130,246,0.2)', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <img
+            src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png"
+            alt="Mira"
+            style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(59,130,246,0.3)', marginTop: 2 }}
+          />
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Mira</p>
+            <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.6, margin: 0 }}>{miraMessage}</p>
+          </div>
         </div>
-        <p style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', lineHeight: 1.45, marginBottom: 4 }}>
-          {challenge.topic}
-        </p>
-        <p style={{ fontSize: 13, color: '#A1A1AA', lineHeight: 1.5, marginBottom: 14 }}>
-          {challenge.goal}
-        </p>
-        <div style={{ display: 'flex', gap: 10 }}>
+      )}
+
+      {/* Daily challenge — compact */}
+      {!challengeDoneToday ? (
+        <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <span style={{ background: '#1E3A5F', color: '#3B82F6', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(59,130,246,0.3)', letterSpacing: '0.08em', display: 'inline-block', marginBottom: 6 }}>
+              DAILY CHALLENGE
+            </span>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', lineHeight: 1.4, margin: 0 }}>
+              {challenge.topic}
+            </p>
+          </div>
           <button
             onClick={() => handleStart(true)}
             disabled={!canRecord}
-            style={{ flex: 1, background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 14, padding: '12px', borderRadius: 10, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit' }}
+            style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0 }}
           >
-            Accept challenge
-          </button>
-          <button style={{ flex: 1, background: '#2A2A2E', color: '#A1A1AA', fontWeight: 600, fontSize: 14, padding: '12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            Not today
+            Accept
           </button>
         </div>
-      </div>
       ) : (
-      <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 14, padding: 16, marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontSize: 20 }}>🔥</span>
-        <div>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#22C55E', marginBottom: 2 }}>Challenge done for today</p>
-          <p style={{ fontSize: 12, color: '#A1A1AA' }}>Come back tomorrow to keep your streak going.</p>
+        <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 12, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 16 }}>🔥</span>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#22C55E', margin: 0 }}>Challenge done — come back tomorrow</p>
         </div>
-      </div>
       )}
 
       {/* Form */}
@@ -220,14 +240,7 @@ export default function SetupPage() {
               step={1}
               value={targetMinutes}
               onChange={(e) => setTargetMinutes(Number(e.target.value))}
-              style={{
-                width: '100%',
-                accentColor: '#3B82F6',
-                cursor: 'pointer',
-                display: 'block',
-                height: 4,
-                margin: 0,
-              }}
+              style={{ width: '100%', accentColor: '#3B82F6', cursor: 'pointer', display: 'block', height: 4, margin: 0 }}
             />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
@@ -255,6 +268,7 @@ export default function SetupPage() {
       </button>
 
       <NavCard title="Session History" subtitle="View your past sessions and track your progress." onClick={() => navigate('/history')} />
+      <NavCard title="My Mira Profile" subtitle="Update your focus and coaching preferences." onClick={() => navigate('/mira-edit')} />
       <NavCard title="Give Feedback" subtitle="Tell us what you would improve." onClick={() => navigate('/feedback')} />
       <NavCard title="Become an Affiliate" subtitle="Earn 50% commission on every referral." onClick={() => navigate('/affiliate')} />
     </div>
