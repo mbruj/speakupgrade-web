@@ -251,9 +251,20 @@ export default function ResultsPage() {
 
   // Mira state
   const [showMiraModal, setShowMiraModal] = useState(false)
+  const [showMiraOnExit, setShowMiraOnExit] = useState(false)
   const [miraInsight, setMiraInsight] = useState<{ message: string; next_session: string } | null>(null)
   const [miraLoading, setMiraLoading] = useState(false)
   const [isOnboarded, setIsOnboarded] = useState(false)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
+
+  const handleNavigation = (path: string) => {
+    if (showMiraOnExit) {
+      setPendingNavigation(path)
+      setShowMiraModal(true)
+    } else {
+      navigate(path)
+    }
+  }
 
   const data = raw as any
   const bl = data?.body_language || {}
@@ -368,8 +379,9 @@ export default function ResultsPage() {
         const result = await res.json()
         setIsOnboarded(result.is_onboarded)
         if (result.message) setMiraInsight({ message: result.message, next_session: result.next_session })
-        // Show modal only if not onboarded yet
-        if (!result.is_onboarded) setShowMiraModal(true)
+        // Force show for test account regardless of onboarded status
+        const isTestAccount = email === 'm@bruj.com'
+        if (!result.is_onboarded || isTestAccount) setShowMiraOnExit(true)
       } catch (e) {
         console.error('Mira error:', e)
       } finally {
@@ -481,8 +493,17 @@ export default function ResultsPage() {
       {/* Mira modal */}
       {showMiraModal && (
         <MiraModal
-          onComplete={() => { setShowMiraModal(false); setIsOnboarded(true) }}
-          onSkip={() => setShowMiraModal(false)}
+          onComplete={() => {
+            setShowMiraModal(false)
+            setShowMiraOnExit(false)
+            setIsOnboarded(true)
+            if (pendingNavigation) navigate(pendingNavigation)
+          }}
+          onSkip={() => {
+            setShowMiraModal(false)
+            setShowMiraOnExit(false)
+            if (pendingNavigation) navigate(pendingNavigation)
+          }}
         />
       )}
 
@@ -494,7 +515,7 @@ export default function ResultsPage() {
       ) : miraInsight && isOnboarded ? (
         <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #3B82F6, #6366F1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>🎤</div>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #3B82F6, #6366F1)', flexShrink: 0 }} />
             <p style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Mira says</p>
           </div>
           <p style={{ fontSize: 15, color: '#d4d4d8', lineHeight: 1.7, marginBottom: miraInsight.next_session ? 14 : 0 }}>{miraInsight.message}</p>
@@ -653,7 +674,7 @@ export default function ResultsPage() {
       {/* Action buttons */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
         <button
-          onClick={() => { clearSession(); navigate('/setup') }}
+          onClick={() => { clearSession(); handleNavigation('/setup') }}
           style={{ width: '100%', background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 15, padding: '14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           Practice Again
@@ -666,7 +687,7 @@ export default function ResultsPage() {
           {emailSending ? 'Sending...' : emailSent ? 'Sent!' : 'Email Results'}
         </button>
         <button
-          onClick={() => navigate('/history')}
+          onClick={() => handleNavigation('/history')}
           style={{ width: '100%', background: 'transparent', color: '#A1A1AA', fontWeight: 400, fontSize: 14, padding: '14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           History

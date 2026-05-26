@@ -50,11 +50,8 @@ export default function MiraModal({ onComplete, onSkip }: Props) {
           <div style={{
             width: 64, height: 64, borderRadius: '50%',
             background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 12px', fontSize: 28,
-          }}>
-            🎤
-          </div>
+            margin: '0 auto 12px',
+          }} />
           <p style={{ fontSize: 13, fontWeight: 700, color: '#3B82F6', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             Meet Mira
           </p>
