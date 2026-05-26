@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSessionStore, useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
 import LegalFooter from '../components/LegalFooter'
+import MiraModal from '../components/MiraModal'
 
 const LANGUAGES = [
   { code: 'en', label: '🇬🇧 English' },
@@ -248,6 +249,12 @@ export default function ResultsPage() {
   const [translating, setTranslating] = useState(false)
   const [translated, setTranslated] = useState<any>(null)
 
+  // Mira state
+  const [showMiraModal, setShowMiraModal] = useState(false)
+  const [miraInsight, setMiraInsight] = useState<{ message: string; next_session: string } | null>(null)
+  const [miraLoading, setMiraLoading] = useState(false)
+  const [isOnboarded, setIsOnboarded] = useState(false)
+
   const data = raw as any
   const bl = data?.body_language || {}
   const blFeedback = bl.feedback || {}
@@ -340,6 +347,37 @@ export default function ResultsPage() {
   useEffect(() => {
     if (!raw) { navigate('/setup'); return }
     setTimeout(() => { if (voiceEnabled) speakResults() }, 800)
+
+    // Fetch Mira insight and check if modal should show
+    const fetchMiraInsight = async () => {
+      if (!email) return
+      setMiraLoading(true)
+      try {
+        const res = await fetch(`${API_URL}/coach/insight`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            currentSession: {
+              overall, pace: data?.scores?.pace || 0,
+              fillerTotal: data?.filler_total || 0,
+              wpm, topic: params!.topic,
+            },
+          }),
+        })
+        const result = await res.json()
+        setIsOnboarded(result.is_onboarded)
+        if (result.message) setMiraInsight({ message: result.message, next_session: result.next_session })
+        // Show modal only if not onboarded yet
+        if (!result.is_onboarded) setShowMiraModal(true)
+      } catch (e) {
+        console.error('Mira error:', e)
+      } finally {
+        setMiraLoading(false)
+      }
+    }
+
+    fetchMiraInsight()
     return () => { window.speechSynthesis?.cancel() }
   }, [])
 
@@ -440,13 +478,39 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* 2. Coach summary */}
-      {coachSummary && (
+      {/* Mira modal */}
+      {showMiraModal && (
+        <MiraModal
+          onComplete={() => { setShowMiraModal(false); setIsOnboarded(true) }}
+          onSkip={() => setShowMiraModal(false)}
+        />
+      )}
+
+      {/* 2. Mira / Coach summary */}
+      {miraLoading ? (
+        <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14, textAlign: 'center' }}>
+          <p style={{ fontSize: 13, color: '#52525B' }}>Mira is reviewing your session...</p>
+        </div>
+      ) : miraInsight && isOnboarded ? (
+        <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #3B82F6, #6366F1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>🎤</div>
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Mira says</p>
+          </div>
+          <p style={{ fontSize: 15, color: '#d4d4d8', lineHeight: 1.7, marginBottom: miraInsight.next_session ? 14 : 0 }}>{miraInsight.message}</p>
+          {miraInsight.next_session && (
+            <div style={{ background: 'rgba(59,130,246,0.08)', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(59,130,246,0.15)' }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Next session suggestion</p>
+              <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.6, margin: 0 }}>{miraInsight.next_session}</p>
+            </div>
+          )}
+        </div>
+      ) : coachSummary ? (
         <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Your coach says</p>
           <p style={{ fontSize: 15, color: '#d4d4d8', lineHeight: 1.7, margin: 0 }}>{coachSummary}</p>
         </div>
-      )}
+      ) : null}
 
       {/* 3. Goal */}
       {params.goal && (
