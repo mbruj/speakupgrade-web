@@ -263,7 +263,6 @@ export default function ResultsPage() {
       setShowMiraModal(true)
     } else {
       navigate(path)
-      if (path === '/setup') setTimeout(() => clearSession(), 100)
     }
   }
 
@@ -499,18 +498,12 @@ export default function ResultsPage() {
             setShowMiraModal(false)
             setShowMiraOnExit(false)
             setIsOnboarded(true)
-            if (pendingNavigation) {
-              navigate(pendingNavigation)
-              if (pendingNavigation === '/setup') setTimeout(() => clearSession(), 100)
-            }
+            if (pendingNavigation) navigate(pendingNavigation)
           }}
           onSkip={() => {
             setShowMiraModal(false)
             setShowMiraOnExit(false)
-            if (pendingNavigation) {
-              navigate(pendingNavigation)
-              if (pendingNavigation === '/setup') setTimeout(() => clearSession(), 100)
-            }
+            if (pendingNavigation) navigate(pendingNavigation)
           }}
         />
       )}
@@ -682,7 +675,7 @@ export default function ResultsPage() {
       {/* Action buttons */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
         <button
-          onClick={() => { clearSession(); handleNavigation('/setup') }}
+          onClick={() => handleNavigation('/setup')}
           style={{ width: '100%', background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 15, padding: '14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           Practice Again
