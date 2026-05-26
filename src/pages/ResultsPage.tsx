@@ -520,7 +520,7 @@ export default function ResultsPage() {
         <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14, textAlign: 'center' }}>
           <p style={{ fontSize: 13, color: '#52525B' }}>Mira is reviewing your session...</p>
         </div>
-      ) : miraInsight && isOnboarded ? (
+      ) : miraInsight ? (
         <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <img src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png" alt="Mira" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(59,130,246,0.3)' }} />
