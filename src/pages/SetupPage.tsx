@@ -257,22 +257,30 @@ export default function SetupPage() {
 
       {/* Daily challenge — below Start Recording */}
       {!challengeDoneToday ? (
-        <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <span style={{ background: '#1E3A5F', color: '#3B82F6', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(59,130,246,0.3)', letterSpacing: '0.08em', display: 'inline-block', marginBottom: 6 }}>
-              DAILY CHALLENGE
-            </span>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', lineHeight: 1.4, margin: 0 }}>
-              {challenge.topic}
-            </p>
+        <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <span style={{ background: '#1E3A5F', color: '#3B82F6', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(59,130,246,0.3)', letterSpacing: '0.08em', display: 'inline-block', marginBottom: 6 }}>
+                DAILY CHALLENGE
+              </span>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', lineHeight: 1.4, margin: '0 0 4px 0' }}>
+                {challenge.topic}
+              </p>
+              <p style={{ fontSize: 12, color: '#A1A1AA', lineHeight: 1.4, margin: 0 }}>
+                {challenge.goal}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setTopic(challenge.topic)
+                setGoal(challenge.goal)
+              }}
+              disabled={!canRecord}
+              style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0, marginTop: 2 }}
+            >
+              Use this
+            </button>
           </div>
-          <button
-            onClick={() => handleStart(true)}
-            disabled={!canRecord}
-            style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0 }}
-          >
-            Accept
-          </button>
         </div>
       ) : (
         <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 12, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
