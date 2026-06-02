@@ -1,38 +1,101 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { checkAuth, checkUsage } from '../lib/api'
+import { checkUsage } from '../lib/api'
 import { useAuthStore } from '../store'
 import LegalFooter from '../components/LegalFooter'
+import { API_URL } from '../lib/constants'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((s) => s.setAuth)
 
   const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [step, setStep] = useState<'email' | 'code'>('email')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [resendCountdown, setResendCountdown] = useState(0)
+  const codeRef = useRef<HTMLInputElement>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (step === 'code') {
+      setTimeout(() => codeRef.current?.focus(), 100)
+      setResendCountdown(60)
+    }
+  }, [step])
+
+  useEffect(() => {
+    if (resendCountdown <= 0) return
+    const t = setTimeout(() => setResendCountdown(r => r - 1), 1000)
+    return () => clearTimeout(t)
+  }, [resendCountdown])
+
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim()) return
     setLoading(true)
     setError('')
 
     try {
-      const cleanEmail = email.trim().toLowerCase()
-      const auth = await checkAuth(cleanEmail)
-
-      if (auth.exists || auth.status === 'active') {
-        // Get real plan + session data from usage endpoint
-        const usage = await checkUsage(cleanEmail)
-        setAuth(cleanEmail, usage.plan, usage.sessions_remaining, usage.sessions_reset_date)
-        navigate('/setup')
-      } else {
-        setError('No account found. Please create an account first.')
+      const res = await fetch(`${API_URL}/otp/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong.')
+        return
       }
-    } catch (err) {
+      setStep('code')
+    } catch {
       setError('Something went wrong. Please try again.')
-      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!code.trim()) return
+    setLoading(true)
+    setError('')
+
+    try {
+      const res = await fetch(`${API_URL}/otp/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Invalid code.')
+        return
+      }
+      const usage = await checkUsage(email.trim().toLowerCase())
+      setAuth(email.trim().toLowerCase(), usage.plan, usage.sessions_remaining, usage.sessions_reset_date)
+      navigate('/setup')
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResend = async () => {
+    if (resendCountdown > 0) return
+    setError('')
+    setCode('')
+    setLoading(true)
+    try {
+      await fetch(`${API_URL}/otp/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      })
+      setResendCountdown(60)
+    } catch {
+      setError('Failed to resend. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -47,31 +110,77 @@ export default function LoginPage() {
             <span style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', color: '#ffffff' }}>GRADE</span>
           </div>
           <p style={{ color: '#A1A1AA', fontSize: 15, lineHeight: 1.6 }}>
-            Better speaking. More impact.<br />Enter your email to get access.
+            {step === 'email'
+              ? <>Better speaking. More impact.<br />Enter your email to get access.</>
+              : <>Check your email.<br />Enter the 6-digit code we sent to <strong style={{ color: '#ffffff' }}>{email}</strong></>
+            }
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 16 }}>
-            <input
-              type="email"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              autoFocus
-            />
-          </div>
+        {step === 'email' ? (
+          <form onSubmit={handleSendCode}>
+            <div style={{ marginBottom: 16 }}>
+              <input
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                autoFocus
+              />
+            </div>
+            {error && (
+              <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 16, textAlign: 'center' }}>{error}</p>
+            )}
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Sending code...' : 'Send login code'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyCode}>
+            <div style={{ marginBottom: 16 }}>
+              <input
+                ref={codeRef}
+                type="text"
+                inputMode="numeric"
+                placeholder="000000"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                required
+                autoComplete="one-time-code"
+                style={{ textAlign: 'center', fontSize: 28, fontWeight: 700, letterSpacing: '0.2em' }}
+              />
+            </div>
+            {error && (
+              <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 16, textAlign: 'center' }}>{error}</p>
+            )}
+            <button type="submit" className="btn-primary" disabled={loading || code.length !== 6}>
+              {loading ? 'Verifying...' : 'Log in'}
+            </button>
 
-          {error && (
-            <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 16, textAlign: 'center' }}>{error}</p>
-          )}
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendCountdown > 0}
+                style={{ background: 'none', border: 'none', cursor: resendCountdown > 0 ? 'default' : 'pointer', color: resendCountdown > 0 ? '#52525B' : '#3B82F6', fontSize: 13, fontFamily: 'inherit' }}
+              >
+                {resendCountdown > 0 ? `Resend code in ${resendCountdown}s` : 'Resend code'}
+              </button>
+            </div>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Checking...' : 'Get Access'}
-          </button>
-        </form>
+            <div style={{ textAlign: 'center', marginTop: 12 }}>
+              <button
+                type="button"
+                onClick={() => { setStep('email'); setError(''); setCode('') }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A1A1AA', fontSize: 13, fontFamily: 'inherit' }}
+              >
+                ← Change email
+              </button>
+            </div>
+          </form>
+        )}
 
         <p style={{ textAlign: 'center', marginTop: 28 }}>
           <button onClick={() => navigate('/register')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3B82F6', fontSize: 14, fontFamily: 'inherit' }}>
