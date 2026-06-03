@@ -63,11 +63,12 @@ function TrendChart({ sessions }: { sessions: Session[] }) {
 export default function HistoryPage() {
   const navigate = useNavigate()
   const { email, plan } = useAuthStore()
-  const { results } = useSessionStore()
+  const { results, setResults } = useSessionStore()
   const isPro = plan === 'pro'
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null)
 
   const handleBack = () => {
     if (results) navigate('/results')
@@ -87,6 +88,25 @@ export default function HistoryPage() {
       .finally(() => setLoading(false))
   }, [email, isPro])
 
+  const handleSessionClick = async (sessionId: string) => {
+    if (!email || loadingSessionId) return
+    setLoadingSessionId(sessionId)
+    try {
+      const res = await fetch(`${API_URL}/history/${sessionId}?email=${encodeURIComponent(email)}`)
+      const data = await res.json()
+      if (!res.ok || !data.session?.raw_result) {
+        alert('Full results are not available for this session. Only new sessions save full details.')
+        return
+      }
+      setResults(data.session.raw_result)
+      navigate('/results')
+    } catch {
+      alert('Could not load session. Please try again.')
+    } finally {
+      setLoadingSessionId(null)
+    }
+  }
+
   const avgScore = sessions.length > 0
     ? Math.round(sessions.reduce((s, sess) => s + sess.score_overall, 0) / sessions.length)
     : 0
@@ -95,6 +115,8 @@ export default function HistoryPage() {
 
   return (
     <div style={{ minHeight: '100dvh', background: '#09090B', display: 'flex', flexDirection: 'column', padding: '48px 20px 40px', maxWidth: 480, margin: '0 auto' }}>
+      <style>{'@keyframes spin { to { transform: rotate(360deg); } }'}</style>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
         <button onClick={handleBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3B82F6', fontSize: 15, fontFamily: 'inherit' }}>Back</button>
         <h1 style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', flex: 1, textAlign: 'center' }}>History</h1>
@@ -131,7 +153,6 @@ export default function HistoryPage() {
       {isPro && loading && (
         <div style={{ textAlign: 'center', marginTop: 60 }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid rgba(59,130,246,0.2)', borderTopColor: '#3B82F6', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-          <style>{'@keyframes spin { to { transform: rotate(360deg); } }'}</style>
         </div>
       )}
 
@@ -163,11 +184,37 @@ export default function HistoryPage() {
             </div>
             <TrendChart sessions={sessions} />
           </div>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>All sessions</p>
+
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>All sessions</p>
+          <p style={{ fontSize: 12, color: '#52525B', marginBottom: 14 }}>Tap a session to view full results</p>
+
           {sessions.map((s) => (
-            <div key={s.id} style={{ background: '#1A1A1E', borderRadius: 12, padding: '14px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(255,255,255,0.04)' }}>
+            <button
+              key={s.id}
+              onClick={() => handleSessionClick(s.id)}
+              disabled={!!loadingSessionId}
+              style={{
+                width: '100%',
+                background: '#1A1A1E',
+                borderRadius: 12,
+                padding: '14px 16px',
+                marginBottom: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                border: '1px solid rgba(255,255,255,0.04)',
+                cursor: loadingSessionId ? 'default' : 'pointer',
+                textAlign: 'left',
+                fontFamily: 'inherit',
+                opacity: loadingSessionId && loadingSessionId !== s.id ? 0.4 : 1,
+                transition: 'opacity 0.2s',
+              }}
+            >
               <div style={{ width: 48, height: 48, borderRadius: '50%', background: scoreColor(s.score_overall), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{s.score_overall}</span>
+                {loadingSessionId === s.id
+                  ? <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />
+                  : <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{s.score_overall}</span>
+                }
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontWeight: 600, fontSize: 14, color: '#ffffff', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -177,7 +224,8 @@ export default function HistoryPage() {
                   {formatDate(s.created_at)} · {fmt(s.actual_seconds)} · {s.words_per_minute} WPM
                 </p>
               </div>
-            </div>
+              <span style={{ color: '#3B82F6', fontSize: 20, flexShrink: 0, lineHeight: 1 }}>›</span>
+            </button>
           ))}
         </>
       )}
