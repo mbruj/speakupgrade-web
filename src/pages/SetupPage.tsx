@@ -303,7 +303,7 @@ export default function SetupPage() {
               disabled={!canRecord}
               style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0, marginTop: 2 }}
             >
-              Use this
+              Accept challenge
             </button>
           </div>
         </div>
