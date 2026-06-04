@@ -80,19 +80,13 @@ export default function SetupPage() {
   const challenge = todaysChallenge()
 
   const [streak, setStreak] = useState(0)
+  const [challengeActive, setChallengeActive] = useState(false)
   // Check localStorage first so it persists across remounts within the same day
   const [challengeDoneToday, setChallengeDoneToday] = useState(() => {
     return localStorage.getItem('challenge_done') === getTodayKey()
   })
 
-  const [challengeActive, setChallengeActive] = useState(false)
-
-  const handleCancelChallenge = () => {
-    setChallengeActive(false)
-    setTopic('')
-    setGoal('')
-    setTargetMinutes(5)
-  }
+  // Mira state
   const [miraMessage, setMiraMessage] = useState<string | null>(null)
   const [miraOnboarded, setMiraOnboarded] = useState(false)
 
@@ -141,11 +135,9 @@ export default function SetupPage() {
     if (!finalTopic || !finalGoal) return
 
     if (isChallenge && !challengeDoneToday && email) {
-      // Lock immediately and synchronously before navigate — persists across remounts
       const todayKey = getTodayKey()
       localStorage.setItem('challenge_done', todayKey)
       setChallengeDoneToday(true)
-      // Fire backend update — state already locked, no need to wait
       fetch(`${API_URL}/streak/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -159,7 +151,7 @@ export default function SetupPage() {
       topic: finalTopic,
       goal: finalGoal,
       audience: audience.trim(),
-      targetSeconds: isChallenge ? 120 : targetMinutes * 60,
+      targetSeconds: challengeActive ? 120 : targetMinutes * 60,
       isChallenge,
     })
     const { hideInstructions } = useSessionStore.getState()
@@ -234,8 +226,8 @@ export default function SetupPage() {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <FieldLabel text="TARGET DURATION" />
-            <span style={{ background: '#3B82F6', color: '#fff', fontSize: 13, fontWeight: 700, padding: '4px 14px', borderRadius: 20 }}>
-              {targetMinutes} min
+            <span style={{ background: challengeActive ? '#F59E0B' : '#3B82F6', color: '#fff', fontSize: 13, fontWeight: 700, padding: '4px 14px', borderRadius: 20 }}>
+              {challengeActive ? '2 min' : `${targetMinutes} min`}
             </span>
           </div>
           <div style={{ position: 'relative', padding: '8px 0' }}>
@@ -244,9 +236,10 @@ export default function SetupPage() {
               min={2}
               max={10}
               step={1}
-              value={targetMinutes}
-              onChange={(e) => setTargetMinutes(Number(e.target.value))}
-              style={{ width: '100%', accentColor: '#3B82F6', cursor: 'pointer', display: 'block', height: 4, margin: 0 }}
+              value={challengeActive ? 2 : targetMinutes}
+              onChange={(e) => { if (!challengeActive) setTargetMinutes(Number(e.target.value)) }}
+              disabled={challengeActive}
+              style={{ width: '100%', accentColor: challengeActive ? '#F59E0B' : '#3B82F6', cursor: challengeActive ? 'not-allowed' : 'pointer', display: 'block', height: 4, margin: 0, opacity: challengeActive ? 0.5 : 1 }}
             />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
@@ -266,12 +259,25 @@ export default function SetupPage() {
       )}
 
       <button
-        onClick={() => handleStart(false)}
+        onClick={() => handleStart(challengeActive)}
         disabled={!topic.trim() || !goal.trim() || !canRecord}
-        style={{ width: '100%', background: '#3B82F6', color: '#ffffff', fontWeight: 700, fontSize: 16, padding: '16px', borderRadius: 12, border: 'none', cursor: (!topic.trim() || !goal.trim() || !canRecord) ? 'not-allowed' : 'pointer', opacity: (!topic.trim() || !goal.trim() || !canRecord) ? 0.4 : 1, fontFamily: 'inherit', marginBottom: 20 }}
+        style={{ width: '100%', background: challengeActive ? '#F59E0B' : '#3B82F6', color: '#ffffff', fontWeight: 700, fontSize: 16, padding: '16px', borderRadius: 12, border: 'none', cursor: (!topic.trim() || !goal.trim() || !canRecord) ? 'not-allowed' : 'pointer', opacity: (!topic.trim() || !goal.trim() || !canRecord) ? 0.4 : 1, fontFamily: 'inherit', marginBottom: challengeActive ? 8 : 20 }}
       >
-        Start Recording
+        {challengeActive ? 'Start Challenge' : 'Start Recording'}
       </button>
+
+      {challengeActive && (
+        <button
+          onClick={() => {
+            setChallengeActive(false)
+            setTopic('')
+            setGoal('')
+          }}
+          style={{ width: '100%', background: 'transparent', color: '#A1A1AA', fontWeight: 400, fontSize: 13, padding: '10px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20 }}
+        >
+          Cancel challenge
+        </button>
+      )}
 
       {/* Daily challenge — below Start Recording */}
       {!challengeDoneToday ? (
@@ -289,11 +295,15 @@ export default function SetupPage() {
               </p>
             </div>
             <button
-              onClick={() => handleStart(true)}
+              onClick={() => {
+                setTopic(challenge.topic)
+                setGoal(challenge.goal)
+                setChallengeActive(true)
+              }}
               disabled={!canRecord}
               style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0, marginTop: 2 }}
             >
-              Start
+              Use this
             </button>
           </div>
         </div>
