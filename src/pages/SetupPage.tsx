@@ -152,7 +152,7 @@ export default function SetupPage() {
       topic: finalTopic,
       goal: finalGoal,
       audience: audience.trim(),
-      targetSeconds: targetMinutes * 60,
+      targetSeconds: isChallenge ? 120 : targetMinutes * 60,
       isChallenge,
     })
     const { hideInstructions } = useSessionStore.getState()
@@ -282,11 +282,14 @@ export default function SetupPage() {
               </p>
             </div>
             <button
-              onClick={() => handleStart(true)}
+              onClick={() => {
+                setTopic(challenge.topic)
+                setGoal(challenge.goal)
+              }}
               disabled={!canRecord}
               style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0, marginTop: 2 }}
             >
-              Start
+              Use this
             </button>
           </div>
         </div>
