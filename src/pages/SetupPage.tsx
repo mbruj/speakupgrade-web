@@ -80,7 +80,10 @@ export default function SetupPage() {
   const challenge = todaysChallenge()
 
   const [streak, setStreak] = useState(0)
-  const [challengeDoneToday, setChallengeDoneToday] = useState(false)
+  // Check localStorage first so it persists across remounts within the same day
+  const [challengeDoneToday, setChallengeDoneToday] = useState(() => {
+    return localStorage.getItem('challenge_done') === getTodayKey()
+  })
 
   // Mira state
   const [miraMessage, setMiraMessage] = useState<string | null>(null)
@@ -96,8 +99,12 @@ export default function SetupPage() {
       .then(r => r.json())
       .then(data => {
         setStreak(data.streak || 0)
+        // DB is source of truth — also update localStorage if DB says done today
         const todayKey = getTodayKey()
-        if (data.streak_last_day === todayKey) setChallengeDoneToday(true)
+        if (data.streak_last_day === todayKey) {
+          localStorage.setItem('challenge_done', todayKey)
+          setChallengeDoneToday(true)
+        }
       })
       .catch(console.error)
 
@@ -127,13 +134,17 @@ export default function SetupPage() {
     if (!finalTopic || !finalGoal) return
 
     if (isChallenge && !challengeDoneToday && email) {
+      // Lock immediately and synchronously before navigate — persists across remounts
+      const todayKey = getTodayKey()
+      localStorage.setItem('challenge_done', todayKey)
+      setChallengeDoneToday(true)
+      // Fire backend update — state already locked, no need to wait
       fetch(`${API_URL}/streak/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       }).then(r => r.json()).then(data => {
         if (data.streak) setStreak(data.streak)
-        setChallengeDoneToday(true)
       }).catch(console.error)
     }
 
