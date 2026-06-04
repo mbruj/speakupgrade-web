@@ -85,7 +85,14 @@ export default function SetupPage() {
     return localStorage.getItem('challenge_done') === getTodayKey()
   })
 
-  // Mira state
+  const [challengeActive, setChallengeActive] = useState(false)
+
+  const handleCancelChallenge = () => {
+    setChallengeActive(false)
+    setTopic('')
+    setGoal('')
+    setTargetMinutes(5)
+  }
   const [miraMessage, setMiraMessage] = useState<string | null>(null)
   const [miraOnboarded, setMiraOnboarded] = useState(false)
 
@@ -282,14 +289,11 @@ export default function SetupPage() {
               </p>
             </div>
             <button
-              onClick={() => {
-                setTopic(challenge.topic)
-                setGoal(challenge.goal)
-              }}
+              onClick={() => handleStart(true)}
               disabled={!canRecord}
               style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0, marginTop: 2 }}
             >
-              Use this
+              Start
             </button>
           </div>
         </div>
