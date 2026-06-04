@@ -101,26 +101,75 @@ function FillerChip({ word, count }: { word: string; count: number }) {
   )
 }
 
-function HighlightedTranscript({ transcript, fillerWords }: { transcript: string; fillerWords: Record<string, number> }) {
+function HighlightedTranscript({ transcript, fillerWords, weakPhrases = [] }: { transcript: string; fillerWords: Record<string, number>; weakPhrases?: string[] }) {
   const fillers = Object.keys(fillerWords).filter(w => fillerWords[w] > 0)
-  if (fillers.length === 0) return <p style={{ fontSize: 14, color: '#A1A1AA', lineHeight: 1.7 }}>{transcript}</p>
-  const pattern = new RegExp('\\b(' + fillers.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'gi')
-  const parts: { text: string; isFiller: boolean }[] = []
-  let lastIndex = 0; let match
-  while ((match = pattern.exec(transcript)) !== null) {
-    if (match.index > lastIndex) parts.push({ text: transcript.slice(lastIndex, match.index), isFiller: false })
-    parts.push({ text: match[0], isFiller: true })
-    lastIndex = match.index + match[0].length
+
+  // Build parts with two pass: weak language (amber) first, then fillers (red)
+  // We tag each character position to avoid double-highlighting
+  type Part = { text: string; type: 'normal' | 'filler' | 'weak' }
+  const parts: Part[] = []
+
+  // Start with the full transcript as one normal part
+  let segments: Part[] = [{ text: transcript, type: 'normal' }]
+
+  // First pass: highlight weak language phrases (amber)
+  if (weakPhrases.length > 0) {
+    const sortedPhrases = [...weakPhrases].sort((a, b) => b.length - a.length)
+    for (const phrase of sortedPhrases) {
+      const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const re = new RegExp('\\b' + escaped + '\\b', 'gi')
+      const newSegments: Part[] = []
+      for (const seg of segments) {
+        if (seg.type !== 'normal') { newSegments.push(seg); continue }
+        let last = 0; let m
+        re.lastIndex = 0
+        while ((m = re.exec(seg.text)) !== null) {
+          if (m.index > last) newSegments.push({ text: seg.text.slice(last, m.index), type: 'normal' })
+          newSegments.push({ text: m[0], type: 'weak' })
+          last = m.index + m[0].length
+        }
+        if (last < seg.text.length) newSegments.push({ text: seg.text.slice(last), type: 'normal' })
+      }
+      segments = newSegments
+    }
   }
-  if (lastIndex < transcript.length) parts.push({ text: transcript.slice(lastIndex), isFiller: false })
+
+  // Second pass: highlight filler words (red) — only in normal segments
+  if (fillers.length > 0) {
+    const pattern = new RegExp('\\b(' + fillers.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'gi')
+    const newSegments: Part[] = []
+    for (const seg of segments) {
+      if (seg.type !== 'normal') { newSegments.push(seg); continue }
+      let last = 0; let m
+      pattern.lastIndex = 0
+      while ((m = pattern.exec(seg.text)) !== null) {
+        if (m.index > last) newSegments.push({ text: seg.text.slice(last, m.index), type: 'normal' })
+        newSegments.push({ text: m[0], type: 'filler' })
+        last = m.index + m[0].length
+      }
+      if (last < seg.text.length) newSegments.push({ text: seg.text.slice(last), type: 'normal' })
+    }
+    segments = newSegments
+  }
+
+  const hasHighlights = fillers.length > 0 || weakPhrases.length > 0
+
   return (
-    <p style={{ fontSize: 14, color: '#A1A1AA', lineHeight: 1.7 }}>
-      {parts.map((part, i) =>
-        part.isFiller
-          ? <span key={i} style={{ color: '#EF4444', fontWeight: 700 }}>{part.text}</span>
-          : <span key={i}>{part.text}</span>
+    <div>
+      {hasHighlights && (
+        <div style={{ display: 'flex', gap: 16, marginBottom: 10, flexWrap: 'wrap' }}>
+          {fillers.length > 0 && <span style={{ fontSize: 11, color: '#A1A1AA' }}><span style={{ color: '#EF4444', fontWeight: 700 }}>Red</span> = filler words</span>}
+          {weakPhrases.length > 0 && <span style={{ fontSize: 11, color: '#A1A1AA' }}><span style={{ color: '#F59E0B', fontWeight: 700 }}>Amber</span> = weak language</span>}
+        </div>
       )}
-    </p>
+      <p style={{ fontSize: 14, color: '#A1A1AA', lineHeight: 1.7, margin: 0 }}>
+        {segments.map((part, i) => {
+          if (part.type === 'filler') return <span key={i} style={{ color: '#EF4444', fontWeight: 700 }}>{part.text}</span>
+          if (part.type === 'weak') return <span key={i} style={{ color: '#F59E0B', fontWeight: 700, background: 'rgba(245,158,11,0.1)', borderRadius: 3, padding: '0 2px' }}>{part.text}</span>
+          return <span key={i}>{part.text}</span>
+        })}
+      </p>
+    </div>
   )
 }
 
@@ -654,7 +703,11 @@ export default function ResultsPage() {
       {data.transcript && (
         <Section>
           <SectionTitle>Transcript</SectionTitle>
-          <HighlightedTranscript transcript={data.transcript} fillerWords={fillerWords} />
+          <HighlightedTranscript
+            transcript={data.transcript}
+            fillerWords={fillerWords}
+            weakPhrases={isPro && confidenceLanguage?.phrases ? confidenceLanguage.phrases : []}
+          />
         </Section>
       )}
 
