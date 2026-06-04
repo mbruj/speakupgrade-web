@@ -25,12 +25,13 @@ function fmt(s: number) {
   if (!s) return '0:00'
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')
 }
+// #1 — no emoji in verdict
 function getVerdict(score: number) {
-  if (score >= 80) return { label: 'Outstanding session', emoji: '🌟' }
-  if (score >= 65) return { label: 'Strong performance', emoji: '💪' }
-  if (score >= 50) return { label: 'Good progress', emoji: '📈' }
-  if (score >= 35) return { label: 'Getting there', emoji: '🎯' }
-  return { label: 'Keep going', emoji: '🔥' }
+  if (score >= 80) return { label: 'Outstanding session' }
+  if (score >= 65) return { label: 'Strong performance' }
+  if (score >= 50) return { label: 'Good progress' }
+  if (score >= 35) return { label: 'Getting there' }
+  return { label: 'Keep going' }
 }
 
 function Section({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -123,6 +124,7 @@ function HighlightedTranscript({ transcript, fillerWords }: { transcript: string
   )
 }
 
+// #8 — only show pauses >= 2 seconds to reduce noise
 function SpeechTimeline({ wordTimestamps, actualSeconds, isPro, onUpgrade }: { wordTimestamps: any[]; actualSeconds: number; isPro: boolean; onUpgrade: () => void }) {
   const [scrubPos, setScrubPos] = useState<number | null>(null)
   const [scrubInfo, setScrubInfo] = useState<any>(null)
@@ -142,10 +144,11 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro, onUpgrade }: { w
     return { start, end, wpm, text: words.map(w => w.word).join(' ') }
   })
 
+  // #8 — only pauses >= 2s shown (strategic = 3s+, hesitation = 2-3s)
   const pauses: any[] = []
   for (let i = 1; i < wordTimestamps.length; i++) {
     const gap = wordTimestamps[i].start - wordTimestamps[i - 1].end
-    if (gap >= 0.8) pauses.push({ start: wordTimestamps[i - 1].end, end: wordTimestamps[i].start, duration: gap, type: gap >= 2 ? 'strategic' : 'hesitation' })
+    if (gap >= 2) pauses.push({ start: wordTimestamps[i - 1].end, end: wordTimestamps[i].start, duration: gap, type: gap >= 3 ? 'strategic' : 'hesitation' })
   }
 
   const xFor = (t: number) => (t / duration) * width
@@ -359,7 +362,6 @@ export default function ResultsPage() {
     if (!raw) { navigate('/setup'); return }
     setTimeout(() => { if (voiceEnabled) speakResults() }, 800)
 
-    // Fetch Mira insight and check if modal should show
     const fetchMiraInsight = async () => {
       if (!email) return
       setMiraLoading(true)
@@ -379,7 +381,6 @@ export default function ResultsPage() {
         const result = await res.json()
         setIsOnboarded(result.is_onboarded)
         if (result.message) setMiraInsight({ message: result.message, next_session: result.next_session })
-        // Force show for test account regardless of onboarded status
         const isTestAccount = email === 'm@bruj.com'
         if (!result.is_onboarded || isTestAccount) setShowMiraOnExit(true)
       } catch (e) {
@@ -429,48 +430,46 @@ export default function ResultsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', flex: 1, marginRight: 12, lineHeight: 1.4 }}>{params.topic}</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {voiceEnabled && (
-            <button onClick={speakResults} style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', color: '#3B82F6', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>
-              ▶ Replay
-            </button>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: '#52525B' }}>Voice</span>
-            <div onClick={() => toggleVoice(!voiceEnabled)} style={{ width: 44, height: 24, borderRadius: 12, background: voiceEnabled ? 'rgba(59,130,246,0.5)' : '#27272A', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
-              <div style={{ position: 'absolute', top: 2, left: voiceEnabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: voiceEnabled ? '#3B82F6' : '#52525B', transition: 'left 0.2s' }} />
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <span style={{ fontSize: 12, color: '#52525B' }}>Voice</span>
+          <div onClick={() => toggleVoice(!voiceEnabled)} style={{ width: 44, height: 24, borderRadius: 12, background: voiceEnabled ? 'rgba(59,130,246,0.5)' : '#27272A', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+            <div style={{ position: 'absolute', top: 2, left: voiceEnabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: voiceEnabled ? '#3B82F6' : '#52525B', transition: 'left 0.2s' }} />
           </div>
         </div>
       </div>
 
-      {/* Language selector */}
-      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* #2 — Translation + AI voice side by side, smaller */}
+      <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
         <select
           value={selectedLang}
           onChange={e => handleLanguageChange(e.target.value)}
           disabled={translating}
           style={{
             background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
-            color: '#d4d4d8', fontSize: 13, padding: '7px 12px', fontFamily: 'inherit',
-            cursor: 'pointer', flex: 1, appearance: 'none', outline: 'none',
+            color: translating ? '#52525B' : '#d4d4d8', fontSize: 12, padding: '7px 10px',
+            fontFamily: 'inherit', cursor: 'pointer', flex: 1, appearance: 'none', outline: 'none',
           }}
         >
           {LANGUAGES.map(l => (
             <option key={l.code} value={l.code}>{l.label}</option>
           ))}
         </select>
-        {translating && (
-          <span style={{ fontSize: 12, color: '#A1A1AA' }}>Translating...</span>
-        )}
-        {translated && !translating && (
-          <span style={{ fontSize: 12, color: '#22C55E' }}>✓ Translated</span>
+        {voiceEnabled && (
+          <button
+            onClick={speakResults}
+            style={{
+              background: '#1A1A1E', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 8,
+              padding: '7px 14px', cursor: 'pointer', color: '#3B82F6', fontSize: 12,
+              fontWeight: 600, fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap',
+            }}
+          >
+            ▶ Replay
+          </button>
         )}
       </div>
 
-      {/* 1. Overall score */}
+      {/* 1. Overall score — no emoji */}
       <div style={{ background: '#1A1A1E', borderRadius: 16, padding: 24, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', marginBottom: 14 }}>
-        <div style={{ fontSize: 36, marginBottom: 4 }}>{verdict.emoji}</div>
         <p style={{ fontSize: 24, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>{verdict.label}</p>
         <p style={{ fontSize: 56, fontWeight: 700, color, lineHeight: 1.1, marginBottom: 4 }}>
           {overall}<span style={{ fontSize: 20, color: '#52525B', fontWeight: 400 }}>/100</span>
@@ -508,29 +507,30 @@ export default function ResultsPage() {
         />
       )}
 
-      {/* 2. Mira / Coach summary */}
+      {/* #3 — Mira block in amber */}
       {miraLoading ? (
-        <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14, textAlign: 'center' }}>
-          <p style={{ fontSize: 13, color: '#52525B' }}>Mira is reviewing your session...</p>
+        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.2)', marginBottom: 14, textAlign: 'center' }}>
+          <p style={{ fontSize: 13, color: '#F59E0B', opacity: 0.6 }}>Mira is reviewing your session...</p>
         </div>
       ) : miraInsight ? (
-        <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14 }}>
+        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <img src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png" alt="Mira" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(59,130,246,0.3)' }} />
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Mira says</p>
+            <img src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png" alt="Mira" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(245,158,11,0.4)' }} />
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Mira</p>
           </div>
-          <p style={{ fontSize: 15, color: '#d4d4d8', lineHeight: 1.7, marginBottom: miraInsight.next_session ? 14 : 0 }}>{miraInsight.message}</p>
+          <p style={{ fontSize: 15, color: '#e4d5b0', lineHeight: 1.7, marginBottom: miraInsight.next_session ? 14 : 0 }}>{miraInsight.message}</p>
+          {/* #4 — "Focus on this next" instead of "Next session suggestion" */}
           {miraInsight.next_session && (
-            <div style={{ background: 'rgba(59,130,246,0.08)', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(59,130,246,0.15)' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Next session suggestion</p>
-              <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.6, margin: 0 }}>{miraInsight.next_session}</p>
+            <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(245,158,11,0.2)' }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Focus on this next</p>
+              <p style={{ fontSize: 14, color: '#e4d5b0', lineHeight: 1.6, margin: 0 }}>{miraInsight.next_session}</p>
             </div>
           )}
         </div>
       ) : coachSummary ? (
-        <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 18, border: '1px solid rgba(59,130,246,0.2)', marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Your coach says</p>
-          <p style={{ fontSize: 15, color: '#d4d4d8', lineHeight: 1.7, margin: 0 }}>{coachSummary}</p>
+        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Your coach says</p>
+          <p style={{ fontSize: 15, color: '#e4d5b0', lineHeight: 1.7, margin: 0 }}>{coachSummary}</p>
         </div>
       ) : null}
 
@@ -556,7 +556,20 @@ export default function ResultsPage() {
         </Section>
       )}
 
-      {/* 5. Focus on this next */}
+      {/* #7 — Improvements moved here, right after strengths */}
+      {displayImprovements.length > 1 && (
+        <Section>
+          <SectionTitle>What to improve</SectionTitle>
+          {(isPro ? displayImprovements : displayImprovements.slice(0, 1)).map((s: string, i: number) => (
+            <BulletItem key={i} text={s} color="#F59E0B" />
+          ))}
+          {!isPro && displayImprovements.length > 1 && (
+            <ProGate text={`${displayImprovements.length - 1} more improvements unlocked with Pro`} onUnlock={() => navigate('/upgrade')} />
+          )}
+        </Section>
+      )}
+
+      {/* 5. Focus on this next (top improvement highlight) */}
       {displayImprovements.length > 0 && (
         <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.3)', marginBottom: 14 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Focus on this next</p>
@@ -596,20 +609,7 @@ export default function ResultsPage() {
         )
       )}
 
-      {/* 8. All improvements */}
-      {displayImprovements.length > 1 && (
-        <Section>
-          <SectionTitle>All improvements</SectionTitle>
-          {(isPro ? displayImprovements : displayImprovements.slice(0, 1)).map((s: string, i: number) => (
-            <BulletItem key={i} text={s} color="#F59E0B" />
-          ))}
-          {!isPro && displayImprovements.length > 1 && (
-            <ProGate text={`${displayImprovements.length - 1} more improvements unlocked with Pro`} onUnlock={() => navigate('/upgrade')} />
-          )}
-        </Section>
-      )}
-
-      {/* 9. Feedback */}
+      {/* #10 — Feedback: eye contact removed */}
       <Section>
         <SectionTitle>Feedback</SectionTitle>
         {feedbackPace && <FeedbackRow label="Pace" text={feedbackPace} last={!isPro} />}
@@ -617,17 +617,14 @@ export default function ResultsPage() {
           <>
             {feedbackFiller && <FeedbackRow label="Filler Words" text={feedbackFiller} />}
             {feedbackStructure && <FeedbackRow label="Structure" text={feedbackStructure} />}
-            {feedbackConfidence && <FeedbackRow label="Confidence" text={feedbackConfidence} />}
-            {blEye && blEye !== 'No video data available.' && (
-              <FeedbackRow label="Eye Contact" text={blEye} last />
-            )}
+            {feedbackConfidence && <FeedbackRow label="Confidence" text={feedbackConfidence} last />}
           </>
         ) : (
           <ProGate text="Full feedback unlocked with Pro" onUnlock={() => navigate('/upgrade')} />
         )}
       </Section>
 
-      {/* 10. Weak language */}
+      {/* Weak language */}
       {confidenceLanguage && confidenceLanguage.total > 0 && (
         isPro ? (
           <Section>
@@ -652,7 +649,7 @@ export default function ResultsPage() {
         )
       )}
 
-      {/* 11. Filler words */}
+      {/* Filler words */}
       {fillerEntries.length > 0 && (
         <Section>
           <SectionTitle>Filler words</SectionTitle>
@@ -664,7 +661,7 @@ export default function ResultsPage() {
         </Section>
       )}
 
-      {/* 12. Transcript */}
+      {/* Transcript */}
       {data.transcript && (
         <Section>
           <SectionTitle>Transcript</SectionTitle>
