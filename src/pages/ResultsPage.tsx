@@ -428,33 +428,24 @@ export default function ResultsPage() {
     <div style={{ minHeight: '100dvh', background: '#09090B', padding: '48px 20px 40px', maxWidth: 480, margin: '0 auto' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-        <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', flex: 1, marginRight: 12, lineHeight: 1.4 }}>{params.topic}</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <span style={{ fontSize: 12, color: '#52525B' }}>Voice</span>
-          <div onClick={() => toggleVoice(!voiceEnabled)} style={{ width: 44, height: 24, borderRadius: 12, background: voiceEnabled ? 'rgba(59,130,246,0.5)' : '#27272A', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
-            <div style={{ position: 'absolute', top: 2, left: voiceEnabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: voiceEnabled ? '#3B82F6' : '#52525B', transition: 'left 0.2s' }} />
-          </div>
-        </div>
-      </div>
-
-      {/* #2 — Translation + AI voice side by side, smaller */}
-      <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
-        <select
-          value={selectedLang}
-          onChange={e => handleLanguageChange(e.target.value)}
-          disabled={translating}
-          style={{
-            background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
-            color: translating ? '#52525B' : '#d4d4d8', fontSize: 12, padding: '7px 10px',
-            fontFamily: 'inherit', cursor: 'pointer', flex: 1, appearance: 'none', outline: 'none',
-          }}
-        >
-          {LANGUAGES.map(l => (
-            <option key={l.code} value={l.code}>{l.label}</option>
-          ))}
-        </select>
-        {voiceEnabled && (
+      <div style={{ marginBottom: 14 }}>
+        <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', lineHeight: 1.4, marginBottom: 12 }}>{params.topic}</p>
+        {/* 1. All controls in one row: language, replay, voice toggle */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <select
+            value={selectedLang}
+            onChange={e => handleLanguageChange(e.target.value)}
+            disabled={translating}
+            style={{
+              background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
+              color: translating ? '#52525B' : '#d4d4d8', fontSize: 12, padding: '7px 10px',
+              fontFamily: 'inherit', cursor: 'pointer', flex: 1, appearance: 'none', outline: 'none',
+            }}
+          >
+            {LANGUAGES.map(l => (
+              <option key={l.code} value={l.code}>{l.label}</option>
+            ))}
+          </select>
           <button
             onClick={speakResults}
             style={{
@@ -465,7 +456,13 @@ export default function ResultsPage() {
           >
             ▶ Replay
           </button>
-        )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <span style={{ fontSize: 11, color: '#52525B' }}>Voice</span>
+            <div onClick={() => toggleVoice(!voiceEnabled)} style={{ width: 40, height: 22, borderRadius: 11, background: voiceEnabled ? 'rgba(59,130,246,0.5)' : '#27272A', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+              <div style={{ position: 'absolute', top: 2, left: voiceEnabled ? 20 : 2, width: 18, height: 18, borderRadius: '50%', background: voiceEnabled ? '#3B82F6' : '#52525B', transition: 'left 0.2s' }} />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 1. Overall score — no emoji */}
@@ -569,14 +566,6 @@ export default function ResultsPage() {
         </Section>
       )}
 
-      {/* 5. Focus on this next (top improvement highlight) */}
-      {displayImprovements.length > 0 && (
-        <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.3)', marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Focus on this next</p>
-          <p style={{ fontSize: 15, color: '#ffffff', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>{displayImprovements[0]}</p>
-        </div>
-      )}
-
       {/* 6. Speech timeline */}
       {data.word_timestamps && data.word_timestamps.length > 2 && (
         <SpeechTimeline
@@ -587,31 +576,9 @@ export default function ResultsPage() {
         />
       )}
 
-      {/* 7. Body language */}
-      {hasBodyLanguage && (
-        isPro ? (
-          <Section>
-            <SectionTitle>Body language</SectionTitle>
-            {[
-              { label: 'Eye contact', text: blEye },
-              { label: 'Posture', text: blPosture },
-              { label: 'Movement', text: blMovement },
-              { label: 'Gestures', text: blGestures },
-            ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }, i, arr) => (
-              <FeedbackRow key={label} label={label} text={text} last={i === arr.length - 1} />
-            ))}
-          </Section>
-        ) : (
-          <Section>
-            <SectionTitle>Body language</SectionTitle>
-            <BlurredRows onUnlock={() => navigate('/upgrade')} />
-          </Section>
-        )
-      )}
-
-      {/* #10 — Feedback: eye contact removed */}
+      {/* 7. Speech evaluation (renamed from Feedback, moved before body language) */}
       <Section>
-        <SectionTitle>Feedback</SectionTitle>
+        <SectionTitle>Speech evaluation</SectionTitle>
         {feedbackPace && <FeedbackRow label="Pace" text={feedbackPace} last={!isPro} />}
         {isPro ? (
           <>
@@ -623,6 +590,28 @@ export default function ResultsPage() {
           <ProGate text="Full feedback unlocked with Pro" onUnlock={() => navigate('/upgrade')} />
         )}
       </Section>
+
+      {/* 8. Body language — amber styling */}
+      {hasBodyLanguage && (
+        isPro ? (
+          <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+            <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Body language</p>
+            {[
+              { label: 'Eye contact', text: blEye },
+              { label: 'Posture', text: blPosture },
+              { label: 'Movement', text: blMovement },
+              { label: 'Gestures', text: blGestures },
+            ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }, i, arr) => (
+              <FeedbackRow key={label} label={label} text={text} last={i === arr.length - 1} />
+            ))}
+          </div>
+        ) : (
+          <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+            <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Body language</p>
+            <BlurredRows onUnlock={() => navigate('/upgrade')} />
+          </div>
+        )
+      )}
 
       {/* Weak language */}
       {confidenceLanguage && confidenceLanguage.total > 0 && (
