@@ -63,7 +63,7 @@ function TrendChart({ sessions }: { sessions: Session[] }) {
 export default function HistoryPage() {
   const navigate = useNavigate()
   const { email, plan } = useAuthStore()
-  const { results, setResults } = useSessionStore()
+  const { results, setResults, setParams } = useSessionStore()
   const isPro = plan === 'pro'
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,17 +88,26 @@ export default function HistoryPage() {
       .finally(() => setLoading(false))
   }, [email, isPro])
 
-  const handleSessionClick = async (sessionId: string) => {
+  const handleSessionClick = async (session: Session) => {
     if (!email || loadingSessionId) return
-    setLoadingSessionId(sessionId)
+    setLoadingSessionId(session.id)
     try {
-      const res = await fetch(`${API_URL}/history/${sessionId}?email=${encodeURIComponent(email)}`)
+      const res = await fetch(`${API_URL}/history/${session.id}?email=${encodeURIComponent(email)}`)
       const data = await res.json()
       if (!res.ok || !data.session?.raw_result) {
         alert('Full results are not available for this session. Only new sessions save full details.')
         return
       }
-      setResults(data.session.raw_result)
+      const raw = data.session.raw_result
+      // Set params from session data so ResultsPage doesn't redirect
+      setParams({
+        topic: session.topic || raw.topic || 'Session',
+        goal: raw.conviction?.goal || '',
+        audience: '',
+        targetSeconds: session.actual_seconds || 0,
+        isChallenge: false,
+      })
+      setResults(raw)
       navigate('/results')
     } catch {
       alert('Could not load session. Please try again.')
@@ -191,7 +200,7 @@ export default function HistoryPage() {
           {sessions.map((s) => (
             <button
               key={s.id}
-              onClick={() => handleSessionClick(s.id)}
+              onClick={() => handleSessionClick(s)}
               disabled={!!loadingSessionId}
               style={{
                 width: '100%',
