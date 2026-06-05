@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-// Detect if device is mobile/tablet
 function isMobileDevice() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
 }
@@ -19,7 +18,6 @@ export default function PositionPage() {
   const isMobile = isMobileDevice()
 
   useEffect(() => {
-    // Check how many cameras are available
     navigator.mediaDevices.enumerateDevices().then((devices) => {
       const cameras = devices.filter((d) => d.kind === 'videoinput')
       setHasMultipleCameras(cameras.length > 1)
@@ -53,7 +51,6 @@ export default function PositionPage() {
       setReady(true)
     } catch (err) {
       console.error('Camera error:', err)
-      // Try without facingMode constraint as fallback
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
         streamRef.current = stream
@@ -75,6 +72,16 @@ export default function PositionPage() {
     await startCamera(next)
   }
 
+  const goToRecording = () => {
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current)
+      countdownRef.current = null
+    }
+    setCountdown(null)
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    navigate('/recording', { state: { facing } })
+  }
+
   const startCountdown = () => {
     if (!ready) return
     setCountdown(10)
@@ -85,7 +92,6 @@ export default function PositionPage() {
         clearInterval(countdownRef.current!)
         countdownRef.current = null
         setCountdown(null)
-        // Stop stream — RecordingPage opens its own fresh stream
         streamRef.current?.getTracks().forEach((t) => t.stop())
         navigate('/recording', { state: { facing } })
       } else {
@@ -95,7 +101,7 @@ export default function PositionPage() {
   }
 
   const cameraButtonLabel = () => {
-    if (!isMobile) return null // no switch on desktop
+    if (!isMobile) return null
     if (!hasMultipleCameras) return null
     return facing === 'user' ? 'Back camera' : 'Front camera'
   }
@@ -105,7 +111,6 @@ export default function PositionPage() {
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#000', overflow: 'hidden' }}>
 
-      {/* Fullscreen camera */}
       <video
         ref={videoRef}
         playsInline
@@ -160,6 +165,29 @@ export default function PositionPage() {
             <span style={{ fontSize: 64, fontWeight: 800, color: '#ffffff', lineHeight: 1 }}>{countdown}</span>
             <span style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.12em', marginTop: 4 }}>GET READY</span>
           </div>
+
+          {/* Skip button during countdown */}
+          <button
+            onClick={goToRecording}
+            style={{
+              position: 'absolute',
+              bottom: 60,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(255,255,255,0.1)',
+              color: '#ffffff',
+              fontWeight: 600,
+              fontSize: 14,
+              padding: '10px 32px',
+              borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.2)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            Skip
+          </button>
         </div>
       )}
 
@@ -178,7 +206,6 @@ export default function PositionPage() {
           alignItems: 'center',
           gap: 16,
         }}>
-          {/* Left text */}
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>
               Position yourself in the{' '}
@@ -189,7 +216,6 @@ export default function PositionPage() {
             </p>
           </div>
 
-          {/* Right buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
             <button
               onClick={startCountdown}
