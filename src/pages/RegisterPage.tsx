@@ -19,7 +19,7 @@ export default function RegisterPage() {
   )
   const [code, setCode] = useState('')
   const [step, setStep] = useState<'register' | 'code'>('register')
-  const [loading, setLoading] = useState(false)
+  const [newsletterConsent, setNewsletterConsent] = useState(false)
   const [error, setError] = useState('')
   const [resendCountdown, setResendCountdown] = useState(0)
   const codeRef = useRef<HTMLInputElement>(null)
@@ -54,20 +54,22 @@ export default function RegisterPage() {
         return
       }
 
-      // Subscribe to MailerLite
-      const form = new FormData()
-      form.append('fields[name]', name.trim())
-      form.append('fields[email]', cleanEmail)
-      if (referral.trim()) {
-        form.append('fields[referral_code]', referral.trim().toUpperCase())
+      // Subscribe to MailerLite only if user gave consent
+      if (newsletterConsent) {
+        const form = new FormData()
+        form.append('fields[name]', name.trim())
+        form.append('fields[email]', cleanEmail)
+        if (referral.trim()) {
+          form.append('fields[referral_code]', referral.trim().toUpperCase())
+        }
+        await fetch(MAILERLITE_FORM, { method: 'POST', body: form, mode: 'no-cors' })
       }
-      await fetch(MAILERLITE_FORM, { method: 'POST', body: form, mode: 'no-cors' })
 
       // Send OTP
       const res = await fetch(`${API_URL}/otp/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, isNewUser: true }),
+        body: JSON.stringify({ email: cleanEmail, isNewUser: true, newsletterConsent }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -173,6 +175,19 @@ export default function RegisterPage() {
                   onChange={(e) => setReferral(e.target.value)}
                   style={{ textTransform: 'uppercase' }}
                 />
+              </div>
+
+              <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10, background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 10, padding: '12px 14px' }}>
+                <input
+                  type="checkbox"
+                  id="newsletter"
+                  checked={newsletterConsent}
+                  onChange={(e) => setNewsletterConsent(e.target.checked)}
+                  style={{ marginTop: 3, flexShrink: 0, accentColor: '#3B82F6', width: 16, height: 16, cursor: 'pointer' }}
+                />
+                <label htmlFor="newsletter" style={{ fontSize: 13, color: '#d4d4d8', lineHeight: 1.5, cursor: 'pointer' }}>
+                  <span style={{ fontWeight: 700, color: '#3B82F6' }}>Get exclusive discounts</span> — join the newsletter for member-only deals, weekly speaking tips, and early access to new features. Unsubscribe anytime.
+                </label>
               </div>
 
               {error && (
