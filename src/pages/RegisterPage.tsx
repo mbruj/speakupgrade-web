@@ -20,6 +20,7 @@ export default function RegisterPage() {
   const [code, setCode] = useState('')
   const [step, setStep] = useState<'register' | 'code'>('register')
   const [newsletterConsent, setNewsletterConsent] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [resendCountdown, setResendCountdown] = useState(0)
   const codeRef = useRef<HTMLInputElement>(null)
