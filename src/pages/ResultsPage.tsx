@@ -518,7 +518,7 @@ export default function ResultsPage() {
       {raw?.trial_unlocked && (
         <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 14, padding: '16px 20px', marginBottom: 14, textAlign: 'center' }}>
           <p style={{ fontSize: 16, fontWeight: 700, color: '#22C55E', marginBottom: 4 }}>You unlocked 1 month Pro</p>
-          <p style={{ fontSize: 13, color: '#A1A1AA' }}>Check your email for confirmation. Enjoy full Pro access for the next 30 days.</p>
+          <p style={{ fontSize: 13, color: '#A1A1AA' }}>Check your email for confirmation. Enjoy full Pro access for the next 7 days.</p>
         </div>
       )}
 
