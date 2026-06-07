@@ -514,6 +514,14 @@ export default function ResultsPage() {
         </div>
       </div>
 
+      {/* Trial unlocked banner */}
+      {raw?.trial_unlocked && (
+        <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 14, padding: '16px 20px', marginBottom: 14, textAlign: 'center' }}>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#22C55E', marginBottom: 4 }}>You unlocked 1 month Pro</p>
+          <p style={{ fontSize: 13, color: '#A1A1AA' }}>Check your email for confirmation. Enjoy full Pro access for the next 30 days.</p>
+        </div>
+      )}
+
       {/* 1. Overall score — no emoji */}
       <div style={{ background: '#1A1A1E', borderRadius: 16, padding: 24, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', marginBottom: 14 }}>
         <p style={{ fontSize: 24, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>{verdict.label}</p>
