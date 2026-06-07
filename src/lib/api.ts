@@ -1,5 +1,4 @@
 import { API_URL } from './constants'
-
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
@@ -12,13 +11,11 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   }
   return res.json()
 }
-
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`)
   if (!res.ok) throw new Error(`Request failed: ${res.status}`)
   return res.json()
 }
-
 // Auth
 export interface AuthResponse {
   exists?: boolean
@@ -27,11 +24,9 @@ export interface AuthResponse {
   sessions_count: number
   sessions_reset_date: string
 }
-
 export function checkAuth(email: string) {
   return post<AuthResponse>('/auth/check', { email })
 }
-
 // Usage
 export interface UsageResponse {
   plan: 'free' | 'pro'
@@ -39,15 +34,12 @@ export interface UsageResponse {
   sessions_reset_date: string
   limit: number
 }
-
 export function checkUsage(email: string) {
   return get<UsageResponse>(`/usage/plan?email=${encodeURIComponent(email)}`)
 }
-
 export function incrementUsage(email: string) {
   return post<{ success: boolean }>('/usage/increment', { email })
 }
-
 // Grading
 export interface GradingResult {
   verdict: string
@@ -74,8 +66,8 @@ export interface GradingResult {
   filler_feedback: string
   structure_feedback: string
   confidence_feedback: string
+  trial_unlocked?: boolean
 }
-
 export interface GradePayload {
   audio: string
   audioType: string
@@ -86,11 +78,9 @@ export interface GradePayload {
   targetSeconds: number
   email: string
 }
-
 export function gradeSession(payload: GradePayload) {
   return post<GradingResult>('/grade-base64', payload)
 }
-
 // Email results
 export function emailResults(payload: {
   email: string
@@ -101,17 +91,14 @@ export function emailResults(payload: {
 }) {
   return post('/email-results', payload)
 }
-
 // Feedback
 export function submitFeedback(email: string, message: string) {
   return post('/feedback', { email, message })
 }
-
 // Affiliates
 export function validateAffiliate(code: string) {
   return post<{ valid: boolean; affiliate?: string }>('/affiliates/validate', { code })
 }
-
 export function applyAffiliate(name: string, email: string) {
   return post('/affiliates/apply', { name, email })
 }
