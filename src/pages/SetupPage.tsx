@@ -81,6 +81,7 @@ export default function SetupPage() {
 
   const [streak, setStreak] = useState(0)
   const [challengeActive, setChallengeActive] = useState(false)
+  const [trialExpiry, setTrialExpiry] = useState<string | null>(null)
   // Check localStorage first so it persists across remounts within the same day
   const [challengeDoneToday, setChallengeDoneToday] = useState(() => {
     return localStorage.getItem('challenge_done') === getTodayKey()
@@ -95,6 +96,19 @@ export default function SetupPage() {
     checkUsage(email).then((u) => {
       setUsageData({ remaining: u.sessions_remaining })
     }).catch(console.error)
+
+    // Check if user has an active promo trial
+    fetch(`${API_URL}/trial/status?email=${encodeURIComponent(email)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.trial_active && data.trial_expires_at) {
+          const expiry = new Date(data.trial_expires_at)
+          setTrialExpiry(expiry.toLocaleString('en-GB', {
+            weekday: 'short', day: 'numeric', month: 'short',
+            hour: '2-digit', minute: '2-digit'
+          }))
+        }
+      }).catch(() => {})
 
     fetch(`${API_URL}/streak?email=${encodeURIComponent(email)}`)
       .then(r => r.json())
@@ -174,11 +188,25 @@ export default function SetupPage() {
               <span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>{streak}</span>
             </div>
           )}
+          <div style={{ background: plan === 'pro' ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${plan === 'pro' ? 'rgba(245,158,11,0.3)' : 'rgba(59,130,246,0.3)'}`, borderRadius: 20, padding: '4px 10px' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: plan === 'pro' ? '#F59E0B' : '#3B82F6' }}>{plan === 'pro' ? 'PRO' : 'FREE'}</span>
+          </div>
           <button onClick={() => { logout(); navigate('/') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A1A1AA', fontSize: 14, fontFamily: 'inherit' }}>
             Log out
           </button>
         </div>
       </div>
+
+      {/* Trial active banner */}
+      {trialExpiry && plan !== 'pro' && (
+        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>⏱</span>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B', marginBottom: 2 }}>Record your first session to unlock 7 days Pro free</p>
+            <p style={{ fontSize: 12, color: '#92400E' }}>Trial window closes {trialExpiry}</p>
+          </div>
+        </div>
+      )}
 
       {/* Mira — always visible, fixed height warm box */}
       <div style={{
