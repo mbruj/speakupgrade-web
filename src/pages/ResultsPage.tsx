@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSessionStore, useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
+import { checkUsage } from '../lib/api'
 import LegalFooter from '../components/LegalFooter'
 import MiraModal from '../components/MiraModal'
 
@@ -289,8 +290,17 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro, onUpgrade }: { w
 export default function ResultsPage() {
   const navigate = useNavigate()
   const { results: raw, params, clearSession } = useSessionStore()
-  const { email, plan } = useAuthStore()
+  const { email, plan, setAuth, sessionsRemaining, sessionsResetDate } = useAuthStore()
   const isPro = plan === 'pro'
+
+  // Refresh plan from backend when trial just unlocked
+  useEffect(() => {
+    if (raw?.trial_unlocked && email) {
+      checkUsage(email).then(u => {
+        setAuth(email, u.plan ?? 'free', u.sessions_remaining ?? 5, u.sessions_reset_date ?? '')
+      }).catch(console.error)
+    }
+  }, [raw?.trial_unlocked])
 
   const [emailSending, setEmailSending] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
@@ -517,7 +527,7 @@ export default function ResultsPage() {
       {/* Trial unlocked banner */}
       {raw?.trial_unlocked && (
         <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 14, padding: '16px 20px', marginBottom: 14, textAlign: 'center' }}>
-          <p style={{ fontSize: 16, fontWeight: 700, color: '#22C55E', marginBottom: 4 }}>You unlocked 1 month Pro</p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#22C55E', marginBottom: 4 }}>You unlocked 7 days Pro</p>
           <p style={{ fontSize: 13, color: '#A1A1AA' }}>Check your email for confirmation. Enjoy full Pro access for the next 7 days.</p>
         </div>
       )}
