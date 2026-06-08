@@ -341,7 +341,12 @@ export default function ResultsPage() {
   const wpmColor = wpm === 0 ? '#A1A1AA' : wpm < 110 ? '#F59E0B' : wpm > 160 ? '#F59E0B' : '#22C55E'
   const wpmLabel = wpm === 0 ? 'WPM' : wpm < 110 ? 'Too slow' : wpm > 160 ? 'Too fast' : 'Good pace'
   const conviction = data?.conviction || null
-  const confidenceLanguage = data?.confidence_language || null
+  const rawCL = data?.confidence_language
+  const confidenceLanguage = rawCL
+    ? Array.isArray(rawCL)
+      ? { total: rawCL.length, phrases: rawCL, examples: [] }
+      : rawCL
+    : null
   const fillerWords: Record<string, number> = data?.filler_words || {}
   const fillerEntries = Object.entries(fillerWords).filter(([, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number))
   const hasBodyLanguage = blFeedback && Object.values(blFeedback).some((v: any) => v && v !== 'No video data available.')
