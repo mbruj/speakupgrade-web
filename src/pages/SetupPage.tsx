@@ -294,6 +294,12 @@ export default function SetupPage() {
         {challengeActive ? 'Start Challenge' : 'Start Recording'}
       </button>
 
+      {!challengeActive && (
+        <p style={{ textAlign: 'center', fontSize: 11, color: '#52525B', margin: '-12px 0 20px 0' }}>
+          Audio and video are never stored — deleted after analysis
+        </p>
+      )}
+
       {challengeActive && (
         <button
           onClick={() => {

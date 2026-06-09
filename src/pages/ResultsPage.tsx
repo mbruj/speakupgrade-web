@@ -690,16 +690,52 @@ export default function ResultsPage() {
         isPro ? (
           <Section>
             <SectionTitle>Weak language detected</SectionTitle>
-            <p style={{ fontSize: 24, fontWeight: 700, color: confidenceLanguage.total >= 5 ? '#EF4444' : '#F59E0B', marginBottom: 10 }}>
+            <p style={{ fontSize: 24, fontWeight: 700, color: confidenceLanguage.total >= 5 ? '#EF4444' : '#F59E0B', marginBottom: 12 }}>
               {confidenceLanguage.total} instances
             </p>
-            <div style={{ marginBottom: 10 }}>
-              {(confidenceLanguage.phrases || []).map((p: string, i: number) => (
-                <span key={i} style={{ display: 'inline-block', background: '#222228', color: '#A1A1AA', fontSize: 12, padding: '5px 10px', borderRadius: 6, margin: '2px' }}>"{p}"</span>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(confidenceLanguage.phrases || []).map((p: string, i: number) => {
+                const strongMap: Record<string, string> = {
+                  'i think': 'I know',
+                  'i believe': 'I am confident',
+                  'i feel like': 'The evidence shows',
+                  'kind of': 'precisely',
+                  'sort of': 'specifically',
+                  'maybe': 'This will',
+                  'perhaps': 'The result is',
+                  'probably': 'This will',
+                  'i just': 'I',
+                  'just': '',
+                  'i guess': 'I know',
+                  'i suppose': 'I know',
+                  'a little bit': '',
+                  'a bit': '',
+                  'try to': 'will',
+                  'trying to': 'working to',
+                  'hopefully': 'We will',
+                  'i wish': 'My goal is',
+                  'it seems': 'The data shows',
+                  'it looks like': 'The evidence shows',
+                  'not sure': 'clear on the direction',
+                  'i was wondering': 'I want to know',
+                }
+                const key = p.toLowerCase()
+                const strong = strongMap[key]
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(245,158,11,0.25)' }}>"{p}"</span>
+                    {strong !== undefined && (
+                      <>
+                        <span style={{ fontSize: 11, color: '#52525B' }}>→</span>
+                        <span style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(34,197,94,0.25)' }}>"{strong || 'remove it'}"</span>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
             </div>
             {confidenceLanguage.examples && confidenceLanguage.examples.slice(0, 2).map((ex: string, i: number) => (
-              <p key={i} style={{ fontSize: 14, color: '#d4d4d8', fontStyle: 'italic', marginTop: 6 }}>"{ex}"</p>
+              <p key={i} style={{ fontSize: 14, color: '#d4d4d8', fontStyle: 'italic', marginTop: 10 }}>"{ex}"</p>
             ))}
           </Section>
         ) : (

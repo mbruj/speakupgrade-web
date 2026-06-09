@@ -77,9 +77,9 @@ export default function RecordingPage() {
       videoRef.current.muted = true
       videoRef.current.play().catch(() => {})
 
-      // Canvas for frames
-      canvasRef.current.width = 640
-      canvasRef.current.height = 480
+      // Canvas for frames — 320x240 keeps payload small without losing body language detail
+      canvasRef.current.width = 320
+      canvasRef.current.height = 240
 
       // Audio-only MediaRecorder
       const audioTracks = stream.getAudioTracks()
@@ -120,10 +120,10 @@ export default function RecordingPage() {
         if (secs >= MAX_SECONDS) handleStop()
       }, 500)
 
-      // Frame capture: first frame immediately, then every 5s, max 6 frames
+      // Frame capture: first frame immediately, then every 5s, max 15 frames
       captureFrame()
       frameTimerRef.current = setInterval(() => {
-        if (_frames.length < 6) captureFrame()
+        if (_frames.length < 15) captureFrame()
       }, 5_000)
 
     } catch (err) {
@@ -133,11 +133,11 @@ export default function RecordingPage() {
   }
 
   const captureFrame = () => {
-    if (!videoRef.current || _frames.length >= 3) return
+    if (!videoRef.current || _frames.length >= 15) return
     const ctx = canvasRef.current.getContext('2d')
     if (!ctx) return
     try {
-      ctx.drawImage(videoRef.current, 0, 0, 640, 480)
+      ctx.drawImage(videoRef.current, 0, 0, 320, 240)
       const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.7)
       const base64 = dataUrl.split(',')[1]
       if (base64 && base64.length > 100) {
