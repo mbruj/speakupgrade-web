@@ -90,7 +90,6 @@ export default function SetupPage() {
   // Mira state
   const [miraMessage, setMiraMessage] = useState<string | null>(null)
   const [miraOnboarded, setMiraOnboarded] = useState(false)
-  const [showLanguageSlide, setShowLanguageSlide] = useState(true)
   const [miraFade, setMiraFade] = useState(true)
 
   useEffect(() => {
@@ -144,12 +143,14 @@ export default function SetupPage() {
   }, [email])
 
   // Rotate Mira message with language slide every 6 seconds
+  const [slideIndex, setSlideIndex] = useState(0)
+
   useEffect(() => {
     if (!miraMessage) return
     const interval = setInterval(() => {
       setMiraFade(false)
       setTimeout(() => {
-        setShowLanguageSlide(prev => !prev)
+        setSlideIndex(prev => (prev + 1) % 3)
         setMiraFade(true)
       }, 400)
     }, 6000)
@@ -157,6 +158,16 @@ export default function SetupPage() {
   }, [miraMessage])
 
   const canRecord = plan === 'pro' || (usageData?.remaining ?? sessionsRemaining) > 0
+
+  const streakMessage = streak === 0
+    ? "You have no active streak yet. Record a session today and start building your habit."
+    : streak === 1
+    ? "You started your streak today. Come back tomorrow to keep it going."
+    : streak < 5
+    ? `You are on a ${streak}-day streak. Keep going, you are building a real habit.`
+    : streak < 10
+    ? `${streak} days in a row. That is impressive. Most people quit before this point.`
+    : `${streak}-day streak. You are in the top 1% of speakers who actually practice consistently.`
 
   const handleStart = (isChallenge = false) => {
     const finalTopic = isChallenge ? challenge.topic : topic.trim()
@@ -197,12 +208,7 @@ export default function SetupPage() {
           <span style={{ color: '#ffffff' }}>GRADE</span>
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {streak > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 20, padding: '4px 10px' }}>
-              <span style={{ fontSize: 13 }}>🔥</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>{streak}</span>
-            </div>
-          )}
+
           <div style={{ background: plan === 'pro' ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${plan === 'pro' ? 'rgba(245,158,11,0.3)' : 'rgba(59,130,246,0.3)'}`, borderRadius: 20, padding: '4px 10px' }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: plan === 'pro' ? '#F59E0B' : '#3B82F6' }}>{plan === 'pro' ? 'PRO' : 'FREE'}</span>
           </div>
@@ -228,7 +234,8 @@ export default function SetupPage() {
         borderRadius: 14,
         padding: '14px 16px',
         marginBottom: 20,
-        minHeight: 96,
+        height: 96,
+        overflow: 'hidden',
         display: 'flex',
         gap: 12,
         alignItems: 'flex-start',
@@ -242,12 +249,14 @@ export default function SetupPage() {
           <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Mira — your coach</p>
           <div style={{ opacity: miraFade ? 1 : 0, transition: 'opacity 0.4s ease' }}>
             {miraMessage ? (
-              showLanguageSlide ? (
+              slideIndex === 0 ? (
                 <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>
                   I understand Polish, Spanish, French, Portuguese, German, Italian and more. Fill in your topic, goal and audience in your language, speak naturally, and your entire report will be in your language.
                 </p>
-              ) : (
+              ) : slideIndex === 1 ? (
                 <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>{miraMessage}</p>
+              ) : (
+                <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>{streakMessage}</p>
               )
             ) : (
               <p style={{ fontSize: 13, color: 'rgba(228,213,176,0.4)', lineHeight: 1.65, margin: 0, fontStyle: 'italic' }}>
