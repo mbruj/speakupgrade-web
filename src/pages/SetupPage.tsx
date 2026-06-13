@@ -90,7 +90,7 @@ export default function SetupPage() {
   // Mira state
   const [miraMessage, setMiraMessage] = useState<string | null>(null)
   const [miraOnboarded, setMiraOnboarded] = useState(false)
-  const [showLanguageSlide, setShowLanguageSlide] = useState(false)
+  const [showLanguageSlide, setShowLanguageSlide] = useState(true)
   const [miraFade, setMiraFade] = useState(true)
 
   useEffect(() => {
