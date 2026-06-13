@@ -234,7 +234,7 @@ export default function SetupPage() {
         borderRadius: 14,
         padding: '14px 16px',
         marginBottom: 20,
-        height: 200,
+        height: 178,
         overflow: 'hidden',
         display: 'flex',
         gap: 12,
