@@ -206,9 +206,7 @@ export default function SetupPage() {
           <div style={{ background: plan === 'pro' ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${plan === 'pro' ? 'rgba(245,158,11,0.3)' : 'rgba(59,130,246,0.3)'}`, borderRadius: 20, padding: '4px 10px' }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: plan === 'pro' ? '#F59E0B' : '#3B82F6' }}>{plan === 'pro' ? 'PRO' : 'FREE'}</span>
           </div>
-          <button onClick={() => { logout(); navigate('/') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A1A1AA', fontSize: 14, fontFamily: 'inherit' }}>
-            Log out
-          </button>
+
         </div>
       </div>
 
@@ -375,6 +373,15 @@ export default function SetupPage() {
       <NavCard title="Visit my coach" subtitle="Update your focus and coaching preferences." onClick={() => navigate('/mira-edit')} />
       <NavCard title="Give Feedback" subtitle="Tell us what you would improve." onClick={() => navigate('/feedback')} />
       <NavCard title="Become an Affiliate" subtitle="Earn 50% commission on every referral." onClick={() => navigate('/affiliate')} />
+
+      <div style={{ textAlign: 'center', marginTop: 32, marginBottom: 16 }}>
+        <button
+          onClick={() => { logout(); navigate('/') }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#52525B', fontSize: 13, fontFamily: 'inherit' }}
+        >
+          Log out
+        </button>
+      </div>
     </div>
   )
 }
