@@ -136,7 +136,7 @@ export default function SetupPage() {
     })
       .then(r => r.json())
       .then(data => {
-        if (data.message) setMiraMessage(data.message.length > 380 ? data.message.slice(0, 377) + '...' : data.message)
+        if (data.message) setMiraMessage(data.message.length > 300 ? data.message.slice(0, 297) + '...' : data.message)
         setMiraOnboarded(data.is_onboarded || false)
       })
       .catch(console.error)
