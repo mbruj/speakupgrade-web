@@ -160,14 +160,14 @@ export default function SetupPage() {
   const canRecord = plan === 'pro' || (usageData?.remaining ?? sessionsRemaining) > 0
 
   const streakMessage = streak === 0
-    ? "You have no active streak yet. Record a session today and start building your habit."
+    ? "You have no active streak yet. Record a session today and start building your habit. The speakers who improve fastest are the ones who show up consistently, not the ones who practice hardest once."
     : streak === 1
-    ? "You started your streak today. Come back tomorrow to keep it going."
+    ? "You started your streak today. Come back tomorrow to keep it going. One session is a start. Two in a row is a habit forming. Do not break it."
     : streak < 5
-    ? `You are on a ${streak}-day streak. Keep going, you are building a real habit.`
+    ? `You are on a ${streak}-day streak. Keep going, you are building a real habit. Consistency is what separates speakers who improve from those who stay the same.`
     : streak < 10
-    ? `${streak} days in a row. That is impressive. Most people quit before this point.`
-    : `${streak}-day streak. You are in the top 1% of speakers who actually practice consistently.`
+    ? `${streak} days in a row. That is impressive. Most people quit before this point. You are proving that you are serious about becoming a better speaker.`
+    : `${streak}-day streak. You are in the top 1% of speakers who actually practice consistently. This kind of discipline is exactly what transforms how people perceive you in a room.`
 
   const handleStart = (isChallenge = false) => {
     const finalTopic = isChallenge ? challenge.topic : topic.trim()
@@ -234,7 +234,7 @@ export default function SetupPage() {
         borderRadius: 14,
         padding: '14px 16px',
         marginBottom: 20,
-        height: 178,
+        height: 200,
         overflow: 'hidden',
         display: 'flex',
         gap: 12,
