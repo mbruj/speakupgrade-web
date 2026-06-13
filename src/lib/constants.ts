@@ -2,7 +2,7 @@
 export const STRIPE_MONTHLY = 'https://buy.stripe.com/28EeVegaAg2741j7Tp7Vm03'
 export const STRIPE_ANNUAL = 'https://buy.stripe.com/9B6fZi1fGdTZ0P78Xt7Vm02'
 export const STRIPE_PORTAL = 'https://billing.stripe.com/p/login/bpc_1TRb2CJovqs3TTQbKYOPrhPa'
-export const FREE_SESSION_LIMIT = 5
+export const FREE_SESSION_LIMIT = 3
 export const SPEAKING_TIPS = [
   'Pause before key points — silence commands attention.',
   'Vary your pace. Speed up for excitement, slow down for emphasis.',
