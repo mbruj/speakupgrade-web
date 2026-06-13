@@ -90,6 +90,8 @@ export default function SetupPage() {
   // Mira state
   const [miraMessage, setMiraMessage] = useState<string | null>(null)
   const [miraOnboarded, setMiraOnboarded] = useState(false)
+  const [showLanguageSlide, setShowLanguageSlide] = useState(false)
+  const [miraFade, setMiraFade] = useState(true)
 
   useEffect(() => {
     if (!email) { navigate('/'); return }
@@ -140,6 +142,19 @@ export default function SetupPage() {
       })
       .catch(console.error)
   }, [email])
+
+  // Rotate Mira message with language slide every 6 seconds
+  useEffect(() => {
+    if (!miraMessage) return
+    const interval = setInterval(() => {
+      setMiraFade(false)
+      setTimeout(() => {
+        setShowLanguageSlide(prev => !prev)
+        setMiraFade(true)
+      }, 400)
+    }, 6000)
+    return () => clearInterval(interval)
+  }, [miraMessage])
 
   const canRecord = plan === 'pro' || (usageData?.remaining ?? sessionsRemaining) > 0
 
@@ -227,13 +242,21 @@ export default function SetupPage() {
         />
         <div style={{ flex: 1 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Mira — your coach</p>
-          {miraMessage ? (
-            <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>{miraMessage}</p>
-          ) : (
-            <p style={{ fontSize: 13, color: 'rgba(228,213,176,0.4)', lineHeight: 1.65, margin: 0, fontStyle: 'italic' }}>
-              {miraOnboarded ? 'Thinking about your progress...' : 'Complete your first session so I can start coaching you.'}
-            </p>
-          )}
+          <div style={{ opacity: miraFade ? 1 : 0, transition: 'opacity 0.4s ease' }}>
+            {miraMessage ? (
+              showLanguageSlide ? (
+                <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>
+                  I understand Polish, Spanish, French, Portuguese, German, Italian and more. Fill in your topic, goal and audience in your language, speak naturally, and your entire report will be in your language.
+                </p>
+              ) : (
+                <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>{miraMessage}</p>
+              )
+            ) : (
+              <p style={{ fontSize: 13, color: 'rgba(228,213,176,0.4)', lineHeight: 1.65, margin: 0, fontStyle: 'italic' }}>
+                {miraOnboarded ? 'Thinking about your progress...' : 'Complete your first session so I can start coaching you.'}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
