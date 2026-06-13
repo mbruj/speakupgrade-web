@@ -136,7 +136,7 @@ export default function SetupPage() {
     })
       .then(r => r.json())
       .then(data => {
-        if (data.message) setMiraMessage(data.message.length > 250 ? data.message.slice(0, 247) + '...' : data.message)
+        if (data.message) setMiraMessage(data.message.length > 230 ? data.message.slice(0, 227) + '...' : data.message)
         setMiraOnboarded(data.is_onboarded || false)
       })
       .catch(console.error)
@@ -160,14 +160,14 @@ export default function SetupPage() {
   const canRecord = plan === 'pro' || (usageData?.remaining ?? sessionsRemaining) > 0
 
   const streakMessage = streak === 0
-    ? "You have no active streak yet. Record a session today and start building your habit. The speakers who improve fastest are the ones who show up consistently, not the ones who practice hardest once."
+    ? "No active streak yet. Record today and start building your habit. Speakers who improve fastest show up consistently, not just once."
     : streak === 1
-    ? "You started your streak today. Come back tomorrow to keep it going. One session is a start. Two in a row is a habit forming. Do not break it."
+    ? "Streak started. Come back tomorrow to keep it going. One session is a start, two in a row is a habit forming."
     : streak < 5
-    ? `You are on a ${streak}-day streak. Keep going, you are building a real habit. Consistency is what separates speakers who improve from those who stay the same.`
+    ? `${streak}-day streak. Keep going, you are building a real habit. Consistency separates speakers who improve from those who stay the same.`
     : streak < 10
-    ? `${streak} days in a row. That is impressive. Most people quit before this point. You are proving that you are serious about becoming a better speaker.`
-    : `${streak}-day streak. You are in the top 1% of speakers who actually practice consistently. This kind of discipline is exactly what transforms how people perceive you in a room.`
+    ? `${streak} days in a row. Impressive. Most people quit before this point. You are proving you are serious about becoming a better speaker.`
+    : `${streak}-day streak. Top 1% of speakers who actually practice consistently. This discipline is what transforms how people perceive you.`
 
   const handleStart = (isChallenge = false) => {
     const finalTopic = isChallenge ? challenge.topic : topic.trim()
