@@ -762,11 +762,28 @@ export default function ResultsPage() {
       {data.transcript && (
         <Section>
           <SectionTitle>Transcript</SectionTitle>
-          <HighlightedTranscript
-            transcript={data.transcript}
-            fillerWords={fillerWords}
-            weakPhrases={isPro && confidenceLanguage?.phrases ? confidenceLanguage.phrases : []}
-          />
+          {isPro ? (
+            <HighlightedTranscript
+              transcript={data.transcript}
+              fillerWords={fillerWords}
+              weakPhrases={confidenceLanguage?.phrases || []}
+            />
+          ) : (
+            <div style={{ position: 'relative' }}>
+              <div style={{ filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none', maxHeight: 120, overflow: 'hidden', fontSize: 14, lineHeight: 1.7, color: '#d4d4d8' }}>
+                {data.transcript}
+              </div>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                <span style={{ fontSize: 13, color: '#A1A1AA', textAlign: 'center' }}>Full transcript available on Pro</span>
+                <button
+                  onClick={() => navigate('/upgrade')}
+                  style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 13, padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  Unlock Pro
+                </button>
+              </div>
+            </div>
+          )}
         </Section>
       )}
 
