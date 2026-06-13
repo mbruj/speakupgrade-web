@@ -136,7 +136,7 @@ export default function SetupPage() {
     })
       .then(r => r.json())
       .then(data => {
-        if (data.message) setMiraMessage(data.message.length > 197 ? data.message.slice(0, 194) + '...' : data.message)
+        if (data.message) setMiraMessage(data.message.length > 150 ? data.message.slice(0, 147) + '...' : data.message)
         setMiraOnboarded(data.is_onboarded || false)
       })
       .catch(console.error)
@@ -234,7 +234,7 @@ export default function SetupPage() {
         borderRadius: 14,
         padding: '14px 16px',
         marginBottom: 20,
-        height: 200,
+        height: 155,
         overflow: 'hidden',
         display: 'flex',
         gap: 12,
