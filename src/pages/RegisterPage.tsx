@@ -70,7 +70,7 @@ export default function RegisterPage() {
       const res = await fetch(`${API_URL}/otp/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, isNewUser: true, newsletterConsent, referralCode: referral.trim().toUpperCase() || null }),
+        body: JSON.stringify({ email: cleanEmail, isNewUser: true, newsletterConsent, referralCode: referral.trim().toUpperCase() || null, name: name.trim() }),
       })
       const data = await res.json()
       if (!res.ok) {
