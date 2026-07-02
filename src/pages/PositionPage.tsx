@@ -205,82 +205,66 @@ export default function PositionPage() {
           bottom: 0,
           left: 0,
           right: 0,
-          background: 'rgba(0,0,0,0.75)',
+          background: 'rgba(0,0,0,0.82)',
           backdropFilter: 'blur(12px)',
           padding: '20px 20px 40px',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 16,
+          flexDirection: 'column',
+          gap: 14,
         }}>
-        <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>
-              Position yourself in the{' '}
-              <span style={{ color: '#3B82F6' }}>center</span>
+          {/* Instruction */}
+          <div>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', marginBottom: 2 }}>
+              Position yourself in the <span style={{ color: '#3B82F6' }}>center</span>
             </p>
-            <p style={{ fontSize: 12, color: '#A1A1AA' }}>
+            <p style={{ fontSize: 12, color: '#A1A1AA', margin: 0 }}>
               {isMobile ? 'Stand 1.5-2m from camera. Full body visible.' : 'Position yourself clearly in frame.'}
             </p>
-
-            {/* Camera preference toggle */}
-            <button
-              onClick={() => setHideCamera(h => !h)}
-              style={{
-                marginTop: 12,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontFamily: 'inherit',
-              }}
-            >
-              <div style={{
-                width: 16, height: 16, borderRadius: 3,
-                border: `2px solid ${hideCamera ? '#3B82F6' : 'rgba(255,255,255,0.3)'}`,
-                background: hideCamera ? '#3B82F6' : 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                {hideCamera && <span style={{ color: '#fff', fontSize: 10, fontWeight: 700 }}>✓</span>}
-              </div>
-              <span style={{ fontSize: 12, color: hideCamera ? '#ffffff' : '#A1A1AA', textAlign: 'left', lineHeight: 1.4 }}>
-                I prefer not to see myself<br />
-                <span style={{ fontSize: 11, color: '#52525B' }}>Video still used for body language analysis</span>
-              </span>
-            </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
-            <button
-              onClick={startCountdown}
-              disabled={!ready}
-              style={{
-                background: '#3B82F6',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: 15,
-                padding: '12px 28px',
-                borderRadius: 12,
-                border: 'none',
-                cursor: ready ? 'pointer' : 'not-allowed',
-                opacity: ready ? 1 : 0.5,
-                fontFamily: 'inherit',
-              }}
-            >
-              Ready
-            </button>
+          {/* Camera preference toggle */}
+          <button
+            onClick={() => setHideCamera(h => !h)}
+            style={{
+              background: hideCamera ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${hideCamera ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)'}`,
+              borderRadius: 10,
+              padding: '10px 14px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              fontFamily: 'inherit',
+              width: '100%',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{
+              width: 20, height: 20, borderRadius: 4, flexShrink: 0,
+              border: `2px solid ${hideCamera ? '#3B82F6' : 'rgba(255,255,255,0.3)'}`,
+              background: hideCamera ? '#3B82F6' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {hideCamera && <span style={{ color: '#fff', fontSize: 12, fontWeight: 700, lineHeight: 1 }}>✓</span>}
+            </div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', margin: 0 }}>I prefer not to see myself</p>
+              <p style={{ fontSize: 11, color: '#71717a', margin: 0, marginTop: 1 }}>Camera still used for body language analysis</p>
+            </div>
+          </button>
 
+          {/* Buttons row */}
+          <div style={{ display: 'flex', gap: 10 }}>
             {switchLabel && (
               <button
                 onClick={switchCamera}
                 style={{
+                  flex: 1,
                   background: '#2A2A2E',
                   color: '#ffffff',
                   fontWeight: 600,
                   fontSize: 14,
-                  padding: '10px 28px',
+                  padding: '13px',
                   borderRadius: 12,
                   border: '1px solid rgba(255,255,255,0.15)',
                   cursor: 'pointer',
@@ -290,6 +274,26 @@ export default function PositionPage() {
                 {switchLabel}
               </button>
             )}
+            <button
+              onClick={startCountdown}
+              disabled={!ready}
+              style={{
+                flex: switchLabel ? 1 : undefined,
+                width: switchLabel ? undefined : '100%',
+                background: '#3B82F6',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 15,
+                padding: '13px 28px',
+                borderRadius: 12,
+                border: 'none',
+                cursor: ready ? 'pointer' : 'not-allowed',
+                opacity: ready ? 1 : 0.5,
+                fontFamily: 'inherit',
+              }}
+            >
+              Ready
+            </button>
           </div>
         </div>
       )}
