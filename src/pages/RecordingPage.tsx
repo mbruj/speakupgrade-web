@@ -26,6 +26,7 @@ export default function RecordingPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const facing: 'user' | 'environment' = location.state?.facing ?? 'user'
+  const hideCameraPreference: boolean = location.state?.hideCamera ?? false
 
   const { params } = useSessionStore()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -39,7 +40,7 @@ export default function RecordingPage() {
 
   const [elapsed, setElapsed] = useState(0)
   const [phase, setPhase] = useState<'recording' | 'processing'>('recording')
-  const [cameraHidden, setCameraHidden] = useState(false)
+  const [cameraHidden, setCameraHidden] = useState(hideCameraPreference)
   const isMobile = isMobileDevice()
 
   useEffect(() => {

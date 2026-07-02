@@ -15,6 +15,7 @@ export default function PositionPage() {
   const [countdown, setCountdown] = useState<number | null>(null)
   const [ready, setReady] = useState(false)
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false)
+  const [hideCamera, setHideCamera] = useState(false)
   const isMobile = isMobileDevice()
 
   useEffect(() => {
@@ -79,7 +80,7 @@ export default function PositionPage() {
     }
     setCountdown(null)
     streamRef.current?.getTracks().forEach((t) => t.stop())
-    navigate('/recording', { state: { facing } })
+    navigate('/recording', { state: { facing, hideCamera } })
   }
 
   const startCountdown = () => {
@@ -93,7 +94,7 @@ export default function PositionPage() {
         countdownRef.current = null
         setCountdown(null)
         streamRef.current?.getTracks().forEach((t) => t.stop())
-        navigate('/recording', { state: { facing } })
+        navigate('/recording', { state: { facing, hideCamera } })
       } else {
         setCountdown(current)
       }
@@ -206,7 +207,7 @@ export default function PositionPage() {
           alignItems: 'center',
           gap: 16,
         }}>
-          <div style={{ flex: 1 }}>
+        <div style={{ flex: 1 }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>
               Position yourself in the{' '}
               <span style={{ color: '#3B82F6' }}>center</span>
@@ -214,6 +215,35 @@ export default function PositionPage() {
             <p style={{ fontSize: 12, color: '#A1A1AA' }}>
               {isMobile ? 'Stand 1.5-2m from camera. Full body visible.' : 'Position yourself clearly in frame.'}
             </p>
+
+            {/* Camera preference toggle */}
+            <button
+              onClick={() => setHideCamera(h => !h)}
+              style={{
+                marginTop: 12,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontFamily: 'inherit',
+              }}
+            >
+              <div style={{
+                width: 16, height: 16, borderRadius: 3,
+                border: `2px solid ${hideCamera ? '#3B82F6' : 'rgba(255,255,255,0.3)'}`,
+                background: hideCamera ? '#3B82F6' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                {hideCamera && <span style={{ color: '#fff', fontSize: 10, fontWeight: 700 }}>✓</span>}
+              </div>
+              <span style={{ fontSize: 12, color: hideCamera ? '#ffffff' : '#A1A1AA', textAlign: 'left', lineHeight: 1.4 }}>
+                I prefer not to see myself<br />
+                <span style={{ fontSize: 11, color: '#52525B' }}>Video still used for body language analysis</span>
+              </span>
+            </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
