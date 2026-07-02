@@ -123,8 +123,14 @@ export default function PositionPage() {
           height: '100%',
           objectFit: 'cover',
           transform: facing === 'user' ? 'scaleX(-1)' : 'none',
+          opacity: hideCamera ? 0 : 1,
         }}
       />
+
+      {/* Black screen when camera hidden on position page */}
+      {hideCamera && (
+        <div style={{ position: 'absolute', inset: 0, background: '#000' }} />
+      )}
 
       {/* Corner brackets */}
       {(['tl','tr','bl','br'] as const).map((pos) => (

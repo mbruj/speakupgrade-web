@@ -276,7 +276,6 @@ export default function RecordingPage() {
               cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8,
             }}
           >
-            <span>{cameraHidden ? '📷' : '🚫'}</span>
             <span>{cameraHidden ? 'Show camera' : 'Hide camera'}</span>
           </button>
           <button
