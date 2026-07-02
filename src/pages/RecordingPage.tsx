@@ -39,6 +39,7 @@ export default function RecordingPage() {
 
   const [elapsed, setElapsed] = useState(0)
   const [phase, setPhase] = useState<'recording' | 'processing'>('recording')
+  const [cameraHidden, setCameraHidden] = useState(false)
   const isMobile = isMobileDevice()
 
   useEffect(() => {
@@ -222,8 +223,20 @@ export default function RecordingPage() {
           position: 'absolute', inset: 0, width: '100%', height: '100%',
           objectFit: 'cover',
           transform: facing === 'user' ? 'scaleX(-1)' : 'none',
+          opacity: cameraHidden ? 0 : 1,
         }}
       />
+
+      {/* Black screen when camera hidden */}
+      {cameraHidden && (
+        <div style={{ position: 'absolute', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(239,68,68,0.12)', border: '2px solid rgba(239,68,68,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#EF4444', animation: 'blink 1.2s ease-in-out infinite' }} />
+          </div>
+          <p style={{ color: '#A1A1AA', fontSize: 14, fontFamily: 'inherit' }}>Recording in progress</p>
+          <p style={{ color: '#52525B', fontSize: 12, fontFamily: 'inherit' }}>Camera is off — audio and analysis still active</p>
+        </div>
+      )}
 
       {/* Timer top-left */}
       <div style={{ position: 'absolute', top: 48, left: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -251,9 +264,20 @@ export default function RecordingPage() {
         </div>
       )}
 
-      {/* Stop button */}
+      {/* Stop button + camera toggle */}
       {phase === 'recording' && (
-        <div style={{ position: 'absolute', bottom: 48, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', bottom: 48, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <button
+            onClick={() => setCameraHidden(h => !h)}
+            style={{
+              background: 'rgba(0,0,0,0.55)', color: '#ffffff', fontWeight: 500, fontSize: 13,
+              padding: '10px 20px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.2)',
+              cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8,
+            }}
+          >
+            <span>{cameraHidden ? '📷' : '🚫'}</span>
+            <span>{cameraHidden ? 'Show camera' : 'Hide camera'}</span>
+          </button>
           <button
             onClick={handleStop}
             style={{
