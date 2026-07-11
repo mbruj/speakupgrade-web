@@ -71,9 +71,21 @@ export default function SetupPage() {
   const { email, plan, sessionsRemaining, logout } = useAuthStore()
   const { setParams } = useSessionStore()
 
-  const [topic, setTopic] = useState('')
-  const [goal, setGoal] = useState('')
-  const [audience, setAudience] = useState('')
+  const [topic, setTopic] = useState(() => {
+    const v = localStorage.getItem('prefill_topic')
+    if (v) { localStorage.removeItem('prefill_topic'); return v }
+    return ''
+  })
+  const [goal, setGoal] = useState(() => {
+    const v = localStorage.getItem('prefill_goal')
+    if (v) { localStorage.removeItem('prefill_goal'); return v }
+    return ''
+  })
+  const [audience, setAudience] = useState(() => {
+    const v = localStorage.getItem('prefill_audience')
+    if (v) { localStorage.removeItem('prefill_audience'); return v }
+    return ''
+  })
   const [targetMinutes, setTargetMinutes] = useState(5)
   const [usageData, setUsageData] = useState<{ remaining: number } | null>(null)
 

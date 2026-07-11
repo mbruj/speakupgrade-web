@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
-import { useSessionStore } from '../store'
 
 const MIRA_IMG = 'https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png'
 
@@ -107,8 +106,6 @@ function BulletPoint({ text }: { text: string }) {
 export default function OnboardingPage() {
   const navigate = useNavigate()
   const { email } = useAuthStore()
-  const { setParams } = useSessionStore()
-
   const [screen, setScreen] = useState(1)
   const [reason, setReason] = useState('')
   const [goal, setGoal] = useState('')
@@ -148,15 +145,13 @@ export default function OnboardingPage() {
   }
 
   const handleStart = () => {
-    setParams({
-      topic: 'Introduce yourself',
-      goal: 'Explain who you are',
-      audience: 'Mira, personal coach',
-      targetSeconds: 120,
-      isChallenge: false,
-    })
+    localStorage.setItem('prefill_topic', 'Introduce yourself')
+    localStorage.setItem('prefill_goal', 'Explain who you are')
+    localStorage.setItem('prefill_audience', 'Mira, personal coach')
     navigate('/setup')
   }
+
+
 
   const btnStyle = (selected: boolean) => ({
     background: selected ? '#3B82F6' : '#1A1A1E',
@@ -182,7 +177,7 @@ export default function OnboardingPage() {
 
       <div style={{ width: '100%', maxWidth: 440, padding: '28px 20px 0' }}>
 
-        <p style={{ fontSize: 12, color: '#52525B', fontWeight: 600, margin: '0 0 28px 0' }}>Step {screen} of {totalScreens}</p>
+
 
         {/* SCREEN 1 */}
         {screen === 1 && (
@@ -191,7 +186,7 @@ export default function OnboardingPage() {
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 4px 0', lineHeight: 1.3 }}>
               What are you preparing for?
             </h2>
-            <p style={{ fontSize: 12, color: '#52525B', margin: '0 0 20px 0' }}>Takes 30 seconds</p>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {REASONS.map(r => (
                 <button key={r} onClick={() => handleReason(r)} style={btnStyle(reason === r)}>{r}</button>
@@ -228,7 +223,7 @@ export default function OnboardingPage() {
                   key={f.label}
                   onClick={() => handleFrequency(f.label)}
                   disabled={saving}
-                  style={{ ...btnStyle(false), display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                  style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '14px 16px', textAlign: 'left', color: '#e4e4e7', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                 >
                   <span>{f.label}</span>
                   {f.note && (
@@ -248,24 +243,32 @@ export default function OnboardingPage() {
         {/* SCREEN 4 — Your plan is ready */}
         {screen === 4 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <MiraBox text={`Your plan is ready. We will focus on helping you ${goal.toLowerCase()}. Here is how each session works.`} />
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 8px 0', lineHeight: 1.3 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 20px 0', lineHeight: 1.3 }}>
               Your plan is ready.
             </h2>
-            <p style={{ fontSize: 14, color: '#71717a', margin: '0 0 28px 0', lineHeight: 1.6 }}>
-              Each session takes 2 to 10 minutes. Here is what happens:
-            </p>
             <div style={{
-              background: '#0c1117', border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: 12, padding: '20px', marginBottom: 28,
+              background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)',
+              borderRadius: 12, padding: '16px', marginBottom: 24,
+              display: 'flex', alignItems: 'flex-start', gap: 12,
             }}>
-              <BulletPoint text="Write your topic and goal before recording. Be specific — the more context you give, the better your feedback." />
-              <BulletPoint text="Speak naturally for 2 to 10 minutes. The app records your audio and body language." />
-              <BulletPoint text="Get your full report with scores, transcript, weak language detection and Mira's personal coaching note." />
+              <img src={MIRA_IMG} alt="Mira" style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(245,158,11,0.5)', flexShrink: 0 }} />
+              <div>
+                <p style={{ margin: '0 0 3px 0', fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Mira, your coach</p>
+                <p style={{ margin: '0 0 12px 0', fontSize: 13, color: '#e4d5b0', lineHeight: 1.7 }}>
+                  We will focus on helping you {goal.toLowerCase()}. I have set up your first session so you can start right away.
+                </p>
+                <p style={{ margin: '0 0 8px 0', fontSize: 13, color: '#e4d5b0', lineHeight: 1.7 }}>Here is how each session works:</p>
+                <p style={{ margin: '0 0 6px 0', fontSize: 13, color: '#a1a1aa', lineHeight: 1.6, paddingLeft: 12, borderLeft: '2px solid rgba(245,158,11,0.3)' }}>
+                  Write your topic and goal. Then speak naturally for 2 to 10 minutes.
+                </p>
+                <p style={{ margin: '0 0 6px 0', fontSize: 13, color: '#a1a1aa', lineHeight: 1.6, paddingLeft: 12, borderLeft: '2px solid rgba(245,158,11,0.3)' }}>
+                  I will analyze your speech and body language.
+                </p>
+                <p style={{ margin: 0, fontSize: 13, color: '#a1a1aa', lineHeight: 1.6, paddingLeft: 12, borderLeft: '2px solid rgba(245,158,11,0.3)' }}>
+                  You will get scores, full transcript and my personal coaching note after every session.
+                </p>
+              </div>
             </div>
-            <p style={{ fontSize: 13, color: '#52525B', margin: '0 0 20px 0', lineHeight: 1.6 }}>
-              Your first session is pre-filled so you can start immediately. You can edit anything before recording.
-            </p>
             <button
               onClick={handleStart}
               style={{
