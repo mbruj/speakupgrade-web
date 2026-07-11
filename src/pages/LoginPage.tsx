@@ -140,13 +140,11 @@ export default function LoginPage() {
           <p style={{ color: '#A1A1AA', fontSize: 15, lineHeight: 1.6 }}>
             {step === 'email'
               ? <>
-                  <div style={{ marginBottom: 16, display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                    <span style={{ color: '#ffffff', fontSize: 22, fontWeight: 700, whiteSpace: 'nowrap' }}>Win your</span>
-                    <div style={{ width: 160, overflow: 'hidden' }}>
-                      <span style={{ color: '#3B82F6', fontSize: 22, fontWeight: 700, opacity: wordFade ? 1 : 0, transition: 'opacity 0.3s ease', whiteSpace: 'nowrap' }}>
-                        {ROTATING_WORDS[wordIndex]}
-                      </span>
-                    </div>
+                  <div style={{ marginBottom: 16, position: 'relative', height: 32 }}>
+                    <span style={{ color: '#ffffff', fontSize: 22, fontWeight: 700 }}>Win your </span>
+                    <span style={{ color: '#3B82F6', fontSize: 22, fontWeight: 700, opacity: wordFade ? 1 : 0, transition: 'opacity 0.3s ease' }}>
+                      {ROTATING_WORDS[wordIndex]}
+                    </span>
                   </div>
                   Enter your email to get access.
                 </>
