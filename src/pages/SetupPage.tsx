@@ -337,14 +337,14 @@ export default function SetupPage() {
         </p>
       )}
       {isPrefilled && (
-        <style>{`
+        <style dangerouslySetInnerHTML={{ __html: `
           @keyframes pulseBtn {
             0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
             70% { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
             100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
           }
           .pulse-btn { animation: pulseBtn 1.8s ease-in-out infinite; }
-        \`}</style>
+        `}} />
       )}
 
       {challengeActive && (
