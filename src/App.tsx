@@ -13,6 +13,7 @@ import UpgradePage from './pages/UpgradePage'
 import HistoryPage from './pages/HistoryPage'
 import { AffiliatePage, FeedbackPage } from './pages/AffiliateFeedbackPages'
 import MiraEditPage from './pages/MiraEditPage'
+import OnboardingPage from './pages/OnboardingPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const email = useAuthStore((s) => s.email)
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/affiliate" element={<RequireAuth><AffiliatePage /></RequireAuth>} />
         <Route path="/feedback" element={<RequireAuth><FeedbackPage /></RequireAuth>} />
         <Route path="/mira-edit" element={<RequireAuth><MiraEditPage /></RequireAuth>} />
+        <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
