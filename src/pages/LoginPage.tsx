@@ -74,6 +74,20 @@ export default function LoginPage() {
       }
       const usage = await checkUsage(email.trim().toLowerCase())
       setAuth(email.trim().toLowerCase(), usage.plan, usage.sessions_remaining, usage.sessions_reset_date)
+
+      // Check onboarding status — redirect to onboarding if not completed
+      const cleanEmail = email.trim().toLowerCase()
+      try {
+        const profileRes = await fetch(`${API_URL}/coach/profile?email=${encodeURIComponent(cleanEmail)}`)
+        const profileData = await profileRes.json()
+        const isOnboarded = profileData.focus && profileData.focus.length > 0
+        if (!isOnboarded || cleanEmail === 'm@bruj.com') {
+          navigate('/onboarding')
+          return
+        }
+      } catch {
+        // on error just go to setup
+      }
       navigate('/setup')
     } catch {
       setError('Something went wrong. Please try again.')
