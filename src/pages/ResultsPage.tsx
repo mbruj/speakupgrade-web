@@ -4,7 +4,6 @@ import { useSessionStore, useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
 import { checkUsage } from '../lib/api'
 import LegalFooter from '../components/LegalFooter'
-import MiraModal from '../components/MiraModal'
 
 const LANGUAGES = [
   { code: 'en', label: '🇬🇧 English' },
@@ -312,7 +311,6 @@ export default function ResultsPage() {
   const [translated, setTranslated] = useState<any>(null)
 
   // Mira state
-  const [showMiraModal, setShowMiraModal] = useState(false)
   const [showMiraOnExit, setShowMiraOnExit] = useState(false)
   const [miraInsight, setMiraInsight] = useState<{ message: string; next_session: string } | null>(null)
   const [miraLoading, setMiraLoading] = useState(false)
@@ -322,7 +320,6 @@ export default function ResultsPage() {
   const handleNavigation = (path: string) => {
     if (showMiraOnExit) {
       setPendingNavigation(path)
-      setShowMiraModal(true)
     } else {
       navigate(path)
     }
@@ -446,8 +443,7 @@ export default function ResultsPage() {
         setIsOnboarded(result.is_onboarded)
         if (result.message) setMiraInsight({ message: result.message, next_session: result.next_session })
         const isTestAccount = email === 'm@bruj.com'
-        if (!result.is_onboarded || isTestAccount) setShowMiraOnExit(true)
-      } catch (e) {
+        } catch (e) {
         console.error('Mira error:', e)
         if (email === 'm@bruj.com') setShowMiraOnExit(true)
       } finally {
@@ -559,22 +555,7 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* Mira modal */}
-      {showMiraModal && (
-        <MiraModal
-          onComplete={() => {
-            setShowMiraModal(false)
-            setShowMiraOnExit(false)
-            setIsOnboarded(true)
-            if (pendingNavigation) navigate(pendingNavigation)
-          }}
-          onSkip={() => {
-            setShowMiraModal(false)
-            setShowMiraOnExit(false)
-            if (pendingNavigation) navigate(pendingNavigation)
-          }}
-        />
-      )}
+      
 
       {/* #3 — Mira block in amber */}
       {miraLoading ? (

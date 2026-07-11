@@ -199,7 +199,7 @@ export default function SetupPage() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#09090B', display: 'flex', flexDirection: 'column', padding: '48px 20px 48px', maxWidth: 480, margin: '0 auto' }}>
+    <div style={{ minHeight: '100dvh', background: '#09090B', display: 'flex', flexDirection: 'column', padding: '20px 20px 48px', maxWidth: 480, margin: '0 auto' }}>
 
       {/* Header — no logo, just spacing */}
       <div style={{ marginBottom: 8 }} />

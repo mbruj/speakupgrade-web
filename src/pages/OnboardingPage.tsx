@@ -6,11 +6,11 @@ import { API_URL } from '../lib/constants'
 const MIRA_IMG = 'https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png'
 
 const REASONS = [
-  'I have a presentation or pitch coming up',
-  'I am preparing for job interviews',
-  'I want to grow in my career and get promoted',
-  'I negotiate with clients or stakeholders',
-  'I want to build confidence when speaking',
+  'Presentation or pitch',
+  'Job interview',
+  'Career growth',
+  'Client or stakeholder meetings',
+  'Build speaking confidence',
 ]
 
 const GOALS = [
@@ -98,11 +98,11 @@ export default function OnboardingPage() {
   }
 
   const PREDEFINED_REASONS = [
-    'I have a presentation or pitch coming up',
-    'I am preparing for job interviews',
-    'I want to grow in my career and get promoted',
-    'I negotiate with clients or stakeholders',
-    'I want to build confidence when speaking',
+    'Presentation or pitch',
+    'Job interview',
+    'Career growth',
+    'Client or stakeholder meetings',
+    'Build speaking confidence',
   ]
 
   const PREDEFINED_GOALS = [
@@ -117,7 +117,7 @@ export default function OnboardingPage() {
     const r = userReason.toLowerCase()
     const g = userGoal.toLowerCase()
 
-    if (r.includes('presentation') || r.includes('pitch')) {
+    if (r.includes('presentation') || r.includes('pitch') || r === 'presentation or pitch') {
       if (g.includes('client') || g.includes('deal')) return "Clients decide in the first 60 seconds. Daily practice builds the delivery habits that make those seconds count every time."
       if (g.includes('promoted') || g.includes('senior')) return "Executives who present with clarity get noticed faster. Daily sessions train that composure before it matters."
       return "The best presenters practice daily, not just before the big moment. Build the habit now and your next pitch will feel natural."
@@ -246,31 +246,18 @@ Return only the 2 sentences, nothing else.`
       fontFamily: 'inherit',
     }}>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 36 }}>
-        {[1,2,3].map(n => (
-          <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: '50%',
-              background: n === screen ? '#3B82F6' : n < screen ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.08)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 700,
-              color: n === screen ? '#fff' : n < screen ? '#3B82F6' : '#52525B',
-              transition: 'all 0.3s ease',
-            }}>{n}</div>
-            {n < 3 && <div style={{ width: 24, height: 1, background: n < screen ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.08)' }} />}
-          </div>
-        ))}
-        <span style={{ fontSize: 12, color: '#52525B', marginLeft: 4 }}>Step {screen} of 3</span>
+      <div style={{ marginBottom: 32 }}>
+        <span style={{ fontSize: 12, color: '#52525B', fontWeight: 600 }}>Step {screen} of 3</span>
       </div>
 
       <div style={{ width: '100%', maxWidth: 440 }}>
 
         {screen === 1 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <MiraBox text="Hi, I am Mira, your personal speaking coach. Before we start, I have a couple of quick questions so I can coach you in the right direction." />
+            <MiraBox text="Hi, I am Mira, your personal speaking coach. Tell me what you are working toward and I will build a practice plan for you." />
 
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 20px 0', lineHeight: 1.3 }}>
-              What brings you to SpeakUPgrade?
+              What are you preparing for?
             </h2>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -281,7 +268,7 @@ Return only the 2 sentences, nothing else.`
               ))}
               {!showReasonInput ? (
                 <button onClick={() => handleReason('Other')} style={{ ...btnStyle(false), color: '#71717a' }}>
-                  Other
+                  Something else
                 </button>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

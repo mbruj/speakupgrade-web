@@ -9,6 +9,7 @@ export default function MiraEditPage() {
 
   const [focus, setFocus] = useState('')
   const [motivation, setMotivation] = useState('')
+  const [frequency, setFrequency] = useState('A few times a week')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -19,7 +20,12 @@ export default function MiraEditPage() {
     fetch(`${API_URL}/coach/profile?email=${encodeURIComponent(email)}`)
       .then(r => r.json())
       .then(data => {
-        if (data.focus) setFocus(data.focus)
+        if (data.focus) {
+          // Extract frequency if saved in focus
+          const freqMatch = data.focus.match(/Practice frequency: (.+?)\./)
+          if (freqMatch) setFrequency(freqMatch[1])
+          setFocus(data.focus.replace(/\. Practice frequency: .+?\./, '').replace(/Goal: .+?\. /, ''))
+        }
         if (data.motivation) setMotivation(data.motivation)
       })
       .catch(console.error)
@@ -33,7 +39,7 @@ export default function MiraEditPage() {
       await fetch(`${API_URL}/coach/setup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, focus: focus.trim(), motivation: motivation.trim() }),
+        body: JSON.stringify({ email, focus: `${focus.trim()}. Practice frequency: ${frequency}.`, motivation: motivation.trim() }),
       })
       setSaved(true)
       setTimeout(() => navigate('/setup'), 1200)
@@ -111,6 +117,28 @@ export default function MiraEditPage() {
                 boxSizing: 'border-box',
               }}
             />
+          </div>
+
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', marginBottom: 8 }}>
+              HOW OFTEN DO YOU WANT TO PRACTICE?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {['Every day', 'A few times a week', 'Once a week', 'When I have something coming up'].map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFrequency(f)}
+                  style={{
+                    background: frequency === f ? 'rgba(59,130,246,0.15)' : '#1A1A1E',
+                    border: `1px solid ${frequency === f ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                    borderRadius: 10, padding: '12px 14px', textAlign: 'left',
+                    color: '#e4e4e7', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
           </div>
 
           <button
