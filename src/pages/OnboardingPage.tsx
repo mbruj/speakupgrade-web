@@ -97,7 +97,66 @@ export default function OnboardingPage() {
     }
   }
 
+  const PREDEFINED_REASONS = [
+    'I have a presentation or pitch coming up',
+    'I am preparing for job interviews',
+    'I want to grow in my career and get promoted',
+    'I negotiate with clients or stakeholders',
+    'I want to build confidence when speaking',
+  ]
+
+  const PREDEFINED_GOALS = [
+    'Get promoted or land a senior role',
+    'Win more clients or close more deals',
+    'Nail my next job interview',
+    'Speak with authority in meetings',
+    'Build a consistent speaking habit',
+  ]
+
+  const getStaticMessage = (userReason: string, userGoal: string): string | null => {
+    const r = userReason.toLowerCase()
+    const g = userGoal.toLowerCase()
+
+    if (r.includes('presentation') || r.includes('pitch')) {
+      if (g.includes('client') || g.includes('deal')) return "Clients decide in the first 60 seconds. Daily practice builds the delivery habits that make those seconds count every time."
+      if (g.includes('promoted') || g.includes('senior')) return "Executives who present with clarity get noticed faster. Daily sessions train that composure before it matters."
+      return "The best presenters practice daily, not just before the big moment. Build the habit now and your next pitch will feel natural."
+    }
+    if (r.includes('interview')) {
+      if (g.includes('interview')) return "Interviewers decide within minutes. Daily practice builds the confidence and structure that makes you memorable, not just prepared."
+      return "The candidate who sounds certain gets the offer. Daily practice is how you build that certainty before you walk into the room."
+    }
+    if (r.includes('career') || r.includes('promoted')) {
+      if (g.includes('promoted') || g.includes('senior')) return "The people who get promoted speak up clearly and concisely in meetings. Daily practice makes that effortless, not an effort."
+      if (g.includes('authority')) return "Authority in speech is built through repetition. Daily short sessions compound into a presence that people notice and remember."
+      return "Your career growth is directly tied to how well you communicate. Daily practice closes that gap faster than anything else."
+    }
+    if (r.includes('client') || r.includes('negotiat')) {
+      if (g.includes('client') || g.includes('deal')) return "Clients buy from people who sound certain. Daily practice trains you to stay composed under pressure, which is what closes deals."
+      return "Every negotiation is a performance. Daily practice builds the muscle memory that keeps you calm and persuasive when stakes are high."
+    }
+    if (r.includes('confidence')) {
+      if (g.includes('authority')) return "Authority is not a personality trait, it is a skill. Daily short sessions rewire how you sound until confidence becomes your default."
+      if (g.includes('habit')) return "Confidence compounds. Each daily session adds a layer that does not disappear. In 30 days you will sound like a different speaker."
+      return "Confidence in speaking is built through repetition, not inspiration. Daily practice is the only shortcut that actually works."
+    }
+    return null
+  }
+
   const generateMira3Message = async (userReason: string, userGoal: string) => {
+    // Use if/else for predefined answers
+    const isCustomReason = !PREDEFINED_REASONS.includes(userReason)
+    const isCustomGoal = !PREDEFINED_GOALS.includes(userGoal)
+
+    if (!isCustomReason && !isCustomGoal) {
+      const staticMsg = getStaticMessage(userReason, userGoal)
+      if (staticMsg) {
+        setMira3Message(staticMsg)
+        return
+      }
+    }
+
+    // Use AI only if user typed custom "Other" response
     setMira3Loading(true)
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -113,7 +172,7 @@ A new user told you:
 - Why they joined: "${userReason}"
 - Their main goal: "${userGoal}"
 
-Write exactly 2 sentences explaining why practicing speaking DAILY will help them achieve their specific goal. 
+Write exactly 2 sentences explaining why practicing speaking DAILY will help them achieve their specific goal.
 Be direct and specific to their answers. Reference their goal directly.
 Do not use em dashes. Do not use generic phrases. Sound like a real coach, not a marketing email.
 Return only the 2 sentences, nothing else.`
@@ -123,6 +182,7 @@ Return only the 2 sentences, nothing else.`
       const data = await res.json()
       const msg = data.content?.[0]?.text?.trim()
       if (msg) setMira3Message(msg)
+      else setMira3Message("Daily practice is the fastest path to your goal. Speakers who show up consistently improve twice as fast as those who practice once a week.")
     } catch {
       setMira3Message("Daily practice is the fastest path to your goal. Speakers who show up consistently improve twice as fast as those who practice once a week.")
     }
