@@ -142,7 +142,7 @@ export default function LoginPage() {
               ? <>
                   <div style={{ marginBottom: 16, textAlign: 'center' }}>
                     <span style={{ color: '#ffffff', fontSize: 22, fontWeight: 700 }}>Win your </span>
-                    <span style={{ color: '#3B82F6', fontSize: 22, fontWeight: 700, opacity: wordFade ? 1 : 0, transition: 'opacity 0.3s ease' }}>{ROTATING_WORDS[wordIndex]}</span>
+                    <span style={{ color: '#3B82F6', fontSize: 22, fontWeight: 700 }}>{ROTATING_WORDS[wordIndex]}</span>
                   </div>
                   Enter your email to get access.
                 </>
