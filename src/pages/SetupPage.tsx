@@ -326,10 +326,9 @@ export default function SetupPage() {
               <p
                 key={tickerIndex}
                 style={{
-                  margin: 0, fontSize: 12, color: '#64748b', whiteSpace: 'nowrap',
+                  margin: 0, fontSize: 12, color: '#F59E0B', whiteSpace: 'nowrap',
                   overflow: 'hidden', textOverflow: 'ellipsis',
                   animation: 'slideIn 0.4s ease',
-                color: '#F59E0B',
                 }}
               >
                 {tickerMessages[tickerIndex]}
