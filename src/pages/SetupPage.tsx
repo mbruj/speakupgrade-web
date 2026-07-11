@@ -375,7 +375,7 @@ export default function SetupPage() {
       <NavCard title="Visit my coach" subtitle="Update your focus and coaching preferences." onClick={() => navigate('/mira-edit')} />
       <NavCard title="Give Feedback" subtitle="Tell us what you would improve." onClick={() => navigate('/feedback')} />
       <NavCard title="Become an Affiliate" subtitle="Earn 50% commission on every referral." onClick={() => navigate('/affiliate')} />
-    </div>
+
       <div style={{ textAlign: 'center', marginTop: 32, marginBottom: 16 }}>
         <button
           onClick={() => { logout(); navigate('/') }}
