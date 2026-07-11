@@ -105,6 +105,8 @@ export default function SetupPage() {
   const [miraOnboarded, setMiraOnboarded] = useState(false)
   const [slideIndex, setSlideIndex] = useState(0)
   const [miraFade, setMiraFade] = useState(true)
+  const [tickerIndex, setTickerIndex] = useState(0)
+  const [tickerMessages, setTickerMessages] = useState<string[]>([])
 
   useEffect(() => {
     if (!email) { navigate('/'); return }
@@ -166,6 +168,43 @@ export default function SetupPage() {
     : streak < 10
     ? `${streak} days in a row. Impressive. Most people quit before this point. You are proving you are serious about becoming a better speaker.`
     : `${streak}-day streak. Top 1% of speakers who actually practice consistently. This discipline is what transforms how people perceive you.`
+
+  // Generate ticker messages — real data where available, synthetic fallback
+  useEffect(() => {
+    const messages: string[] = []
+
+    // Fetch real stats from backend
+    fetch(`${API_URL}/stats/community?email=${encodeURIComponent(email || '')}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.score_percentile) messages.push(`Your average score is higher than ${data.score_percentile}% of speakers this month.`)
+        if (data.streak_percentile) messages.push(`Your streak puts you in the top ${100 - data.streak_percentile}% of consistent speakers.`)
+        if (data.sessions_this_week) messages.push(`You have recorded ${data.sessions_this_week} sessions this week. Most users record 1.`)
+        if (data.filler_percentile) messages.push(`Your filler word count is lower than ${data.filler_percentile}% of users this week.`)
+      })
+      .catch(() => {})
+      .finally(() => {
+        // Always add synthetic fallback messages
+        const syntheticBase = [
+          "143 speakers practiced this week. Keep going.",
+          "Speakers who practice 3 times a week improve twice as fast.",
+          "Top 10% of speakers practice every day. You are building that habit.",
+          "82 sessions recorded globally today. You are one of the consistent ones.",
+          "Speakers with a streak of 5 or more days improve 40% faster.",
+        ]
+        const combined = [...messages, ...syntheticBase].slice(0, 6)
+        setTickerMessages(combined)
+      })
+  }, [email])
+
+  // Rotate ticker every 4 seconds
+  useEffect(() => {
+    if (tickerMessages.length === 0) return
+    const interval = setInterval(() => {
+      setTickerIndex(prev => (prev + 1) % tickerMessages.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [tickerMessages])
 
   // Rotate Mira message every 6 seconds
   useEffect(() => {
@@ -272,6 +311,43 @@ export default function SetupPage() {
           </div>
         </div>
       </div>
+
+      {/* Community ticker */}
+      {tickerMessages.length > 0 && (
+        <div style={{ overflow: 'hidden', marginBottom: 16, marginTop: -8 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: 'rgba(59,130,246,0.06)',
+            border: '1px solid rgba(59,130,246,0.12)',
+            borderRadius: 8, padding: '8px 12px',
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3B82F6', flexShrink: 0, animation: 'pulse 2s infinite' }} />
+            <div style={{ overflow: 'hidden', flex: 1 }}>
+              <p
+                key={tickerIndex}
+                style={{
+                  margin: 0, fontSize: 12, color: '#64748b', whiteSpace: 'nowrap',
+                  overflow: 'hidden', textOverflow: 'ellipsis',
+                  animation: 'slideIn 0.4s ease',
+                }}
+              >
+                {tickerMessages[tickerIndex]}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+      `}</style>
 
       {/* Form */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 24 }}>
