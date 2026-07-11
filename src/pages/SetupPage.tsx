@@ -326,7 +326,7 @@ export default function SetupPage() {
         onClick={() => handleStart(challengeActive)}
         disabled={!topic.trim() || !goal.trim() || !canRecord}
         className={isPrefilled && !challengeActive ? 'pulse-btn' : ''}
-        style={{ width: '100%', background: challengeActive ? '#F59E0B' : '#3B82F6', color: '#ffffff', fontWeight: 700, fontSize: 16, padding: '16px', borderRadius: 12, border: 'none', cursor: (!topic.trim() || !goal.trim() || !canRecord) ? 'not-allowed' : 'pointer', opacity: (!topic.trim() || !goal.trim() || !canRecord) ? 0.4 : 1, fontFamily: 'inherit', marginBottom: challengeActive ? 8 : 20 }}
+        style={{ width: '100%', background: challengeActive ? '#F59E0B' : isPrefilled ? '#F59E0B' : '#3B82F6', color: (challengeActive || isPrefilled) ? '#1a1a1a' : '#ffffff', fontWeight: 700, fontSize: 16, padding: '16px', borderRadius: 12, border: 'none', cursor: (!topic.trim() || !goal.trim() || !canRecord) ? 'not-allowed' : 'pointer', opacity: (!topic.trim() || !goal.trim() || !canRecord) ? 0.4 : 1, fontFamily: 'inherit', marginBottom: challengeActive ? 8 : 20 }}
       >
         {challengeActive ? 'Start Challenge' : isPrefilled ? 'Start my first session' : 'Start Recording'}
       </button>
@@ -339,11 +339,11 @@ export default function SetupPage() {
       {isPrefilled && (
         <style dangerouslySetInnerHTML={{ __html: `
           @keyframes pulseBtn {
-            0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
-            70% { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
-            100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+            0% { box-shadow: 0 0 0 0 rgba(245,158,11,0.8); transform: scale(1); }
+            50% { box-shadow: 0 0 0 16px rgba(245,158,11,0); transform: scale(1.02); }
+            100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); transform: scale(1); }
           }
-          .pulse-btn { animation: pulseBtn 1.8s ease-in-out infinite; }
+          .pulse-btn { animation: pulseBtn 1.2s ease-in-out infinite; }
         `}} />
       )}
 
