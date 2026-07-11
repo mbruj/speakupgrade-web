@@ -97,7 +97,7 @@ function MiraBox({ text }: { text: string }) {
     <div style={{
       display: 'flex', alignItems: 'flex-start', gap: 12,
       background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)',
-      borderRadius: 12, padding: '12px 14px', marginBottom: 24,
+      borderRadius: 12, padding: '12px 14px', marginBottom: 20,
     }}>
       <img src={MIRA_IMG} alt="Mira" style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(245,158,11,0.5)', flexShrink: 0 }} />
       <div>
@@ -197,7 +197,7 @@ export default function OnboardingPage() {
         {screen === 1 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
             <MiraBox text="Hi, I am Mira, your personal speaking coach. Tell me what you are working toward and I will build a practice plan for you." />
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 4px 0', lineHeight: 1.3 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 16px 0', lineHeight: 1.3 }}>
               What are you preparing for?
             </h2>
 
@@ -213,8 +213,8 @@ export default function OnboardingPage() {
         {screen === 2 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
             <MiraBox text={SCREEN2_MIRA[reason] || 'Please tell me more about yourself so I can advise you better.'} />
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 20px 0', lineHeight: 1.3 }}>
-              {SCREEN2_HEADLINE[reason] || 'What is your main goal?'}
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 16px 0', lineHeight: 1.3 }}>
+              {SCREEN2_HEADLINE[reason] || 'What does success look like?'}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {(GOALS_BY_REASON[reason] || []).map(g => (
@@ -228,7 +228,7 @@ export default function OnboardingPage() {
         {screen === 3 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
             <MiraBox text={getScreen3Message(reason, goal)} />
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 20px 0', lineHeight: 1.3 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 16px 0', lineHeight: 1.3 }}>
               How often can you practice?
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -262,7 +262,7 @@ export default function OnboardingPage() {
             </h2>
             <div style={{
               background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)',
-              borderRadius: 12, padding: '16px', marginBottom: 24,
+              borderRadius: 12, padding: '16px', marginBottom: 20,
               display: 'flex', alignItems: 'flex-start', gap: 12,
             }}>
               <img src={MIRA_IMG} alt="Mira" style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(245,158,11,0.5)', flexShrink: 0 }} />
