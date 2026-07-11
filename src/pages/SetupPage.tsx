@@ -179,7 +179,7 @@ export default function SetupPage() {
       .then(data => {
         if (data.score_percentile) messages.push(`Higher score than ${data.score_percentile}% of speakers this month.`)
         if (data.streak_percentile) messages.push(`Top ${100 - data.streak_percentile}% for consistency this month.`)
-        if (data.sessions_this_week) messages.push(`${data.sessions_this_week} sessions this week. Most users record 1.`)
+        if (data.sessions_this_week) messages.push(`${data.sessions_this_week} sessions recorded this week. Keep going.`)
         if (data.filler_percentile) messages.push(`Fewer filler words than ${data.filler_percentile}% of users.`)
       })
       .catch(() => {})
