@@ -90,6 +90,8 @@ export default function SetupPage() {
   // Mira state
   const [miraMessage, setMiraMessage] = useState<string | null>(null)
   const [miraOnboarded, setMiraOnboarded] = useState(false)
+  const [slideIndex, setSlideIndex] = useState(0)
+  const [miraFade, setMiraFade] = useState(true)
 
   useEffect(() => {
     if (!email) { navigate('/'); return }
@@ -141,6 +143,30 @@ export default function SetupPage() {
       .catch(console.error)
   }, [email])
 
+  // Streak message personalized
+  const streakMessage = streak === 0
+    ? "No active streak yet. Record today and start building your habit. Speakers who improve fastest show up consistently, not just once."
+    : streak === 1
+    ? "Streak started. Come back tomorrow to keep it going. One session is a start, two in a row is a habit forming."
+    : streak < 5
+    ? `${streak}-day streak. Keep going, you are building a real habit. Consistency separates speakers who improve from those who stay the same.`
+    : streak < 10
+    ? `${streak} days in a row. Impressive. Most people quit before this point. You are proving you are serious about becoming a better speaker.`
+    : `${streak}-day streak. Top 1% of speakers who actually practice consistently. This discipline is what transforms how people perceive you.`
+
+  // Rotate Mira message every 6 seconds
+  useEffect(() => {
+    if (!miraMessage) return
+    const interval = setInterval(() => {
+      setMiraFade(false)
+      setTimeout(() => {
+        setSlideIndex(prev => (prev + 1) % 3)
+        setMiraFade(true)
+      }, 400)
+    }, 6000)
+    return () => clearInterval(interval)
+  }, [miraMessage])
+
   const canRecord = plan === 'pro' || (usageData?.remaining ?? sessionsRemaining) > 0
 
   const handleStart = (isChallenge = false) => {
@@ -175,8 +201,8 @@ export default function SetupPage() {
   return (
     <div style={{ minHeight: '100dvh', background: '#09090B', display: 'flex', flexDirection: 'column', padding: '48px 20px 48px', maxWidth: 480, margin: '0 auto' }}>
 
-      {/* Header — empty, no logo */}
-      <div style={{ marginBottom: 20 }} />
+      {/* Header — no logo, just spacing */}
+      <div style={{ marginBottom: 8 }} />
 
       {/* Trial active banner */}
       {trialExpiry && plan !== 'pro' && (
@@ -196,7 +222,8 @@ export default function SetupPage() {
         borderRadius: 14,
         padding: '14px 16px',
         marginBottom: 20,
-        minHeight: 96,
+        height: 155,
+        overflow: 'hidden',
         display: 'flex',
         gap: 12,
         alignItems: 'flex-start',
@@ -207,19 +234,29 @@ export default function SetupPage() {
           style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid rgba(245,158,11,0.4)', marginTop: 2 }}
         />
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>Mira — your coach</p>
-            <div style={{ background: plan === 'pro' ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${plan === 'pro' ? 'rgba(245,158,11,0.3)' : 'rgba(59,130,246,0.3)'}`, borderRadius: 20, padding: '2px 8px' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: plan === 'pro' ? '#F59E0B' : '#3B82F6' }}>{plan === 'pro' ? 'PRO' : 'FREE'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>Mira — your coach</p>
+            <div style={{ background: plan === 'pro' ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${plan === 'pro' ? 'rgba(245,158,11,0.3)' : 'rgba(59,130,246,0.3)'}`, borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: plan === 'pro' ? '#F59E0B' : '#3B82F6', lineHeight: 1 }}>{plan === 'pro' ? 'PRO' : 'FREE'}</span>
             </div>
           </div>
-          {miraMessage ? (
-            <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>{miraMessage}</p>
-          ) : (
-            <p style={{ fontSize: 13, color: 'rgba(228,213,176,0.4)', lineHeight: 1.65, margin: 0, fontStyle: 'italic' }}>
-              {miraOnboarded ? 'Thinking about your progress...' : 'Complete your first session so I can start coaching you.'}
-            </p>
-          )}
+          <div style={{ opacity: miraFade ? 1 : 0, transition: 'opacity 0.4s ease' }}>
+            {miraMessage ? (
+              slideIndex === 0 ? (
+                <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>
+                  I understand Polish, Spanish, French, Portuguese, German, Italian and more. Fill in your topic, goal and audience in your language, speak naturally, and your entire report will be in your language.
+                </p>
+              ) : slideIndex === 1 ? (
+                <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>{miraMessage}</p>
+              ) : (
+                <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>{streakMessage}</p>
+              )
+            ) : (
+              <p style={{ fontSize: 13, color: 'rgba(228,213,176,0.4)', lineHeight: 1.65, margin: 0, fontStyle: 'italic' }}>
+                {miraOnboarded ? 'Thinking about your progress...' : 'Complete your first session so I can start coaching you.'}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -339,6 +376,14 @@ export default function SetupPage() {
       <NavCard title="Give Feedback" subtitle="Tell us what you would improve." onClick={() => navigate('/feedback')} />
       <NavCard title="Become an Affiliate" subtitle="Earn 50% commission on every referral." onClick={() => navigate('/affiliate')} />
     </div>
+      <div style={{ textAlign: 'center', marginTop: 32, marginBottom: 16 }}>
+        <button
+          onClick={() => { logout(); navigate('/') }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#52525B', fontSize: 13, fontFamily: 'inherit' }}
+        >
+          Log out
+        </button>
+      </div>
+    </div>
   )
 }
-

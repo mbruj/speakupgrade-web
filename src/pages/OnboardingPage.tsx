@@ -22,14 +22,10 @@ const GOALS = [
 ]
 
 const FREQUENCY = [
-  {
-    label: 'Every day',
-    note: 'Recommended',
-    reason: 'Daily practice compounds faster than any other schedule. Daily challenges are free and unlimited.',
-  },
-  { label: 'A few times a week', note: '', reason: '' },
-  { label: 'Once a week', note: '', reason: '' },
-  { label: 'When I have something coming up', note: '', reason: '' },
+  { label: 'Every day', note: 'Recommended' },
+  { label: 'A few times a week', note: '' },
+  { label: 'Once a week', note: '' },
+  { label: 'When I have something coming up', note: '' },
 ]
 
 function MiraBox({ text }: { text: string }) {
@@ -69,6 +65,8 @@ export default function OnboardingPage() {
   const [goalOther, setGoalOther] = useState('')
   const [showGoalInput, setShowGoalInput] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [mira3Message, setMira3Message] = useState<string>('Thinking about your goals...')
+  const [mira3Loading, setMira3Loading] = useState(false)
 
   const handleReason = (val: string) => {
     if (val === 'Other') {
@@ -95,13 +93,47 @@ export default function OnboardingPage() {
       setGoal(val)
       setShowGoalInput(false)
       setScreen(3)
+      generateMira3Message(reason, val)
     }
+  }
+
+  const generateMira3Message = async (userReason: string, userGoal: string) => {
+    setMira3Loading(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `You are Mira, a personal speaking coach for SpeakUPgrade app.
+A new user told you:
+- Why they joined: "${userReason}"
+- Their main goal: "${userGoal}"
+
+Write exactly 2 sentences explaining why practicing speaking DAILY will help them achieve their specific goal. 
+Be direct and specific to their answers. Reference their goal directly.
+Do not use em dashes. Do not use generic phrases. Sound like a real coach, not a marketing email.
+Return only the 2 sentences, nothing else.`
+          }]
+        })
+      })
+      const data = await res.json()
+      const msg = data.content?.[0]?.text?.trim()
+      if (msg) setMira3Message(msg)
+    } catch {
+      setMira3Message("Daily practice is the fastest path to your goal. Speakers who show up consistently improve twice as fast as those who practice once a week.")
+    }
+    setMira3Loading(false)
   }
 
   const handleGoalOtherSubmit = () => {
     if (!goalOther.trim()) return
     setGoal(goalOther.trim())
     setScreen(3)
+    generateMira3Message(reason, goalOther.trim())
   }
 
   const handleFrequency = async (freq: string) => {
@@ -128,15 +160,6 @@ export default function OnboardingPage() {
     navigate('/setup')
   }
 
-  const dot = (n: number) => (
-    <div style={{
-      width: n === screen ? 20 : 8,
-      height: 8,
-      borderRadius: 4,
-      background: n === screen ? '#3B82F6' : 'rgba(255,255,255,0.15)',
-      transition: 'all 0.3s ease',
-    }} />
-  )
 
   const btnStyle = (selected: boolean) => ({
     background: selected ? 'rgba(59,130,246,0.15)' : '#1A1A1E',
@@ -163,15 +186,28 @@ export default function OnboardingPage() {
       fontFamily: 'inherit',
     }}>
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 36 }}>
-        {dot(1)}{dot(2)}{dot(3)}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 36 }}>
+        {[1,2,3].map(n => (
+          <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: n === screen ? '#3B82F6' : n < screen ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 700,
+              color: n === screen ? '#fff' : n < screen ? '#3B82F6' : '#52525B',
+              transition: 'all 0.3s ease',
+            }}>{n}</div>
+            {n < 3 && <div style={{ width: 24, height: 1, background: n < screen ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.08)' }} />}
+          </div>
+        ))}
+        <span style={{ fontSize: 12, color: '#52525B', marginLeft: 4 }}>Step {screen} of 3</span>
       </div>
 
       <div style={{ width: '100%', maxWidth: 440 }}>
 
         {screen === 1 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <MiraBox text="Tell me what brings you here so I can coach you properly." />
+            <MiraBox text="Hi, I am Mira, your personal speaking coach. Before we start, I have a couple of quick questions so I can coach you in the right direction." />
 
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 20px 0', lineHeight: 1.3 }}>
               What brings you to SpeakUPgrade?
@@ -299,17 +335,7 @@ export default function OnboardingPage() {
 
         {screen === 3 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <MiraBox text={
-      reason.includes('job') || reason.includes('interview')
-        ? "People who practice speaking daily are 3 times more likely to get the job. Recruiters remember candidates who sound confident and prepared. Daily sessions build that habit fast."
-        : reason.includes('career') || reason.includes('promoted')
-        ? "The people who get promoted are the ones who speak up clearly in meetings. Daily practice builds the confidence to do that consistently, not just when it matters."
-        : reason.includes('client') || reason.includes('negotiat') || reason.includes('pitch')
-        ? "Clients buy from people who sound certain. Daily practice trains you to stay composed and persuasive under pressure, which is exactly what closes deals."
-        : reason.includes('confidence')
-        ? "Confidence in speaking is a skill, not a personality trait. Daily short sessions rewire how you sound, faster than any other approach."
-        : "Daily practice compounds. Ten minutes a day beats one hour a week. The speakers who improve fastest are the ones who show up consistently."
-    } />
+            <MiraBox text={mira3Loading ? "Thinking about your goals..." : mira3Message} />
 
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 20px 0', lineHeight: 1.3 }}>
               How often can you practice?
@@ -329,24 +355,21 @@ export default function OnboardingPage() {
                   }}
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3, textAlign: 'left' }}>
-                    <span style={{ fontWeight: f.note ? 700 : 400, color: f.note ? '#fff' : '#e4e4e7' }}>{f.label}</span>
-                    {f.reason && (
-                      <span style={{ fontSize: 11, color: '#71717a', lineHeight: 1.4 }}>{f.reason}</span>
-                    )}
+                    <span style={{ fontWeight: f.note ? 600 : 400, color: '#e4e4e7' }}>{f.label}</span>
                   </div>
                   {f.note && (
                     <span style={{
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: 700,
-                      color: '#22C55E',
-                      background: 'rgba(34,197,94,0.1)',
-                      border: '1px solid rgba(34,197,94,0.25)',
+                      color: '#F59E0B',
+                      background: 'rgba(245,158,11,0.1)',
+                      border: '1px solid rgba(245,158,11,0.25)',
                       borderRadius: 20,
-                      padding: '2px 8px',
+                      padding: '2px 7px',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase' as const,
                       flexShrink: 0,
-                      marginLeft: 10,
+                      marginLeft: 8,
                     }}>
                       {f.note}
                     </span>
