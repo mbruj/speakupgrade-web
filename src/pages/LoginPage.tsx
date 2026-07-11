@@ -10,6 +10,20 @@ export default function LoginPage() {
   const setAuth = useAuthStore((s) => s.setAuth)
 
   const [email, setEmail] = useState('')
+  const ROTATING_WORDS = ['interview.', 'presentation.', 'pitch.', 'negotiation.', 'promotion.', 'meeting.', 'clients.']
+  const [wordIndex, setWordIndex] = useState(0)
+  const [wordFade, setWordFade] = useState(true)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWordFade(false)
+      setTimeout(() => {
+        setWordIndex(prev => (prev + 1) % ROTATING_WORDS.length)
+        setWordFade(true)
+      }, 300)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
   const [code, setCode] = useState('')
   const [step, setStep] = useState<'email' | 'code'>('email')
   const [loading, setLoading] = useState(false)
@@ -125,7 +139,15 @@ export default function LoginPage() {
           </div>
           <p style={{ color: '#A1A1AA', fontSize: 15, lineHeight: 1.6 }}>
             {step === 'email'
-              ? <>Better speaking. More impact.<br />Enter your email to get access.</>
+              ? <>
+                  <div style={{ marginBottom: 16 }}>
+                    <span style={{ color: '#ffffff', fontSize: 22, fontWeight: 700 }}>Win your </span>
+                    <span style={{ color: '#3B82F6', fontSize: 22, fontWeight: 700, opacity: wordFade ? 1 : 0, transition: 'opacity 0.3s ease', display: 'inline-block' }}>
+                      {ROTATING_WORDS[wordIndex]}
+                    </span>
+                  </div>
+                  Enter your email to get access.
+                </>
               : <>Check your email.<br />Enter the 6-digit code we sent to <strong style={{ color: '#ffffff' }}>{email}</strong></>
             }
           </p>
