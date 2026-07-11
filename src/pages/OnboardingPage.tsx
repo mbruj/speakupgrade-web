@@ -22,11 +22,40 @@ const GOALS = [
 ]
 
 const FREQUENCY = [
-  { label: 'Every day', note: '' },
-  { label: 'A few times a week', note: 'Recommended' },
-  { label: 'Once a week', note: '' },
-  { label: 'When I have something coming up', note: '' },
+  {
+    label: 'Every day',
+    note: 'Recommended',
+    reason: 'Daily practice compounds faster than any other schedule. Daily challenges are free and unlimited.',
+  },
+  { label: 'A few times a week', note: '', reason: '' },
+  { label: 'Once a week', note: '', reason: '' },
+  { label: 'When I have something coming up', note: '', reason: '' },
 ]
+
+function MiraBox({ text }: { text: string }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 12,
+      background: 'rgba(245,158,11,0.07)',
+      border: '1px solid rgba(245,158,11,0.2)',
+      borderRadius: 12,
+      padding: '12px 14px',
+      marginBottom: 24,
+    }}>
+      <img
+        src={MIRA_IMG}
+        alt="Mira"
+        style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(245,158,11,0.5)', flexShrink: 0 }}
+      />
+      <div>
+        <p style={{ margin: '0 0 3px 0', fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Mira, your coach</p>
+        <p style={{ margin: 0, fontSize: 13, color: '#e4d5b0', lineHeight: 1.6 }}>{text}</p>
+      </div>
+    </div>
+  )
+}
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
@@ -88,7 +117,7 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          focus: `${finalReason}. Goal: ${finalGoal}. Frequency: ${freq}`,
+          focus: `${finalGoal}. Practice frequency: ${freq}.`,
           motivation: finalReason,
         }),
       })
@@ -109,6 +138,20 @@ export default function OnboardingPage() {
     }} />
   )
 
+  const btnStyle = (selected: boolean) => ({
+    background: selected ? 'rgba(59,130,246,0.15)' : '#1A1A1E',
+    border: `1px solid ${selected ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
+    borderRadius: 10,
+    padding: '14px 16px',
+    textAlign: 'left' as const,
+    color: '#e4e4e7',
+    fontSize: 14,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    transition: 'all 0.15s ease',
+    width: '100%',
+  })
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -116,34 +159,19 @@ export default function OnboardingPage() {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'flex-start',
       padding: '40px 20px 60px',
       fontFamily: 'inherit',
     }}>
 
-      {/* Progress dots */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 40 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 36 }}>
         {dot(1)}{dot(2)}{dot(3)}
       </div>
 
       <div style={{ width: '100%', maxWidth: 440 }}>
 
-        {/* SCREEN 1 — Welcome + Reason */}
         {screen === 1 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-              <img
-                src={MIRA_IMG}
-                alt="Mira"
-                style={{ width: 52, height: 52, borderRadius: '50%', border: '2px solid rgba(245,158,11,0.5)', flexShrink: 0 }}
-              />
-              <div>
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 3 }}>Mira, your coach</p>
-                <p style={{ margin: 0, fontSize: 14, color: '#e4d5b0', lineHeight: 1.5 }}>
-                  Tell me what brings you here so I can coach you properly.
-                </p>
-              </div>
-            </div>
+            <MiraBox text="Tell me what brings you here so I can coach you properly." />
 
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 20px 0', lineHeight: 1.3 }}>
               What brings you to SpeakUPgrade?
@@ -151,40 +179,12 @@ export default function OnboardingPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {REASONS.map(r => (
-                <button
-                  key={r}
-                  onClick={() => handleReason(r)}
-                  style={{
-                    background: reason === r ? 'rgba(59,130,246,0.15)' : '#1A1A1E',
-                    border: `1px solid ${reason === r ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                    borderRadius: 10,
-                    padding: '14px 16px',
-                    textAlign: 'left',
-                    color: '#e4e4e7',
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
+                <button key={r} onClick={() => handleReason(r)} style={btnStyle(reason === r)}>
                   {r}
                 </button>
               ))}
               {!showReasonInput ? (
-                <button
-                  onClick={() => handleReason('Other')}
-                  style={{
-                    background: '#1A1A1E',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '14px 16px',
-                    textAlign: 'left',
-                    color: '#71717a',
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
+                <button onClick={() => handleReason('Other')} style={{ ...btnStyle(false), color: '#71717a' }}>
                   Other
                 </button>
               ) : (
@@ -205,6 +205,8 @@ export default function OnboardingPage() {
                       fontSize: 14,
                       fontFamily: 'inherit',
                       outline: 'none',
+                      width: '100%',
+                      boxSizing: 'border-box' as const,
                     }}
                   />
                   <button
@@ -231,52 +233,22 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* SCREEN 2 — Goal */}
         {screen === 2 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 8px 0', lineHeight: 1.3 }}>
+            <MiraBox text="Please tell me more about yourself so I can advise you better." />
+
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 20px 0', lineHeight: 1.3 }}>
               What is your main goal?
             </h2>
-            <p style={{ color: '#71717a', fontSize: 14, margin: '0 0 24px 0', lineHeight: 1.6 }}>
-              Mira will focus her coaching on this.
-            </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {GOALS.map(g => (
-                <button
-                  key={g}
-                  onClick={() => handleGoal(g)}
-                  style={{
-                    background: goal === g ? 'rgba(59,130,246,0.15)' : '#1A1A1E',
-                    border: `1px solid ${goal === g ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                    borderRadius: 10,
-                    padding: '14px 16px',
-                    textAlign: 'left',
-                    color: '#e4e4e7',
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
+                <button key={g} onClick={() => handleGoal(g)} style={btnStyle(goal === g)}>
                   {g}
                 </button>
               ))}
               {!showGoalInput ? (
-                <button
-                  onClick={() => handleGoal('Other')}
-                  style={{
-                    background: '#1A1A1E',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '14px 16px',
-                    textAlign: 'left',
-                    color: '#71717a',
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
+                <button onClick={() => handleGoal('Other')} style={{ ...btnStyle(false), color: '#71717a' }}>
                   Other
                 </button>
               ) : (
@@ -297,6 +269,8 @@ export default function OnboardingPage() {
                       fontSize: 14,
                       fontFamily: 'inherit',
                       outline: 'none',
+                      width: '100%',
+                      boxSizing: 'border-box' as const,
                     }}
                   />
                   <button
@@ -323,15 +297,23 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* SCREEN 3 — Frequency */}
         {screen === 3 && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 8px 0', lineHeight: 1.3 }}>
+            <MiraBox text={
+      reason.includes('job') || reason.includes('interview')
+        ? "People who practice speaking daily are 3 times more likely to get the job. Recruiters remember candidates who sound confident and prepared. Daily sessions build that habit fast."
+        : reason.includes('career') || reason.includes('promoted')
+        ? "The people who get promoted are the ones who speak up clearly in meetings. Daily practice builds the confidence to do that consistently, not just when it matters."
+        : reason.includes('client') || reason.includes('negotiat') || reason.includes('pitch')
+        ? "Clients buy from people who sound certain. Daily practice trains you to stay composed and persuasive under pressure, which is exactly what closes deals."
+        : reason.includes('confidence')
+        ? "Confidence in speaking is a skill, not a personality trait. Daily short sessions rewire how you sound, faster than any other approach."
+        : "Daily practice compounds. Ten minutes a day beats one hour a week. The speakers who improve fastest are the ones who show up consistently."
+    } />
+
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 20px 0', lineHeight: 1.3 }}>
               How often can you practice?
             </h2>
-            <p style={{ color: '#71717a', fontSize: 14, margin: '0 0 24px 0', lineHeight: 1.6 }}>
-              Speakers who practice 3 times a week improve twice as fast as those who practice once.
-            </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {FREQUENCY.map(f => (
@@ -340,22 +322,18 @@ export default function OnboardingPage() {
                   onClick={() => handleFrequency(f.label)}
                   disabled={saving}
                   style={{
-                    background: '#1A1A1E',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '14px 16px',
-                    textAlign: 'left',
-                    color: '#e4e4e7',
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
+                    ...btnStyle(false),
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    transition: 'all 0.15s ease',
                   }}
                 >
-                  <span>{f.label}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3, textAlign: 'left' }}>
+                    <span style={{ fontWeight: f.note ? 700 : 400, color: f.note ? '#fff' : '#e4e4e7' }}>{f.label}</span>
+                    {f.reason && (
+                      <span style={{ fontSize: 11, color: '#71717a', lineHeight: 1.4 }}>{f.reason}</span>
+                    )}
+                  </div>
                   {f.note && (
                     <span style={{
                       fontSize: 10,
@@ -366,7 +344,9 @@ export default function OnboardingPage() {
                       borderRadius: 20,
                       padding: '2px 8px',
                       letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
+                      textTransform: 'uppercase' as const,
+                      flexShrink: 0,
+                      marginLeft: 10,
                     }}>
                       {f.note}
                     </span>
