@@ -71,6 +71,7 @@ export default function SetupPage() {
   const { email, plan, sessionsRemaining, logout } = useAuthStore()
   const { setParams } = useSessionStore()
 
+  const [isPrefilled] = useState(() => !!localStorage.getItem('prefill_topic'))
   const [topic, setTopic] = useState(() => {
     const v = localStorage.getItem('prefill_topic')
     if (v) { localStorage.removeItem('prefill_topic'); return v }
@@ -324,15 +325,26 @@ export default function SetupPage() {
       <button
         onClick={() => handleStart(challengeActive)}
         disabled={!topic.trim() || !goal.trim() || !canRecord}
+        className={isPrefilled && !challengeActive ? 'pulse-btn' : ''}
         style={{ width: '100%', background: challengeActive ? '#F59E0B' : '#3B82F6', color: '#ffffff', fontWeight: 700, fontSize: 16, padding: '16px', borderRadius: 12, border: 'none', cursor: (!topic.trim() || !goal.trim() || !canRecord) ? 'not-allowed' : 'pointer', opacity: (!topic.trim() || !goal.trim() || !canRecord) ? 0.4 : 1, fontFamily: 'inherit', marginBottom: challengeActive ? 8 : 20 }}
       >
-        {challengeActive ? 'Start Challenge' : 'Start Recording'}
+        {challengeActive ? 'Start Challenge' : isPrefilled ? 'Start my first session' : 'Start Recording'}
       </button>
 
       {!challengeActive && (
         <p style={{ textAlign: 'center', fontSize: 11, color: '#52525B', margin: '-12px 0 20px 0' }}>
           Audio and video are never stored — deleted after analysis
         </p>
+      )}
+      {isPrefilled && (
+        <style>{`
+          @keyframes pulseBtn {
+            0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+            70% { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+            100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+          }
+          .pulse-btn { animation: pulseBtn 1.8s ease-in-out infinite; }
+        \`}</style>
       )}
 
       {challengeActive && (

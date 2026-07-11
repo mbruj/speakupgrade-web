@@ -74,7 +74,7 @@ export default function MiraEditPage() {
         <div style={{ background: 'rgba(245,158,11,0.07)', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(245,158,11,0.2)', flex: 1 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px 0' }}>Mira, your coach</p>
           <p style={{ fontSize: 13, color: '#e4d5b0', lineHeight: 1.65, margin: 0 }}>
-            Update your answers so I can give you better coaching. The more specific you are, the more useful I become.
+            The more you tell me, the better I can coach you. Updating these answers directly improves the feedback I give you after every session.
           </p>
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function MiraEditPage() {
 
           <div>
             <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', marginBottom: 8 }}>
-              WHY DO YOU WANT TO IMPROVE YOUR SPEAKING SKILLS?
+              WHY IS THIS GOAL IMPORTANT TO YOU?
             </p>
             <textarea
               rows={3}

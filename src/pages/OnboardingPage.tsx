@@ -14,19 +14,19 @@ const REASONS = [
 ]
 
 const GOALS_BY_REASON: Record<string, string[]> = {
-  'Presentation or pitch': ['Get client to buy', 'Impress investors', 'Deliver a keynote', 'Train a team', 'Pass a work presentation'],
-  'Job interview': ['Get the job offer', 'Stand out from candidates', 'Answer confidently under pressure', 'Change career field'],
-  'Career growth': ['Get promoted', 'Be taken seriously in meetings', 'Lead with more authority', 'Increase my visibility'],
-  'Client or stakeholder meetings': ['Close the deal', 'Get stakeholder buy-in', 'Negotiate a better outcome', 'Present results clearly'],
-  'Build speaking confidence': ['Stop using filler words', 'Speak without anxiety', 'Sound more authoritative', 'Hold attention in a room'],
+  'Presentation or pitch': ['Get client to say yes', 'Deliver with confidence', 'Handle tough questions', 'Make it memorable', 'Land the key message'],
+  'Job interview': ['Get an offer', 'Answer confidently', 'Reduce nerves', 'Stand out from other candidates', 'Change career field'],
+  'Career growth': ['Get promoted', 'Be taken seriously in meetings', 'Lead with more authority', 'Increase my visibility at work'],
+  'Client or stakeholder meetings': ['Close the deal', 'Get buy-in from the room', 'Negotiate a better outcome', 'Present results clearly'],
+  'Build speaking confidence': ['Stop using filler words', 'Speak without anxiety', 'Hold attention in a room', 'Sound more authoritative'],
 }
 
 const SCREEN2_HEADLINE: Record<string, string> = {
-  'Presentation or pitch': 'What outcome do you want?',
-  'Job interview': 'What interview are you preparing for?',
-  'Career growth': 'What does success look like for you?',
-  'Client or stakeholder meetings': 'What do you want to walk away with?',
-  'Build speaking confidence': 'What would feeling confident look like?',
+  'Presentation or pitch': 'What does success look like?',
+  'Job interview': 'What does success look like?',
+  'Career growth': 'What does success look like?',
+  'Client or stakeholder meetings': 'What does success look like?',
+  'Build speaking confidence': 'What does success look like?',
 }
 
 const SCREEN2_MIRA: Record<string, string> = {
@@ -73,9 +73,23 @@ const SCREEN3_MIRA: Record<string, Record<string, string>> = {
 }
 
 function getScreen3Message(reason: string, goal: string): string {
-  const byReason = SCREEN3_MIRA[reason]
-  if (!byReason) return 'Daily practice is the fastest path to your goal. Speakers who show up consistently improve twice as fast as those who practice once a week.'
-  return byReason[goal] || byReason['default'] || 'Daily practice is the fastest path to your goal.'
+  const g = goal.toLowerCase()
+  if (g.includes('offer') || g.includes('interview') || g.includes('nerves')) {
+    return `Based on your goal, 5 minutes a day is the fastest way to prepare. Interviewers notice the candidates who sound practiced, not just prepared.`
+  }
+  if (g.includes('promoted') || g.includes('visibility') || g.includes('taken seriously')) {
+    return `Based on your goal, 5 minutes a day is the fastest way to improve. The people who get promoted are the ones who speak up consistently, not just once.`
+  }
+  if (g.includes('deal') || g.includes('buy-in') || g.includes('negotiate') || g.includes('client')) {
+    return `Based on your goal, 5 minutes a day is the fastest way to improve. Clients buy from people who sound certain, and that certainty is built through repetition.`
+  }
+  if (g.includes('filler') || g.includes('anxiety') || g.includes('confident') || g.includes('authoritative') || g.includes('attention')) {
+    return `Based on your goal, 5 minutes a day is the fastest way to improve. Confidence is built through repetition, not willpower. Small daily sessions compound fast.`
+  }
+  if (g.includes('memorable') || g.includes('key message') || g.includes('tough questions') || g.includes('say yes')) {
+    return `Based on your goal, 5 minutes a day is the fastest way to improve. Great presenters practice daily, not just before the big moment.`
+  }
+  return `Based on your goal, 5 minutes a day is the fastest way to improve. Speakers who practice consistently improve twice as fast as those who practice once a week.`
 }
 
 function MiraBox({ text }: { text: string }) {
