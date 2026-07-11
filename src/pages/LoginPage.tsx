@@ -21,7 +21,7 @@ export default function LoginPage() {
         setWordIndex(prev => (prev + 1) % ROTATING_WORDS.length)
         setWordFade(true)
       }, 300)
-    }, 5000)
+    }, 1000)
     return () => clearInterval(interval)
   }, [])
   const [code, setCode] = useState('')
