@@ -177,20 +177,20 @@ export default function SetupPage() {
     fetch(`${API_URL}/stats/community?email=${encodeURIComponent(email || '')}`)
       .then(r => r.json())
       .then(data => {
-        if (data.score_percentile) messages.push(`Your average score is higher than ${data.score_percentile}% of speakers this month.`)
-        if (data.streak_percentile) messages.push(`Your streak puts you in the top ${100 - data.streak_percentile}% of consistent speakers.`)
-        if (data.sessions_this_week) messages.push(`You have recorded ${data.sessions_this_week} sessions this week. Most users record 1.`)
-        if (data.filler_percentile) messages.push(`Your filler word count is lower than ${data.filler_percentile}% of users this week.`)
+        if (data.score_percentile) messages.push(`Higher score than ${data.score_percentile}% of speakers this month.`)
+        if (data.streak_percentile) messages.push(`Top ${100 - data.streak_percentile}% for consistency this month.`)
+        if (data.sessions_this_week) messages.push(`${data.sessions_this_week} sessions this week. Most users record 1.`)
+        if (data.filler_percentile) messages.push(`Fewer filler words than ${data.filler_percentile}% of users.`)
       })
       .catch(() => {})
       .finally(() => {
         // Always add synthetic fallback messages
         const syntheticBase = [
           "143 speakers practiced this week. Keep going.",
-          "Speakers who practice 3 times a week improve twice as fast.",
-          "Top 10% of speakers practice every day. You are building that habit.",
-          "82 sessions recorded globally today. You are one of the consistent ones.",
-          "Speakers with a streak of 5 or more days improve 40% faster.",
+          "Practice 3x a week and improve twice as fast.",
+          "Top 10% of speakers practice every day.",
+          "82 sessions recorded today. Keep going.",
+          "A 5-day streak means 40% faster improvement.",
         ]
         const combined = [...messages, ...syntheticBase].slice(0, 6)
         setTickerMessages(combined)
@@ -317,11 +317,11 @@ export default function SetupPage() {
         <div style={{ overflow: 'hidden', marginBottom: 16, marginTop: -8 }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            background: 'rgba(59,130,246,0.06)',
-            border: '1px solid rgba(59,130,246,0.12)',
+            background: 'rgba(245,158,11,0.06)',
+            border: '1px solid rgba(245,158,11,0.15)',
             borderRadius: 8, padding: '8px 12px',
           }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3B82F6', flexShrink: 0, animation: 'pulse 2s infinite' }} />
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B', flexShrink: 0, animation: 'pulse 2s infinite' }} />
             <div style={{ overflow: 'hidden', flex: 1 }}>
               <p
                 key={tickerIndex}
@@ -329,6 +329,7 @@ export default function SetupPage() {
                   margin: 0, fontSize: 12, color: '#64748b', whiteSpace: 'nowrap',
                   overflow: 'hidden', textOverflow: 'ellipsis',
                   animation: 'slideIn 0.4s ease',
+                color: '#F59E0B',
                 }}
               >
                 {tickerMessages[tickerIndex]}
