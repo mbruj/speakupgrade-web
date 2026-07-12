@@ -173,8 +173,6 @@ export default function SetupPage() {
   // Show consent modal for users with null newsletter_consent
   useEffect(() => {
     if (!email) return
-    // Only show for m@bruj.com during testing
-    if (email !== 'm@bruj.com') return
     fetch(`${API_URL}/auth/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
