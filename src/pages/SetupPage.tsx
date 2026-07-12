@@ -445,8 +445,8 @@ export default function SetupPage() {
           Audio and video are never stored — deleted after analysis
         </p>
       )}
-      {isPrefilled && (
-        {/* Newsletter consent modal */}
+
+      {/* Newsletter consent modal */}
       {showConsentModal && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
