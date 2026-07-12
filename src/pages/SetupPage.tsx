@@ -72,6 +72,7 @@ export default function SetupPage() {
   const { setParams } = useSessionStore()
 
   const [isPrefilled] = useState(() => !!localStorage.getItem('prefill_topic'))
+  const [showConsentModal, setShowConsentModal] = useState(false)
   const [topic, setTopic] = useState(() => {
     const v = localStorage.getItem('prefill_topic')
     if (v) { localStorage.removeItem('prefill_topic'); return v }
@@ -168,6 +169,38 @@ export default function SetupPage() {
     : streak < 10
     ? `${streak} days in a row. Impressive. Most people quit before this point. You are proving you are serious about becoming a better speaker.`
     : `${streak}-day streak. Top 1% of speakers who actually practice consistently. This discipline is what transforms how people perceive you.`
+
+  // Show consent modal for users with null newsletter_consent
+  useEffect(() => {
+    if (!email) return
+    // Only show for m@bruj.com during testing
+    if (email !== 'm@bruj.com') return
+    fetch(`${API_URL}/auth/check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.newsletter_consent === null || data.newsletter_consent === undefined) {
+          setShowConsentModal(true)
+        }
+      })
+      .catch(() => {})
+  }, [email])
+
+  const handleConsent = async (consent: boolean) => {
+    try {
+      await fetch(`${API_URL}/otp/consent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newsletterConsent: consent })
+      })
+    } catch (e) {
+      console.error('Consent update error:', e)
+    }
+    setShowConsentModal(false)
+  }
 
   // Generate ticker messages — real data where available, synthetic fallback
   useEffect(() => {
@@ -413,7 +446,61 @@ export default function SetupPage() {
         </p>
       )}
       {isPrefilled && (
-        <style dangerouslySetInnerHTML={{ __html: `
+        {/* Newsletter consent modal */}
+      {showConsentModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.85)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 24,
+        }}>
+          <div style={{
+            background: '#0c1117', borderRadius: 16,
+            border: '1px solid rgba(245,158,11,0.2)',
+            padding: 28, maxWidth: 400, width: '100%',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <img
+                src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png"
+                alt="Mira"
+                style={{ width: 44, height: 44, borderRadius: '50%', border: '1.5px solid rgba(245,158,11,0.5)', flexShrink: 0 }}
+              />
+              <div>
+                <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Mira, your coach</p>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#ffffff' }}>Stay on track with Mira</p>
+              </div>
+            </div>
+            <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.7, marginBottom: 24 }}>
+              Mira sends you a personal coaching message 3 times a week based on your actual session data. No generic tips. Specific feedback on your pace, confidence and filler words. You can unsubscribe anytime.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={() => handleConsent(true)}
+                style={{
+                  background: '#F59E0B', color: '#1a1a1a', fontWeight: 700,
+                  fontSize: 14, padding: '13px', borderRadius: 10, border: 'none',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                Yes, send me coaching tips
+              </button>
+              <button
+                onClick={() => handleConsent(false)}
+                style={{
+                  background: 'transparent', color: '#52525B', fontWeight: 600,
+                  fontSize: 13, padding: '13px', borderRadius: 10,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                No thanks
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
           @keyframes pulseBtn {
             0% { box-shadow: 0 0 0 0 rgba(245,158,11,0.8); transform: scale(1); }
             50% { box-shadow: 0 0 0 16px rgba(245,158,11,0); transform: scale(1.02); }
