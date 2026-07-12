@@ -508,7 +508,6 @@ export default function SetupPage() {
           }
           .pulse-btn { animation: pulseBtn 1.2s ease-in-out infinite; }
         `}} />
-      )}
 
       {challengeActive && (
         <button
