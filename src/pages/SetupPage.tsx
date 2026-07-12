@@ -352,15 +352,15 @@ export default function SetupPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 24 }}>
         <div>
           <FieldLabel text="PRESENTATION TOPIC" />
-          <input type="text" placeholder="What is your speech topic today?" value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={200} />
+          <input type="text" placeholder="What is your speech topic today?" value={topic} onChange={(e) => { if (!challengeActive) setTopic(e.target.value) }} maxLength={200} readOnly={challengeActive} style={challengeActive ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
         </div>
         <div>
           <FieldLabel text="YOUR GOAL" />
-          <input type="text" placeholder="e.g. Get the audience to buy the product" value={goal} onChange={(e) => setGoal(e.target.value)} maxLength={200} />
+          <input type="text" placeholder="e.g. Get the audience to buy the product" value={goal} onChange={(e) => { if (!challengeActive) setGoal(e.target.value) }} maxLength={200} readOnly={challengeActive} style={challengeActive ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
         </div>
         <div>
           <FieldLabel text="AUDIENCE (optional)" />
-          <input type="text" placeholder="e.g. 20 investors, technical background" value={audience} onChange={(e) => setAudience(e.target.value)} maxLength={100} />
+          <input type="text" placeholder="e.g. 20 investors, technical background" value={audience} onChange={(e) => { if (!challengeActive) setAudience(e.target.value) }} maxLength={100} readOnly={challengeActive} style={challengeActive ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
         </div>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
