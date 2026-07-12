@@ -10,36 +10,36 @@ function getTodayKey() {
 }
 
 const DAILY_CHALLENGES = [
-  { topic: 'Why public speaking matters', goal: 'Convince the audience that speaking skills change careers' },
-  { topic: 'A product you love', goal: 'Make the audience want to buy it immediately' },
-  { topic: 'Your biggest lesson from last year', goal: 'Leave the audience with one actionable takeaway' },
+  { topic: 'Why public speaking matters', goal: 'Convince the audience that speaking skills change careers', audience: 'Professionals looking to grow their career' },
+  { topic: 'A product you love', goal: 'Make the audience want to buy it immediately', audience: 'Potential customers unfamiliar with the product' },
+  { topic: 'Your biggest lesson from last year', goal: 'Leave the audience with one actionable takeaway', audience: 'Peers at a team meeting' },
   { topic: 'Why sleep is underrated', goal: 'Change one person\'s bedtime habit' },
-  { topic: 'Explain your job to a 10-year-old', goal: 'Make them understand and find it interesting' },
-  { topic: 'A mistake you made and what you learned', goal: 'Make the audience trust you more after hearing it' },
-  { topic: 'Why reading books is worth it', goal: 'Get someone to start a book this week' },
-  { topic: 'The best advice you ever received', goal: 'Make the audience remember it a week from now' },
-  { topic: 'Why exercise changes your mindset', goal: 'Motivate someone to move their body today' },
-  { topic: 'A city or country you love', goal: 'Make the audience want to visit it' },
-  { topic: 'Why saying no is a skill', goal: 'Help the audience feel confident setting boundaries' },
-  { topic: 'Your morning routine', goal: 'Inspire at least one person to change theirs' },
+  { topic: 'Explain your job to a 10-year-old', goal: 'Make them understand and find it interesting', audience: 'A curious child with no industry knowledge' },
+  { topic: 'A mistake you made and what you learned', goal: 'Make the audience trust you more after hearing it', audience: 'A team you lead or work closely with' },
+  { topic: 'Why reading books is worth it', goal: 'Get someone to start a book this week', audience: 'People who say they have no time to read' },
+  { topic: 'The best advice you ever received', goal: 'Make the audience remember it a week from now', audience: 'Young professionals early in their career' },
+  { topic: 'Why exercise changes your mindset', goal: 'Motivate someone to move their body today', audience: 'People who struggle with consistency' },
+  { topic: 'A city or country you love', goal: 'Make the audience want to visit it', audience: 'Friends or colleagues planning a trip' },
+  { topic: 'Why saying no is a skill', goal: 'Help the audience feel confident setting boundaries', audience: 'People pleasers who struggle to set limits' },
+  { topic: 'Your morning routine', goal: 'Inspire at least one person to change theirs', audience: 'People looking to improve their daily habits' },
   { topic: 'Why AI won\'t replace human connection', goal: 'Reassure a skeptical audience' },
-  { topic: 'A book that changed how you think', goal: 'Make someone add it to their reading list' },
-  { topic: 'Why learning a second language is worth it', goal: 'Motivate someone who gave up to try again' },
-  { topic: 'What makes a great leader', goal: 'Give the audience a framework they can apply tomorrow' },
-  { topic: 'Why travel teaches more than school', goal: 'Make a skeptic reconsider their next vacation' },
-  { topic: 'The power of asking better questions', goal: 'Change how the audience approaches conversations' },
-  { topic: 'Why consistency beats motivation', goal: 'Help someone stop waiting to feel ready' },
-  { topic: 'A skill everyone should learn', goal: 'Make the audience genuinely want to start learning it' },
-  { topic: 'Why silence is powerful in conversation', goal: 'Make the audience more comfortable with pauses' },
-  { topic: 'The difference between busy and productive', goal: 'Make someone reconsider how they spend their day' },
-  { topic: 'Why failure is misunderstood', goal: 'Reframe failure as a tool, not a setback' },
-  { topic: 'Something you changed your mind about', goal: 'Show intellectual honesty and earn trust' },
-  { topic: 'Why small habits compound', goal: 'Get the audience to start one small habit today' },
-  { topic: 'Your vision for the next five years', goal: 'Make the audience believe in your direction' },
-  { topic: 'Why kindness is underestimated in business', goal: 'Make a cynical audience reconsider' },
-  { topic: 'The most important skill for the next decade', goal: 'Make the audience prioritize learning it' },
-  { topic: 'Why boredom is good for creativity', goal: 'Convince someone to put their phone down' },
-  { topic: 'What you wish you knew at 20', goal: 'Give the audience something they can use today' },
+  { topic: 'A book that changed how you think', goal: 'Make someone add it to their reading list', audience: 'Curious people open to new ideas' },
+  { topic: 'Why learning a second language is worth it', goal: 'Motivate someone who gave up to try again', audience: 'Adults who tried and quit language learning' },
+  { topic: 'What makes a great leader', goal: 'Give the audience a framework they can apply tomorrow', audience: 'Managers and team leads' },
+  { topic: 'Why travel teaches more than school', goal: 'Make a skeptic reconsider their next vacation', audience: 'People who prioritize work over travel' },
+  { topic: 'The power of asking better questions', goal: 'Change how the audience approaches conversations', audience: 'Sales professionals and team managers' },
+  { topic: 'Why consistency beats motivation', goal: 'Help someone stop waiting to feel ready', audience: 'People who start things but rarely finish them' },
+  { topic: 'A skill everyone should learn', goal: 'Make the audience genuinely want to start learning it', audience: 'General audience open to self-improvement' },
+  { topic: 'Why silence is powerful in conversation', goal: 'Make the audience more comfortable with pauses', audience: 'People who fill silence with filler words' },
+  { topic: 'The difference between busy and productive', goal: 'Make someone reconsider how they spend their day', audience: 'Overworked professionals feeling stuck' },
+  { topic: 'Why failure is misunderstood', goal: 'Reframe failure as a tool, not a setback', audience: 'Entrepreneurs and ambitious professionals' },
+  { topic: 'Something you changed your mind about', goal: 'Show intellectual honesty and earn trust', audience: 'A sceptical but open-minded audience' },
+  { topic: 'Why small habits compound', goal: 'Get the audience to start one small habit today', audience: 'People who want to change but feel overwhelmed' },
+  { topic: 'Your vision for the next five years', goal: 'Make the audience believe in your direction', audience: 'Potential investors or senior stakeholders' },
+  { topic: 'Why kindness is underestimated in business', goal: 'Make a cynical audience reconsider', audience: 'Competitive professionals in fast-paced environments' },
+  { topic: 'The most important skill for the next decade', goal: 'Make the audience prioritize learning it', audience: 'Students and early-career professionals' },
+  { topic: 'Why boredom is good for creativity', goal: 'Convince someone to put their phone down', audience: 'People constantly attached to their devices' },
+  { topic: 'What you wish you knew at 20', goal: 'Give the audience something they can use today', audience: 'Young adults at the start of their journey' },
 ]
 
 function todaysChallenge() {
@@ -220,6 +220,7 @@ export default function SetupPage() {
   const handleStart = (isChallenge = false) => {
     const finalTopic = isChallenge ? challenge.topic : topic.trim()
     const finalGoal = isChallenge ? challenge.goal : goal.trim()
+    const finalAudience = isChallenge ? (challenge.audience || '') : audience.trim()
     if (!finalTopic || !finalGoal) return
 
     if (isChallenge && !challengeDoneToday && email) {
@@ -238,7 +239,7 @@ export default function SetupPage() {
     setParams({
       topic: finalTopic,
       goal: finalGoal,
-      audience: audience.trim(),
+      audience: finalAudience,
       targetSeconds: challengeActive ? 120 : targetMinutes * 60,
       isChallenge,
     })
@@ -360,7 +361,7 @@ export default function SetupPage() {
         </div>
         <div>
           <FieldLabel text="AUDIENCE (optional)" />
-          <input type="text" placeholder="e.g. 20 investors, technical background" value={audience} onChange={(e) => { if (!challengeActive) setAudience(e.target.value) }} maxLength={100} readOnly={challengeActive} style={challengeActive ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
+          <input type="text" placeholder="e.g. 20 investors, technical background" value={challengeActive ? (challenge.audience || '') : audience} onChange={(e) => { if (!challengeActive) setAudience(e.target.value) }} maxLength={100} readOnly={challengeActive} style={challengeActive ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
         </div>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
