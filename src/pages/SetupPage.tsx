@@ -286,6 +286,9 @@ export default function SetupPage() {
             <div style={{ background: plan === 'pro' ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${plan === 'pro' ? 'rgba(245,158,11,0.3)' : 'rgba(59,130,246,0.3)'}`, borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
               <span style={{ fontSize: 9, fontWeight: 700, color: plan === 'pro' ? '#F59E0B' : '#3B82F6', lineHeight: 1 }}>{plan === 'pro' ? 'PRO' : 'FREE'}</span>
             </div>
+            <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#F59E0B', lineHeight: 1 }}>{streak} DAY STREAK</span>
+            </div>
           </div>
           <div style={{ opacity: miraFade ? 1 : 0, transition: 'opacity 0.4s ease' }}>
             {miraMessage ? (
