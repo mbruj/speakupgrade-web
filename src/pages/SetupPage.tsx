@@ -171,29 +171,24 @@ export default function SetupPage() {
 
   // Generate ticker messages — real data where available, synthetic fallback
   useEffect(() => {
-    const messages: string[] = []
-
-    // Fetch real stats from backend
     fetch(`${API_URL}/stats/community?email=${encodeURIComponent(email || '')}`)
       .then(r => r.json())
       .then(data => {
-        if (data.score_percentile) messages.push(`Higher score than ${data.score_percentile}% of speakers this month.`)
-        if (data.streak_percentile) messages.push(`Top ${100 - data.streak_percentile}% for consistency this month.`)
-        if (data.sessions_this_week) messages.push(`${data.sessions_this_week} sessions recorded this week. Keep going.`)
-        if (data.filler_percentile) messages.push(`Fewer filler words than ${data.filler_percentile}% of users.`)
+        const messages: string[] = []
+        if (data.users_this_week) messages.push(`${data.users_this_week} speakers practiced this week.`)
+        if (data.sessions_this_week) messages.push(`${data.sessions_this_week} sessions recorded this week.`)
+        if (data.score_percentile) messages.push(`Higher score than ${data.score_percentile}% of speakers.`)
+        messages.push("Practice 3x a week and improve twice as fast.")
+        messages.push("Top 10% of speakers practice every day.")
+        messages.push("A 5-day streak means 40% faster improvement.")
+        setTickerMessages(messages)
       })
-      .catch(() => {})
-      .finally(() => {
-        // Always add synthetic fallback messages
-        const syntheticBase = [
-          "143 speakers practiced this week. Keep going.",
+      .catch(() => {
+        setTickerMessages([
           "Practice 3x a week and improve twice as fast.",
           "Top 10% of speakers practice every day.",
-          "82 sessions recorded today. Keep going.",
           "A 5-day streak means 40% faster improvement.",
-        ]
-        const combined = [...messages, ...syntheticBase].slice(0, 6)
-        setTickerMessages(combined)
+        ])
       })
   }, [email])
 
