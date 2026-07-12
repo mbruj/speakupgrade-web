@@ -215,6 +215,7 @@ export default function SetupPage() {
   }, [miraMessage])
 
   const canRecord = plan === 'pro' || (usageData?.remaining ?? sessionsRemaining) > 0
+  const canRecordChallenge = !challengeDoneToday // challenges always available, 1 per day
 
   const handleStart = (isChallenge = false) => {
     const finalTopic = isChallenge ? challenge.topic : topic.trim()
@@ -398,9 +399,9 @@ export default function SetupPage() {
 
       <button
         onClick={() => handleStart(challengeActive)}
-        disabled={!topic.trim() || !goal.trim() || !canRecord}
+        disabled={challengeActive ? !canRecordChallenge : (!topic.trim() || !goal.trim() || !canRecord)}
         className={isPrefilled && !challengeActive ? 'pulse-btn' : ''}
-        style={{ width: '100%', background: challengeActive ? '#F59E0B' : isPrefilled ? '#F59E0B' : '#3B82F6', color: (challengeActive || isPrefilled) ? '#1a1a1a' : '#ffffff', fontWeight: 700, fontSize: 16, padding: '16px', borderRadius: 12, border: 'none', cursor: (!topic.trim() || !goal.trim() || !canRecord) ? 'not-allowed' : 'pointer', opacity: (!topic.trim() || !goal.trim() || !canRecord) ? 0.4 : 1, fontFamily: 'inherit', marginBottom: challengeActive ? 8 : 20 }}
+        style={{ width: '100%', background: challengeActive ? '#F59E0B' : isPrefilled ? '#F59E0B' : '#3B82F6', color: (challengeActive || isPrefilled) ? '#1a1a1a' : '#ffffff', fontWeight: 700, fontSize: 16, padding: '16px', borderRadius: 12, border: 'none', cursor: (challengeActive ? !canRecordChallenge : (!topic.trim() || !goal.trim() || !canRecord)) ? 'not-allowed' : 'pointer', opacity: (challengeActive ? !canRecordChallenge : (!topic.trim() || !goal.trim() || !canRecord)) ? 0.4 : 1, fontFamily: 'inherit', marginBottom: challengeActive ? 8 : 20 }}
       >
         {challengeActive ? 'Start Challenge' : isPrefilled ? 'Start my first session' : 'Start Recording'}
       </button>
@@ -455,8 +456,8 @@ export default function SetupPage() {
                 setGoal(challenge.goal)
                 setChallengeActive(true)
               }}
-              disabled={!canRecord}
-              style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0, marginTop: 2 }}
+              disabled={!canRecordChallenge}
+              style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: canRecordChallenge ? 'pointer' : 'not-allowed', opacity: canRecordChallenge ? 1 : 0.4, fontFamily: 'inherit', flexShrink: 0, marginTop: 2 }}
             >
               Accept challenge
             </button>
