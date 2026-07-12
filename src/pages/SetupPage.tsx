@@ -173,6 +173,8 @@ export default function SetupPage() {
   // Show consent modal for users with null newsletter_consent
   useEffect(() => {
     if (!email) return
+    // Check localStorage first to avoid showing modal again
+    if (localStorage.getItem('consent_answered') === 'true') return
     fetch(`${API_URL}/auth/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -182,6 +184,8 @@ export default function SetupPage() {
       .then(data => {
         if (data.newsletter_consent === null || data.newsletter_consent === undefined) {
           setShowConsentModal(true)
+        } else {
+          localStorage.setItem('consent_answered', 'true')
         }
       })
       .catch(() => {})
@@ -197,6 +201,7 @@ export default function SetupPage() {
     } catch (e) {
       console.error('Consent update error:', e)
     }
+    localStorage.setItem('consent_answered', 'true')
     setShowConsentModal(false)
   }
 
