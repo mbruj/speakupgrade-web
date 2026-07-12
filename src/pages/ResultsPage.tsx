@@ -67,10 +67,10 @@ function FeedbackRow({ label, text, last = false }: { label: string; text: strin
 
 function ProGate({ text, onUnlock }: { text: string; onUnlock: () => void }) {
   return (
-    <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(59,130,246,0.2)', textAlign: 'center', marginTop: 8 }}>
+    <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(245,158,11,0.2)', textAlign: 'center', marginTop: 8 }}>
       <p style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 10 }}>{text}</p>
-      <button onClick={onUnlock} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-        Unlock with Pro
+      <button onClick={onUnlock} style={{ background: '#F59E0B', color: '#1a1a1a', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+        Unlock Pro
       </button>
     </div>
   )
@@ -85,8 +85,8 @@ function BlurredRows({ onUnlock }: { onUnlock: () => void }) {
           <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, width: `${w}%` }} />
         </div>
       ))}
-      <button onClick={onUnlock} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 11, padding: '8px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'flex-start', marginTop: 4 }}>
-        Unlock with Pro
+      <button onClick={onUnlock} style={{ background: '#F59E0B', color: '#1a1a1a', fontWeight: 700, fontSize: 11, padding: '8px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'flex-start', marginTop: 4 }}>
+        Unlock Pro
       </button>
     </div>
   )
@@ -758,7 +758,7 @@ export default function ResultsPage() {
                 <span style={{ fontSize: 13, color: '#A1A1AA', textAlign: 'center' }}>Full transcript available on Pro</span>
                 <button
                   onClick={() => navigate('/upgrade')}
-                  style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 13, padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ background: '#F59E0B', color: '#1a1a1a', fontWeight: 700, fontSize: 13, padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   Unlock Pro
                 </button>

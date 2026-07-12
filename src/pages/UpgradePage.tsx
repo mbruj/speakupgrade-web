@@ -25,19 +25,19 @@ export default function UpgradePage() {
       <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A1A1AA', fontSize: 13, marginBottom: 32 }}>← Back</button>
       <div style={{ textAlign: 'center', marginBottom: 32 }}><Logo size="md" /><p style={{ color: '#A1A1AA', marginTop: 8, fontSize: 15 }}>Unlock everything</p></div>
       <a href={STRIPE_ANNUAL} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-        <div className="card" style={{ marginBottom: 14, borderColor: '#3B82F6', borderWidth: 1.5, cursor: 'pointer', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#3B82F6', color: '#fff', fontSize: 11, fontWeight: 600, padding: '3px 14px', borderRadius: 20, whiteSpace: 'nowrap' }}>2 MONTHS FREE</div>
+        <div className="card" style={{ marginBottom: 14, borderColor: '#F59E0B', borderWidth: 1.5, cursor: 'pointer', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#F59E0B', color: '#1a1a1a', fontSize: 11, fontWeight: 600, padding: '3px 14px', borderRadius: 20, whiteSpace: 'nowrap' }}>2 MONTHS FREE</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-            <div><p style={{ fontWeight: 700, fontSize: 16 }}>Annual</p><p style={{ color: '#A1A1AA', fontSize: 12, marginTop: 2 }}>€8.33 / month, billed yearly</p></div>
-            <div style={{ textAlign: 'right' }}><p style={{ fontWeight: 700, fontSize: 20, color: '#3B82F6' }}>€99.99</p><p style={{ color: '#52525B', fontSize: 11, textDecoration: 'line-through' }}>€119.88</p></div>
+            <div><p style={{ fontWeight: 700, fontSize: 16, color: '#F59E0B' }}>Annual</p><p style={{ color: '#A1A1AA', fontSize: 12, marginTop: 2 }}>€8.33 / month, billed yearly</p></div>
+            <div style={{ textAlign: 'right' }}><p style={{ fontWeight: 700, fontSize: 20, color: '#F59E0B' }}>€99.99</p><p style={{ color: '#52525B', fontSize: 11, textDecoration: 'line-through' }}>€119.88</p></div>
           </div>
         </div>
       </a>
       <a href={STRIPE_MONTHLY} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
         <div className="card" style={{ marginBottom: 28, cursor: 'pointer' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div><p style={{ fontWeight: 700, fontSize: 16 }}>Monthly</p><p style={{ color: '#A1A1AA', fontSize: 12, marginTop: 2 }}>Cancel anytime</p></div>
-            <p style={{ fontWeight: 700, fontSize: 20 }}>€9.99<span style={{ fontSize: 12, fontWeight: 400, color: '#A1A1AA' }}>/mo</span></p>
+            <div><p style={{ fontWeight: 700, fontSize: 16, color: '#3B82F6' }}>Monthly</p><p style={{ color: '#A1A1AA', fontSize: 12, marginTop: 2 }}>Cancel anytime</p></div>
+            <p style={{ fontWeight: 700, fontSize: 20, color: '#3B82F6' }}>€9.99<span style={{ fontSize: 12, fontWeight: 400, color: '#A1A1AA' }}>/mo</span></p>
           </div>
         </div>
       </a>
