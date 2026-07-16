@@ -124,7 +124,7 @@ export default function GradingPage() {
               Analysing your speech
             </h2>
             <p style={{ fontSize: 13, color: '#52525B', marginBottom: 40 }}>
-              This usually takes 20–40 seconds
+              This usually takes under a minute
             </p>
 
             {/* Tip card — fades in/out */}

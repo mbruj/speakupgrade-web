@@ -67,6 +67,11 @@ export interface GradingResult {
   structure_feedback: string
   confidence_feedback: string
   trial_unlocked?: boolean
+  body_language?: {
+    scores?: Record<string, number>
+    feedback?: Record<string, string>
+    zone_usage?: { left: number; center: number; right: number }
+  }
 }
 export interface GradePayload {
   audio: string
