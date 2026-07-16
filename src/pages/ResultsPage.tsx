@@ -347,6 +347,7 @@ export default function ResultsPage() {
   const fillerWords: Record<string, number> = data?.filler_words || {}
   const fillerEntries = Object.entries(fillerWords).filter(([, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number))
   const hasBodyLanguage = blFeedback && Object.values(blFeedback).some((v: any) => v && v !== 'No video data available.')
+  const zoneUsage = bl.zone_usage || null
 
   // Use translated content if available, fallback to original
   const t = translated || {}
@@ -629,6 +630,33 @@ export default function ResultsPage() {
         />
       )}
 
+
+      {/* Stage presence heatmap */}
+      {zoneUsage && isPro && (
+        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Stage presence</p>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ display: 'flex', height: 80, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(245,158,11,0.15)' }}>
+              {[
+                { label: 'Left', pct: zoneUsage.left || 0 },
+                { label: 'Center', pct: zoneUsage.center || 0 },
+                { label: 'Right', pct: zoneUsage.right || 0 },
+              ].map((zone, i) => (
+                <div key={zone.label} style={{
+                  flex: 1, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  background: `rgba(245,158,11,${(zone.pct / 100) * 0.6 + 0.04})`,
+                  borderRight: i < 2 ? '1px solid rgba(245,158,11,0.1)' : 'none',
+                }}>
+                  <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: zone.pct > 20 ? '#F59E0B' : '#71717a' }}>{zone.pct}%</p>
+                  <p style={{ margin: 0, fontSize: 10, color: '#71717a', marginTop: 2 }}>{zone.label}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ margin: 0, fontSize: 10, color: '#52525B', textAlign: 'center', marginTop: 6 }}>Audience perspective</p>
+          </div>
+        </div>
+      )}
 
       {/* 7. Speech evaluation (renamed from Feedback, moved before body language) */}
       <Section>

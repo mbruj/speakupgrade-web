@@ -79,9 +79,9 @@ export default function RecordingPage() {
       videoRef.current.muted = true
       videoRef.current.play().catch(() => {})
 
-      // Canvas for frames — 320x240 keeps payload small without losing body language detail
-      canvasRef.current.width = 320
-      canvasRef.current.height = 240
+      // Canvas for frames — 160x120 minimum quality Claude needs for body language + position
+      canvasRef.current.width = 160
+      canvasRef.current.height = 120
 
       // Audio-only MediaRecorder
       const audioTracks = stream.getAudioTracks()
@@ -122,11 +122,11 @@ export default function RecordingPage() {
         if (secs >= MAX_SECONDS) handleStop()
       }, 500)
 
-      // Frame capture: first frame immediately, then every 5s, max 15 frames
+      // Frame capture: first frame immediately, then every 15s, max 40 frames
       captureFrame()
       frameTimerRef.current = setInterval(() => {
-        if (_frames.length < 15) captureFrame()
-      }, 5_000)
+        if (_frames.length < 40) captureFrame()
+      }, 15_000)
 
     } catch (err) {
       console.error('Recording init error:', err)
@@ -135,12 +135,12 @@ export default function RecordingPage() {
   }
 
   const captureFrame = () => {
-    if (!videoRef.current || _frames.length >= 15) return
+    if (!videoRef.current || _frames.length >= 40) return
     const ctx = canvasRef.current.getContext('2d')
     if (!ctx) return
     try {
-      ctx.drawImage(videoRef.current, 0, 0, 320, 240)
-      const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.7)
+      ctx.drawImage(videoRef.current, 0, 0, 160, 120)
+      const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.4)
       const base64 = dataUrl.split(',')[1]
       if (base64 && base64.length > 100) {
         _frames.push(base64)
