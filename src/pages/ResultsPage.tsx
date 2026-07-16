@@ -67,10 +67,10 @@ function FeedbackRow({ label, text, last = false }: { label: string; text: strin
 
 function ProGate({ text, onUnlock }: { text: string; onUnlock: () => void }) {
   return (
-    <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(245,158,11,0.2)', textAlign: 'center', marginTop: 8 }}>
+    <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(59,130,246,0.2)', textAlign: 'center', marginTop: 8 }}>
       <p style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 10 }}>{text}</p>
-      <button onClick={onUnlock} style={{ background: '#F59E0B', color: '#1a1a1a', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-        Unlock Pro
+      <button onClick={onUnlock} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+        Unlock with Pro
       </button>
     </div>
   )
@@ -85,8 +85,8 @@ function BlurredRows({ onUnlock }: { onUnlock: () => void }) {
           <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, width: `${w}%` }} />
         </div>
       ))}
-      <button onClick={onUnlock} style={{ background: '#F59E0B', color: '#1a1a1a', fontWeight: 700, fontSize: 11, padding: '8px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'flex-start', marginTop: 4 }}>
-        Unlock Pro
+      <button onClick={onUnlock} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 11, padding: '8px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'flex-start', marginTop: 4 }}>
+        Unlock with Pro
       </button>
     </div>
   )
@@ -347,6 +347,7 @@ export default function ResultsPage() {
   const fillerWords: Record<string, number> = data?.filler_words || {}
   const fillerEntries = Object.entries(fillerWords).filter(([, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number))
   const hasBodyLanguage = blFeedback && Object.values(blFeedback).some((v: any) => v && v !== 'No video data available.')
+  const stagePosition = data?.stage_position || null
 
   // Use translated content if available, fallback to original
   const t = translated || {}
@@ -666,6 +667,51 @@ export default function ResultsPage() {
         )
       )}
 
+      {/* Stage position heatmap */}
+      {stagePosition && stagePosition.zones && isPro && (
+        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Stage presence</p>
+
+          {/* Stage diagram */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', gap: 4, height: 80, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(245,158,11,0.15)' }}>
+              {[
+                { label: 'Left', key: 'left', pct: stagePosition.zones.left },
+                { label: 'Center', key: 'center', pct: stagePosition.zones.center },
+                { label: 'Right', key: 'right', pct: stagePosition.zones.right },
+              ].map(zone => (
+                <div key={zone.key} style={{
+                  flex: 1, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  background: `rgba(245,158,11,${(zone.pct / 100) * 0.6 + 0.04})`,
+                  borderRight: zone.key !== 'right' ? '1px solid rgba(245,158,11,0.1)' : 'none',
+                  transition: 'background 0.3s',
+                }}>
+                  <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: zone.pct > 40 ? '#F59E0B' : '#71717a' }}>{zone.pct}%</p>
+                  <p style={{ margin: 0, fontSize: 10, color: '#71717a', marginTop: 2 }}>{zone.label}</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 6 }}>
+              <p style={{ margin: 0, fontSize: 10, color: '#52525B' }}>Audience perspective</p>
+            </div>
+          </div>
+
+          {/* Movement score */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <p style={{ margin: 0, fontSize: 12, color: '#A1A1AA', flexShrink: 0 }}>Movement</p>
+            <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3 }}>
+              <div style={{ width: `${stagePosition.movementScore}%`, height: '100%', background: '#F59E0B', borderRadius: 3 }} />
+            </div>
+            <p style={{ margin: 0, fontSize: 12, color: '#F59E0B', fontWeight: 700, flexShrink: 0 }}>{stagePosition.movementScore}/100</p>
+          </div>
+
+          {stagePosition.feedback && (
+            <p style={{ margin: 0, fontSize: 13, color: '#A1A1AA', lineHeight: 1.6 }}>{stagePosition.feedback}</p>
+          )}
+        </div>
+      )}
+
       {/* Weak language */}
       {confidenceLanguage && confidenceLanguage.total > 0 && (
         isPro ? (
@@ -758,7 +804,7 @@ export default function ResultsPage() {
                 <span style={{ fontSize: 13, color: '#A1A1AA', textAlign: 'center' }}>Full transcript available on Pro</span>
                 <button
                   onClick={() => navigate('/upgrade')}
-                  style={{ background: '#F59E0B', color: '#1a1a1a', fontWeight: 700, fontSize: 13, padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 13, padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   Unlock Pro
                 </button>
