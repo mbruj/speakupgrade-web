@@ -630,6 +630,45 @@ export default function ResultsPage() {
         />
       )}
 
+      {/* Stage position heatmap */}
+      {stagePosition && stagePosition.zones && isPro && (
+        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Stage presence</p>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', gap: 4, height: 80, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(245,158,11,0.15)' }}>
+              {[
+                { label: 'Left', key: 'left', pct: stagePosition.zones.left },
+                { label: 'Center', key: 'center', pct: stagePosition.zones.center },
+                { label: 'Right', key: 'right', pct: stagePosition.zones.right },
+              ].map(zone => (
+                <div key={zone.key} style={{
+                  flex: 1, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  background: `rgba(245,158,11,${(zone.pct / 100) * 0.6 + 0.04})`,
+                  borderRight: zone.key !== 'right' ? '1px solid rgba(245,158,11,0.1)' : 'none',
+                }}>
+                  <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: zone.pct > 20 ? '#F59E0B' : '#71717a' }}>{zone.pct}%</p>
+                  <p style={{ margin: 0, fontSize: 10, color: '#71717a', marginTop: 2 }}>{zone.label}</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 6 }}>
+              <p style={{ margin: 0, fontSize: 10, color: '#52525B' }}>Audience perspective</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <p style={{ margin: 0, fontSize: 12, color: '#A1A1AA', flexShrink: 0 }}>Movement</p>
+            <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3 }}>
+              <div style={{ width: `${stagePosition.movementScore}%`, height: '100%', background: '#F59E0B', borderRadius: 3 }} />
+            </div>
+            <p style={{ margin: 0, fontSize: 12, color: '#F59E0B', fontWeight: 700, flexShrink: 0 }}>{stagePosition.movementScore}/100</p>
+          </div>
+          {stagePosition.feedback && (
+            <p style={{ margin: 0, fontSize: 13, color: '#A1A1AA', lineHeight: 1.6 }}>{stagePosition.feedback}</p>
+          )}
+        </div>
+      )}
+
       {/* 7. Speech evaluation (renamed from Feedback, moved before body language) */}
       <Section>
         <SectionTitle>Speech evaluation</SectionTitle>
@@ -665,51 +704,6 @@ export default function ResultsPage() {
             <BlurredRows onUnlock={() => navigate('/upgrade')} />
           </div>
         )
-      )}
-
-      {/* Stage position heatmap */}
-      {stagePosition && stagePosition.zones && isPro && (
-        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Stage presence</p>
-
-          {/* Stage diagram */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', gap: 4, height: 80, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(245,158,11,0.15)' }}>
-              {[
-                { label: 'Left', key: 'left', pct: stagePosition.zones.left },
-                { label: 'Center', key: 'center', pct: stagePosition.zones.center },
-                { label: 'Right', key: 'right', pct: stagePosition.zones.right },
-              ].map(zone => (
-                <div key={zone.key} style={{
-                  flex: 1, display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
-                  background: `rgba(245,158,11,${(zone.pct / 100) * 0.6 + 0.04})`,
-                  borderRight: zone.key !== 'right' ? '1px solid rgba(245,158,11,0.1)' : 'none',
-                  transition: 'background 0.3s',
-                }}>
-                  <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: zone.pct > 40 ? '#F59E0B' : '#71717a' }}>{zone.pct}%</p>
-                  <p style={{ margin: 0, fontSize: 10, color: '#71717a', marginTop: 2 }}>{zone.label}</p>
-                </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 6 }}>
-              <p style={{ margin: 0, fontSize: 10, color: '#52525B' }}>Audience perspective</p>
-            </div>
-          </div>
-
-          {/* Movement score */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <p style={{ margin: 0, fontSize: 12, color: '#A1A1AA', flexShrink: 0 }}>Movement</p>
-            <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3 }}>
-              <div style={{ width: `${stagePosition.movementScore}%`, height: '100%', background: '#F59E0B', borderRadius: 3 }} />
-            </div>
-            <p style={{ margin: 0, fontSize: 12, color: '#F59E0B', fontWeight: 700, flexShrink: 0 }}>{stagePosition.movementScore}/100</p>
-          </div>
-
-          {stagePosition.feedback && (
-            <p style={{ margin: 0, fontSize: 13, color: '#A1A1AA', lineHeight: 1.6 }}>{stagePosition.feedback}</p>
-          )}
-        </div>
       )}
 
       {/* Weak language */}
