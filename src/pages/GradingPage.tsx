@@ -74,6 +74,23 @@ export default function GradingPage() {
       }
 
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
+
+      // Team sessions (sales scenario category set) get a follow-up Q&A phase
+      // before Results. The pitch itself is already fully graded at this point —
+      // this only changes where we navigate to next.
+      const category = (params as any)?.category
+      if (category) {
+        navigate('/negotiate', {
+          state: {
+            sessionId: (raw as any).session_id,
+            pitchTranscript: (raw as any).transcript,
+            pitchResult: raw,
+            category,
+          },
+        })
+        return
+      }
+
       setResults(raw as any)
       navigate('/results')
     } catch (err) {

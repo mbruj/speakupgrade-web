@@ -534,6 +534,23 @@ export default function ResultsPage() {
         </div>
       )}
 
+      {/* Team sessions only: goal-achieved headline sits ABOVE the normal score card,
+          since for team users whether the goal was achieved matters more than the 0-100 number.
+          Solo/Pro sessions never have data.negotiation, so this block simply doesn't render for them. */}
+      {data?.negotiation && (
+        <div style={{
+          background: data.negotiation.goal_status === 'achieved' ? 'rgba(34,197,94,0.08)' : data.negotiation.goal_status === 'partially_achieved' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)',
+          border: `1px solid ${data.negotiation.goal_status === 'achieved' ? 'rgba(34,197,94,0.3)' : data.negotiation.goal_status === 'partially_achieved' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'}`,
+          borderRadius: 16, padding: '20px 22px', textAlign: 'center', marginBottom: 14,
+        }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
+            color: data.negotiation.goal_status === 'achieved' ? '#22C55E' : data.negotiation.goal_status === 'partially_achieved' ? '#F59E0B' : '#EF4444' }}>
+            {data.negotiation.goal_status === 'achieved' ? 'Goal achieved' : data.negotiation.goal_status === 'partially_achieved' ? 'Goal partially achieved' : 'Goal not achieved'}
+          </p>
+          <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.6, margin: 0 }}>{data.negotiation.goal_reasoning}</p>
+        </div>
+      )}
+
       {/* 1. Overall score — no emoji */}
       <div style={{ background: '#1A1A1E', borderRadius: 16, padding: 24, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', marginBottom: 14 }}>
         <p style={{ fontSize: 24, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>{verdict.label}</p>
@@ -556,7 +573,20 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      
+      {/* Team sessions only: how the rep handled the buyer's follow-up questions */}
+      {data?.negotiation && (
+        <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.05)', marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
+            How you handled the follow-up questions
+          </p>
+          {(data.negotiation.per_question_feedback || []).map((qf: any, i: number) => (
+            <div key={i} style={{ marginBottom: i < data.negotiation.per_question_feedback.length - 1 ? 14 : 0 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#e4d5b0', marginBottom: 4 }}>"{qf.question}"</p>
+              <p style={{ fontSize: 13, color: '#d4d4d8', lineHeight: 1.6, margin: 0 }}>{qf.feedback}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* #3 — Mira block in amber */}
       {miraLoading ? (

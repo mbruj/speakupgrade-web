@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore, useSessionStore } from '../store'
 import { checkUsage } from '../lib/api'
 import { FREE_SESSION_LIMIT, API_URL } from '../lib/constants'
+import { SALES_CATEGORIES, randomScenario } from '../data/salesScenarios'
 
 function getTodayKey() {
   const now = new Date()
@@ -109,6 +110,11 @@ export default function SetupPage() {
   const [tickerIndex, setTickerIndex] = useState(0)
   const [tickerMessages, setTickerMessages] = useState<string[]>([])
 
+  // Team state — null org_role means a normal solo user, nothing below changes for them
+  const [orgRole, setOrgRole] = useState<string | null>(null)
+  const [orgName, setOrgName] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+
   useEffect(() => {
     if (!email) { navigate('/'); return }
     checkUsage(email).then((u) => {
@@ -140,6 +146,15 @@ export default function SetupPage() {
         }
       })
       .catch(console.error)
+
+    // Fetch team info — no-op for solo users (org_role comes back null)
+    fetch(`${API_URL}/org/me?email=${encodeURIComponent(email)}`)
+      .then(r => r.json())
+      .then(data => {
+        setOrgRole(data.org_role || null)
+        setOrgName(data.org_name || null)
+      })
+      .catch(() => {})
 
     // Fetch Mira motivational message
     fetch(`${API_URL}/coach/insight`, {
@@ -278,7 +293,10 @@ export default function SetupPage() {
       audience: finalAudience,
       targetSeconds: challengeActive ? 120 : targetMinutes * 60,
       isChallenge,
-    })
+      // category is only set for team scenario sessions — undefined for everyone else,
+      // which is what GradingPage checks to decide whether to run the negotiation phase
+      ...(orgRole && selectedCategory ? { category: selectedCategory } : {}),
+    } as any)
     const { hideInstructions } = useSessionStore.getState()
     navigate(hideInstructions ? '/permissions' : '/instructions')
   }
@@ -518,6 +536,8 @@ export default function SetupPage() {
             setChallengeActive(false)
             setTopic('')
             setGoal('')
+            setAudience('')
+            setSelectedCategory(null)
           }}
           style={{ width: '100%', background: 'transparent', color: '#A1A1AA', fontWeight: 400, fontSize: 13, padding: '10px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20 }}
         >
@@ -525,8 +545,39 @@ export default function SetupPage() {
         </button>
       )}
 
-      {/* Daily challenge — below Start Recording */}
-      {!challengeDoneToday ? (
+      {/* Team users see a sales scenario picker here instead of the daily challenge.
+          Solo/Pro users below this condition see the exact daily challenge card as before. */}
+      {orgRole ? (
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', margin: '0 0 10px 0' }}>
+            SALES PRACTICE{orgName ? ` — ${orgName.toUpperCase()}` : ''}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            {SALES_CATEGORIES.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => {
+                  const scenario = randomScenario(cat.key)
+                  if (!scenario) return
+                  setTopic(scenario.topic)
+                  setGoal(scenario.goal)
+                  setAudience(scenario.audience)
+                  setSelectedCategory(cat.key)
+                  setChallengeActive(true)
+                }}
+                style={{
+                  background: selectedCategory === cat.key ? 'rgba(59,130,246,0.12)' : '#1A1A1E',
+                  border: `1px solid ${selectedCategory === cat.key ? '#3B82F6' : 'rgba(255,255,255,0.06)'}`,
+                  borderRadius: 10, padding: '10px 12px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', margin: '0 0 3px 0' }}>{cat.label}</p>
+                <p style={{ fontSize: 10.5, color: '#A1A1AA', margin: 0, lineHeight: 1.3 }}>{cat.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : !challengeDoneToday ? (
         <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
             <div style={{ flex: 1 }}>
@@ -563,7 +614,13 @@ export default function SetupPage() {
       <NavCard title="Session History" subtitle="View your past sessions and track your progress." onClick={() => navigate('/history')} />
       <NavCard title="Visit my coach" subtitle="Update your focus and coaching preferences." onClick={() => navigate('/mira-edit')} />
       <NavCard title="Give Feedback" subtitle="Tell us what you would improve." onClick={() => navigate('/feedback')} />
-      <NavCard title="Become an Affiliate" subtitle="Earn 50% commission on every referral." onClick={() => navigate('/affiliate')} />
+      {orgRole === 'manager' ? (
+        <NavCard title="Team" subtitle={`View ${orgName || 'your team'}'s performance dashboard.`} onClick={() => navigate('/team')} />
+      ) : orgRole === 'rep' ? (
+        <NavCard title="Team" subtitle={`You're on ${orgName || 'a team'}. Your manager can see your progress.`} onClick={() => {}} />
+      ) : (
+        <NavCard title="Become an Affiliate" subtitle="Earn 50% commission on every referral." onClick={() => navigate('/affiliate')} />
+      )}
 
       <div style={{ textAlign: 'center', marginTop: 32, marginBottom: 16 }}>
         <button
