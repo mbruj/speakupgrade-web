@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore, useSessionStore } from '../store'
 import { API_URL } from '../lib/constants'
+import { useEffectiveAccess } from '../hooks/useEffectiveAccess'
 
 interface Session {
   id: string
@@ -64,7 +65,7 @@ export default function HistoryPage() {
   const navigate = useNavigate()
   const { email, plan } = useAuthStore()
   const { results, setResults, setParams } = useSessionStore()
-  const isPro = plan === 'pro'
+  const { isPro, checked } = useEffectiveAccess()
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -77,6 +78,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if (!email) { navigate('/'); return }
+    if (!checked) return // wait for org/plan check to resolve — avoids a blur flash
     if (!isPro) { setLoading(false); return }
     fetch(API_URL + '/history?email=' + encodeURIComponent(email))
       .then(async (r) => {
@@ -86,7 +88,7 @@ export default function HistoryPage() {
       })
       .catch(() => setError('Could not load sessions.'))
       .finally(() => setLoading(false))
-  }, [email, isPro])
+  }, [email, isPro, checked])
 
   const handleSessionClick = async (session: Session) => {
     if (!email || loadingSessionId) return
@@ -132,7 +134,13 @@ export default function HistoryPage() {
         <div style={{ width: 40 }} />
       </div>
 
-      {!isPro && (
+      {!checked && (
+        <div style={{ textAlign: 'center', marginTop: 60 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid rgba(59,130,246,0.2)', borderTopColor: '#3B82F6', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
+        </div>
+      )}
+
+      {checked && !isPro && (
         <div style={{ position: 'relative' }}>
           <div style={{ filter: 'blur(5px)', userSelect: 'none', pointerEvents: 'none' }}>
             <div style={{ background: '#1A1A1E', borderRadius: 16, padding: 20, marginBottom: 14 }}>
