@@ -475,7 +475,7 @@ export default function SetupPage() {
         </div>
       </div>
 
-      {!canRecord && (
+      {usageChecked && !canRecord && (
         <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#FCA5A5', marginBottom: 16 }}>
           You've used all {FREE_SESSION_LIMIT} free sessions this month.{' '}
           <button onClick={() => navigate('/upgrade')} style={{ color: '#3B82F6', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
