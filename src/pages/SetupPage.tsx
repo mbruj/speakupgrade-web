@@ -292,6 +292,13 @@ export default function SetupPage() {
   const canRecord = usageChecked && (plan === 'pro' || !!orgRole || (usageData?.remaining ?? 0) > 0)
   const canRecordChallenge = !challengeDoneToday // challenges always available, 1 per day
 
+  // A team scenario is its own thing, independent from the daily challenge —
+  // it prefills fields the same way, but must NOT inherit the daily challenge's
+  // fixed 2-minute duration or its one-per-day limit.
+  const isTeamScenario = !!(orgRole && selectedCategory)
+  const fieldsLocked = challengeActive || isTeamScenario
+  const durationMax = orgRole ? 30 : 10
+
   const handleStart = (isChallenge = false) => {
     const finalTopic = isChallenge ? challenge.topic : topic.trim()
     const finalGoal = isChallenge ? challenge.goal : goal.trim()
@@ -439,15 +446,15 @@ export default function SetupPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 24 }}>
         <div>
           <FieldLabel text="PRESENTATION TOPIC" />
-          <input type="text" placeholder="What is your speech topic today?" value={topic} onChange={(e) => { if (!challengeActive) setTopic(e.target.value) }} maxLength={200} readOnly={challengeActive} style={challengeActive ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
+          <input type="text" placeholder="What is your speech topic today?" value={topic} onChange={(e) => { if (!fieldsLocked) setTopic(e.target.value) }} maxLength={200} readOnly={fieldsLocked} style={fieldsLocked ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
         </div>
         <div>
           <FieldLabel text="YOUR GOAL" />
-          <input type="text" placeholder="e.g. Get the audience to buy the product" value={goal} onChange={(e) => { if (!challengeActive) setGoal(e.target.value) }} maxLength={200} readOnly={challengeActive} style={challengeActive ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
+          <input type="text" placeholder="e.g. Get the audience to buy the product" value={goal} onChange={(e) => { if (!fieldsLocked) setGoal(e.target.value) }} maxLength={200} readOnly={fieldsLocked} style={fieldsLocked ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
         </div>
         <div>
           <FieldLabel text="AUDIENCE (optional)" />
-          <input type="text" placeholder="e.g. 20 investors, technical background" value={challengeActive ? (challenge.audience || '') : audience} onChange={(e) => { if (!challengeActive) setAudience(e.target.value) }} maxLength={100} readOnly={challengeActive} style={challengeActive ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
+          <input type="text" placeholder="e.g. 20 investors, technical background" value={challengeActive ? (challenge.audience || '') : audience} onChange={(e) => { if (!fieldsLocked) setAudience(e.target.value) }} maxLength={100} readOnly={fieldsLocked} style={fieldsLocked ? { opacity: 0.6, cursor: "not-allowed" } : {}} />
         </div>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -460,7 +467,7 @@ export default function SetupPage() {
             <input
               type="range"
               min={2}
-              max={10}
+              max={durationMax}
               step={1}
               value={challengeActive ? 2 : targetMinutes}
               onChange={(e) => { if (!challengeActive) setTargetMinutes(Number(e.target.value)) }}
@@ -470,7 +477,7 @@ export default function SetupPage() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
             <span style={{ fontSize: 12, color: '#52525B' }}>2 min</span>
-            <span style={{ fontSize: 12, color: '#52525B' }}>10 min</span>
+            <span style={{ fontSize: 12, color: '#52525B' }}>{durationMax} min</span>
           </div>
         </div>
       </div>
@@ -490,7 +497,7 @@ export default function SetupPage() {
         className={isPrefilled && !challengeActive ? 'pulse-btn' : ''}
         style={{ width: '100%', background: challengeActive ? '#F59E0B' : isPrefilled ? '#F59E0B' : '#3B82F6', color: (challengeActive || isPrefilled) ? '#1a1a1a' : '#ffffff', fontWeight: 700, fontSize: 16, padding: '16px', borderRadius: 12, border: 'none', cursor: (challengeActive ? !canRecordChallenge : (!topic.trim() || !goal.trim() || !canRecord)) ? 'not-allowed' : 'pointer', opacity: (challengeActive ? !canRecordChallenge : (!topic.trim() || !goal.trim() || !canRecord)) ? 0.4 : 1, fontFamily: 'inherit', marginBottom: challengeActive ? 8 : 20 }}
       >
-        {challengeActive ? 'Start Challenge' : isPrefilled ? 'Start my first session' : 'Start Recording'}
+        {challengeActive ? 'Start Challenge' : isTeamScenario ? 'Start Practice' : isPrefilled ? 'Start my first session' : 'Start Recording'}
       </button>
 
       {!challengeActive && (
@@ -562,7 +569,7 @@ export default function SetupPage() {
           .pulse-btn { animation: pulseBtn 1.2s ease-in-out infinite; }
         `}} />
 
-      {challengeActive && (
+      {(challengeActive || isTeamScenario) && (
         <button
           onClick={() => {
             setChallengeActive(false)
@@ -573,7 +580,7 @@ export default function SetupPage() {
           }}
           style={{ width: '100%', background: 'transparent', color: '#A1A1AA', fontWeight: 400, fontSize: 13, padding: '10px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20 }}
         >
-          Cancel challenge
+          {challengeActive ? 'Cancel challenge' : 'Cancel scenario'}
         </button>
       )}
 
@@ -598,7 +605,10 @@ export default function SetupPage() {
                   setGoal(scenario.goal)
                   setAudience(scenario.audience)
                   setSelectedCategory(cat.key)
-                  setChallengeActive(true)
+                  // Deliberately NOT setChallengeActive(true) here — that flag is
+                  // exclusively for the free daily challenge (fixed 2-min duration,
+                  // one per day). Team scenarios are unlimited, full-length practice
+                  // sessions and must not inherit those constraints.
                 }}
                 style={{
                   background: selectedCategory === cat.key ? 'rgba(59,130,246,0.12)' : '#1A1A1E',
