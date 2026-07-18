@@ -120,6 +120,7 @@ export default function SetupPage() {
   const [orgRole, setOrgRole] = useState<string | null>(null)
   const [orgName, setOrgName] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [orgChecked, setOrgChecked] = useState(false)
 
   // Three-way tier for badge coloring: grey (free) / blue (pro) / amber (team).
   // Team takes priority — a team member's `plan` often also reads 'pro' via the
@@ -168,6 +169,7 @@ export default function SetupPage() {
         setOrgName(data.org_name || null)
       })
       .catch(() => {})
+      .finally(() => setOrgChecked(true))
 
     // Fetch Mira motivational message
     fetch(`${API_URL}/coach/insight`, {
@@ -352,12 +354,20 @@ export default function SetupPage() {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>Mira — your coach</p>
-            <div style={{ background: `${tierColor}1F`, border: `1px solid ${tierColor}4D`, borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: tierColor, lineHeight: 1 }}>{tierLabel}</span>
-            </div>
-            <div style={{ background: `${tierColor}14`, border: `1px solid ${tierColor}33`, borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: tierColor, lineHeight: 1 }}>{streak} DAY STREAK</span>
-            </div>
+            {orgChecked ? (
+              <>
+                <div style={{ background: `${tierColor}1F`, border: `1px solid ${tierColor}4D`, borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: tierColor, lineHeight: 1 }}>{tierLabel}</span>
+                </div>
+                <div style={{ background: `${tierColor}14`, border: `1px solid ${tierColor}33`, borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: tierColor, lineHeight: 1 }}>{streak} DAY STREAK</span>
+                </div>
+              </>
+            ) : (
+              // Neutral placeholder while we determine free/pro/team — avoids a
+              // flash of the wrong tier color before the org check resolves
+              <div style={{ width: 90, height: 16, borderRadius: 20, background: 'rgba(255,255,255,0.04)' }} />
+            )}
           </div>
           <div style={{ opacity: miraFade ? 1 : 0, transition: 'opacity 0.4s ease' }}>
             {miraMessage ? (
