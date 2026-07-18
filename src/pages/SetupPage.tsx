@@ -67,6 +67,12 @@ function NavCard({ title, subtitle, onClick }: { title: string; subtitle: string
   )
 }
 
+const TIER_COLORS = {
+  free: '#71717A',
+  pro: '#3B82F6',
+  team: '#F59E0B',
+} as const
+
 export default function SetupPage() {
   const navigate = useNavigate()
   const { email, plan, sessionsRemaining, logout } = useAuthStore()
@@ -114,6 +120,13 @@ export default function SetupPage() {
   const [orgRole, setOrgRole] = useState<string | null>(null)
   const [orgName, setOrgName] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+
+  // Three-way tier for badge coloring: grey (free) / blue (pro) / amber (team).
+  // Team takes priority — a team member's `plan` often also reads 'pro' via the
+  // usage.js effectivePlan override, but the badge should show they're on a team.
+  const tier: 'free' | 'pro' | 'team' = orgRole ? 'team' : plan === 'pro' ? 'pro' : 'free'
+  const tierColor = TIER_COLORS[tier]
+  const tierLabel = tier === 'team' ? 'TEAM' : tier === 'pro' ? 'PRO' : 'FREE'
 
   useEffect(() => {
     if (!email) { navigate('/'); return }
@@ -339,11 +352,11 @@ export default function SetupPage() {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>Mira — your coach</p>
-            <div style={{ background: plan === 'pro' ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${plan === 'pro' ? 'rgba(245,158,11,0.3)' : 'rgba(59,130,246,0.3)'}`, borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: plan === 'pro' ? '#F59E0B' : '#3B82F6', lineHeight: 1 }}>{plan === 'pro' ? 'PRO' : 'FREE'}</span>
+            <div style={{ background: `${tierColor}1F`, border: `1px solid ${tierColor}4D`, borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: tierColor, lineHeight: 1 }}>{tierLabel}</span>
             </div>
-            <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: '#F59E0B', lineHeight: 1 }}>{streak} DAY STREAK</span>
+            <div style={{ background: `${tierColor}14`, border: `1px solid ${tierColor}33`, borderRadius: 20, padding: '2px 7px', display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: tierColor, lineHeight: 1 }}>{streak} DAY STREAK</span>
             </div>
           </div>
           <div style={{ opacity: miraFade ? 1 : 0, transition: 'opacity 0.4s ease' }}>
