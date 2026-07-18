@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSessionStore } from '../store'
 
-const MAX_SECONDS = 12 * 60
+// Solo/Pro keep the existing 12-minute cap. Team sessions (category set) get 30
+// minutes — this only ever raises the ceiling for team users, per design decision.
+const SOLO_MAX_SECONDS = 12 * 60
+const TEAM_MAX_SECONDS = 30 * 60
+
+// Frame count target stays roughly constant regardless of duration, spread further
+// apart for longer recordings — keeps body-language coverage across the WHOLE
+// speech instead of just the first 10 minutes, without tripling Vision API cost.
+const TARGET_FRAME_COUNT = 45
 
 function isMobileDevice() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
@@ -42,6 +50,12 @@ export default function RecordingPage() {
   const [phase, setPhase] = useState<'recording' | 'processing'>('recording')
   const [cameraHidden, setCameraHidden] = useState(hideCameraPreference)
   const isMobile = isMobileDevice()
+
+  // Team sessions (category set on params) get the 30-minute ceiling; everyone
+  // else keeps the existing 12-minute one, unchanged.
+  const maxSeconds = (params as any)?.category ? TEAM_MAX_SECONDS : SOLO_MAX_SECONDS
+  const isTeamSession = !!(params as any)?.category
+  const frameIntervalMs = Math.round((maxSeconds * 1000) / TARGET_FRAME_COUNT)
 
   useEffect(() => {
     if (!params) { navigate('/setup'); return }
@@ -119,14 +133,14 @@ export default function RecordingPage() {
       timerRef.current = setInterval(() => {
         const secs = Math.floor((Date.now() - startTimeRef.current) / 1000)
         setElapsed(secs)
-        if (secs >= MAX_SECONDS) handleStop()
+        if (secs >= maxSeconds) handleStop()
       }, 500)
 
       // Frame capture: first frame immediately, then every 15s, max 40 frames
       captureFrame()
       frameTimerRef.current = setInterval(() => {
-        if (_frames.length < 40) captureFrame()
-      }, 15_000)
+        if (_frames.length < TARGET_FRAME_COUNT + 5) captureFrame()
+      }, frameIntervalMs)
 
     } catch (err) {
       console.error('Recording init error:', err)
@@ -135,7 +149,7 @@ export default function RecordingPage() {
   }
 
   const captureFrame = () => {
-    if (!videoRef.current || _frames.length >= 40) return
+    if (!videoRef.current || _frames.length >= TARGET_FRAME_COUNT + 5) return
     const ctx = canvasRef.current.getContext('2d')
     if (!ctx) return
     try {
@@ -240,13 +254,34 @@ export default function RecordingPage() {
       )}
 
       {/* Timer top-left */}
-      <div style={{ position: 'absolute', top: 48, left: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-        {phase === 'recording' && (
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'blink 1.2s ease-in-out infinite' }} />
+      <div style={{ position: 'absolute', top: 48, left: 20, right: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {phase === 'recording' && (
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'blink 1.2s ease-in-out infinite' }} />
+          )}
+          <span style={{ fontSize: 28, fontWeight: 700, color: '#ffffff', fontFamily: 'monospace', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
+            {fmt(elapsed)}
+          </span>
+          {isTeamSession && (
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontFamily: 'monospace', marginLeft: 2 }}>
+              / {fmt(maxSeconds)}
+            </span>
+          )}
+        </div>
+
+        {/* Progress bar — team sessions only. Solo/Pro keep the exact same simple
+            digit timer they've always had; 30 min is long enough to warrant more
+            visual feedback, 12 min wasn't. */}
+        {isTeamSession && (
+          <div style={{ width: '100%', maxWidth: 240, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)', marginTop: 8, overflow: 'hidden' }}>
+            <div style={{
+              width: `${Math.min(100, (elapsed / maxSeconds) * 100)}%`,
+              height: '100%',
+              background: elapsed / maxSeconds > 0.9 ? '#EF4444' : elapsed / maxSeconds > 0.7 ? '#F59E0B' : '#22C55E',
+              transition: 'width 0.5s linear, background 0.5s ease',
+            }} />
+          </div>
         )}
-        <span style={{ fontSize: 28, fontWeight: 700, color: '#ffffff', fontFamily: 'monospace', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-          {fmt(elapsed)}
-        </span>
       </div>
 
       {/* REC badge top-right */}

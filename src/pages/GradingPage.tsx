@@ -28,6 +28,12 @@ export default function GradingPage() {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tipTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // A 30-minute team recording genuinely takes longer to grade than a 3-minute
+  // one — 90s flat was a false alarm waiting to happen for any long session.
+  // Scale generously with actual recorded length instead of a fixed number.
+  const actualSeconds = (location.state as any)?.actualSeconds || 180
+  const timeoutMs = Math.max(90_000, actualSeconds * 1000 * 0.5 + 60_000)
+
   useEffect(() => {
     if (!params || !email || !audioBase64) {
       navigate('/setup')
@@ -45,7 +51,7 @@ export default function GradingPage() {
 
     timeoutRef.current = setTimeout(() => {
       setError('Analysis is taking longer than expected. Please try again.')
-    }, 90_000)
+    }, timeoutMs)
 
     analyse()
 
@@ -104,7 +110,7 @@ export default function GradingPage() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
     timeoutRef.current = setTimeout(() => {
       setError('Analysis is taking longer than expected. Please try again.')
-    }, 90_000)
+    }, timeoutMs)
     analyse()
   }
 
