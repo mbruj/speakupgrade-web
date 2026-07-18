@@ -14,6 +14,8 @@ import HistoryPage from './pages/HistoryPage'
 import { AffiliatePage, FeedbackPage } from './pages/AffiliateFeedbackPages'
 import MiraEditPage from './pages/MiraEditPage'
 import OnboardingPage from './pages/OnboardingPage'
+import NegotiationPage from './pages/NegotiationPage'
+import ManagerDashboardPage from './pages/ManagerDashboardPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const email = useAuthStore((s) => s.email)
@@ -32,6 +34,7 @@ export default function App() {
         <Route path="/position" element={<RequireAuth><PositionPage /></RequireAuth>} />
         <Route path="/recording" element={<RequireAuth><RecordingPage /></RequireAuth>} />
         <Route path="/grading" element={<RequireAuth><GradingPage /></RequireAuth>} />
+        <Route path="/negotiate" element={<RequireAuth><NegotiationPage /></RequireAuth>} />
         <Route path="/results" element={<RequireAuth><ResultsPage /></RequireAuth>} />
         <Route path="/upgrade" element={<RequireAuth><UpgradePage /></RequireAuth>} />
         <Route path="/history" element={<RequireAuth><HistoryPage /></RequireAuth>} />
@@ -39,6 +42,7 @@ export default function App() {
         <Route path="/feedback" element={<RequireAuth><FeedbackPage /></RequireAuth>} />
         <Route path="/mira-edit" element={<RequireAuth><MiraEditPage /></RequireAuth>} />
         <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
+        <Route path="/team" element={<RequireAuth><ManagerDashboardPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
