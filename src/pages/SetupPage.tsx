@@ -121,6 +121,12 @@ export default function SetupPage() {
   const [orgName, setOrgName] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [orgChecked, setOrgChecked] = useState(false)
+  const [usageChecked, setUsageChecked] = useState(false)
+  // True only once BOTH the org check and usage check have resolved — gates
+  // any UI that depends on either (challenge card vs scenario picker, the
+  // record button, session-remaining messaging) so nothing flashes a wrong
+  // default before the real answer arrives.
+  const pageReady = orgChecked && usageChecked
 
   // Three-way tier for badge coloring: grey (free) / blue (pro) / amber (team).
   // Team takes priority — a team member's `plan` often also reads 'pro' via the
@@ -133,7 +139,7 @@ export default function SetupPage() {
     if (!email) { navigate('/'); return }
     checkUsage(email).then((u) => {
       setUsageData({ remaining: u.sessions_remaining })
-    }).catch(console.error)
+    }).catch(console.error).finally(() => setUsageChecked(true))
 
     // Check if user has an active promo trial
     fetch(`${API_URL}/trial/status?email=${encodeURIComponent(email)}`)
@@ -280,7 +286,10 @@ export default function SetupPage() {
     return () => clearInterval(interval)
   }, [miraMessage])
 
-  const canRecord = plan === 'pro' || (usageData?.remaining ?? sessionsRemaining) > 0
+  // While usageChecked is false, usageData is still null — fall back to false
+  // rather than the possibly-stale persisted sessionsRemaining, so the button
+  // doesn't briefly show as available (or unavailable) based on old data.
+  const canRecord = usageChecked && (plan === 'pro' || !!orgRole || (usageData?.remaining ?? 0) > 0)
   const canRecordChallenge = !challengeDoneToday // challenges always available, 1 per day
 
   const handleStart = (isChallenge = false) => {
@@ -569,8 +578,11 @@ export default function SetupPage() {
       )}
 
       {/* Team users see a sales scenario picker here instead of the daily challenge.
-          Solo/Pro users below this condition see the exact daily challenge card as before. */}
-      {orgRole ? (
+          Solo/Pro users below this condition see the exact daily challenge card as before.
+          Gated on pageReady so it never flashes the wrong option before org/usage checks resolve. */}
+      {!pageReady ? (
+        <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, height: 74, marginBottom: 20 }} />
+      ) : orgRole ? (
         <div style={{ marginBottom: 20 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', margin: '0 0 10px 0' }}>
             SALES PRACTICE{orgName ? ` — ${orgName.toUpperCase()}` : ''}
