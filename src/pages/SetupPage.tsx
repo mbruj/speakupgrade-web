@@ -8,7 +8,7 @@ import { getTodayChallenge, isChallengeDoneToday, getChallengeStreak, CHALLENGE_
 import MiraAvatar from '../components/MiraAvatar'
 import Sparkline from '../components/Sparkline'
 import { getScores } from '../lib/scoreHistory'
-import { SCENARIOS, Scenario } from '../lib/scenarios'
+import { SCENARIOS, type Scenario } from '../lib/scenarios'
 
 const PITCH_KEY = 'sua_pitch'
 const CAMERA_KEY = 'sua_camera_on'
