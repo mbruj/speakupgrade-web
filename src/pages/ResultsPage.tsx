@@ -3,20 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useSessionStore, useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
 import { checkUsage } from '../lib/api'
+import { useEffectiveAccess } from '../hooks/useEffectiveAccess'
 import LegalFooter from '../components/LegalFooter'
-
-const LANGUAGES = [
-  { code: 'en', label: '🇬🇧 English' },
-  { code: 'pl', label: '🇵🇱 Polish' },
-  { code: 'es', label: '🇪🇸 Spanish' },
-  { code: 'de', label: '🇩🇪 German' },
-  { code: 'fr', label: '🇫🇷 French' },
-  { code: 'pt', label: '🇵🇹 Portuguese' },
-  { code: 'it', label: '🇮🇹 Italian' },
-  { code: 'nl', label: '🇳🇱 Dutch' },
-  { code: 'uk', label: '🇺🇦 Ukrainian' },
-  { code: 'ru', label: '🇷🇺 Russian' },
-]
+import BottomNav from '../components/BottomNav'
 
 function scoreColor(v: number) {
   return v >= 70 ? '#22C55E' : v >= 50 ? '#F59E0B' : '#EF4444'
@@ -107,8 +96,6 @@ function HighlightedTranscript({ transcript, fillerWords, weakPhrases = [] }: { 
   // Build parts with two pass: weak language (amber) first, then fillers (red)
   // We tag each character position to avoid double-highlighting
   type Part = { text: string; type: 'normal' | 'filler' | 'weak' }
-  const parts: Part[] = []
-
   // Start with the full transcript as one normal part
   let segments: Part[] = [{ text: transcript, type: 'normal' }]
 
@@ -284,13 +271,88 @@ function SpeechTimeline({ wordTimestamps, actualSeconds, isPro, onUpgrade }: { w
   )
 }
 
+// ─── Sales-mode pieces ────────────────────────────────────────────────────────
+
+const STATUS_STYLE: Record<string, { label: string; color: string; border: string }> = {
+  handled: { label: 'HANDLED', color: '#22C55E', border: 'rgba(34,197,94,0.4)' },
+  weak: { label: 'WEAK', color: '#F59E0B', border: 'rgba(245,158,11,0.4)' },
+  missed: { label: 'MISSED', color: '#EF4444', border: 'rgba(239,68,68,0.4)' },
+}
+
+const GOAL_STYLE: Record<string, { label: string; color: string; bg: string; border: string; text: string }> = {
+  achieved: { label: 'Win', color: '#22C55E', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.3)', text: '#c9e8d2' },
+  partially_achieved: { label: 'Partial win', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.3)', text: '#e4d5b0' },
+  not_achieved: { label: 'Not yet', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.3)', text: '#f0c9c9' },
+}
+
+function Chevron({ up }: { up?: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points={up ? '18 15 12 9 6 15' : '6 9 12 15 18 9'} />
+    </svg>
+  )
+}
+
+function QuestionRow({ qf, isPro, defaultOpen, onUnlock }: { qf: any; isPro: boolean; defaultOpen: boolean; onUnlock: () => void }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const st = STATUS_STYLE[qf.status] || STATUS_STYLE.weak
+  return (
+    <div style={{ background: '#1A1A1E', border: `1px solid ${qf.status === 'missed' ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 12, padding: '0 14px' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        style={{ width: '100%', minHeight: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', color: '#fff' }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.4 }}>{qf.question}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: st.color, border: `1px solid ${st.border}`, borderRadius: 20, padding: '3px 9px' }}>{st.label}</span>
+          <Chevron up={open} />
+        </span>
+      </button>
+      {open && (
+        <div style={{ paddingBottom: 14 }}>
+          {qf.feedback && <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#d4d4d8' }}>{qf.feedback}</p>}
+          {qf.better_answer && (
+            isPro ? (
+              <div style={{ marginTop: 10, background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10, padding: '10px 12px' }}>
+                <p style={{ margin: '0 0 4px 0', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#22C55E' }}>A STRONGER ANSWER</p>
+                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#d4d4d8' }}>{qf.better_answer}</p>
+              </div>
+            ) : (
+              <ProGate text="See a stronger answer to this question with Pro" onUnlock={onUnlock} />
+            )
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DetailsWrap({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        style={{ width: '100%', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer', fontFamily: 'inherit' }}
+      >
+        <span style={{ fontSize: 14, color: '#d4d4d8' }}>{title}</span>
+        <Chevron up={open} />
+      </button>
+      {open && <div style={{ paddingTop: 6, paddingBottom: 6 }}>{children}</div>}
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ResultsPage() {
   const navigate = useNavigate()
-  const { results: raw, params, clearSession } = useSessionStore()
-  const { email, plan, setAuth, sessionsRemaining, sessionsResetDate } = useAuthStore()
-  const isPro = plan === 'pro'
+  const { results: raw, params } = useSessionStore()
+  const { email, setAuth } = useAuthStore()
+  // Reads org membership directly so team members are not treated as Free by a stale cached plan
+  const { isPro } = useEffectiveAccess()
 
   // Refresh plan from backend when trial just unlocked
   useEffect(() => {
@@ -304,33 +366,20 @@ export default function ResultsPage() {
   const [emailSending, setEmailSending] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [voiceEnabled, setVoiceEnabled] = useState(true)
-
-  // Translation state
-  const [selectedLang, setSelectedLang] = useState('en')
-  const [translating, setTranslating] = useState(false)
-  const [translated, setTranslated] = useState<any>(null)
+  const [tryingAgain, setTryingAgain] = useState(false)
+  const [showConsent, setShowConsent] = useState(false)
 
   // Mira state
-  const [showMiraOnExit, setShowMiraOnExit] = useState(false)
   const [miraInsight, setMiraInsight] = useState<{ message: string; next_session: string } | null>(null)
   const [miraLoading, setMiraLoading] = useState(false)
-  const [isOnboarded, setIsOnboarded] = useState(false)
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
-
-  const handleNavigation = (path: string) => {
-    if (showMiraOnExit) {
-      setPendingNavigation(path)
-    } else {
-      navigate(path)
-    }
-  }
 
   const data = raw as any
+  const neg = data?.negotiation || null
   const bl = data?.body_language || {}
   const blFeedback = bl.feedback || {}
   const feedback = data?.feedback || {}
-  const strengths = data?.strengths || []
-  const improvements = data?.improvements || []
+  const displayStrengths: string[] = data?.strengths || []
+  const displayImprovements: string[] = data?.improvements || []
   const overall = data?.scores?.overall || 0
   const color = scoreColor(overall)
   const verdict = getVerdict(overall)
@@ -338,6 +387,7 @@ export default function ResultsPage() {
   const wpmColor = wpm === 0 ? '#A1A1AA' : wpm < 110 ? '#F59E0B' : wpm > 160 ? '#F59E0B' : '#22C55E'
   const wpmLabel = wpm === 0 ? 'WPM' : wpm < 110 ? 'Too slow' : wpm > 160 ? 'Too fast' : 'Good pace'
   const conviction = data?.conviction || null
+  const coachSummary: string = data?.coach_summary || ''
   const rawCL = data?.confidence_language
   const confidenceLanguage = rawCL
     ? Array.isArray(rawCL)
@@ -347,70 +397,29 @@ export default function ResultsPage() {
   const fillerWords: Record<string, number> = data?.filler_words || {}
   const fillerEntries = Object.entries(fillerWords).filter(([, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number))
   const hasBodyLanguage = blFeedback && Object.values(blFeedback).some((v: any) => v && v !== 'No video data available.')
-  const zoneUsage = bl.zone_usage || null
 
-  // Use translated content if available, fallback to original
-  const t = translated || {}
-  const coachSummary = t.coach_summary ?? data?.coach_summary
-  const convictionReasoning = t.conviction_reasoning ?? conviction?.reasoning
-  const convictionConvinced = conviction?.convinced
-  const displayStrengths: string[] = t.strengths ?? strengths
-  const displayImprovements: string[] = t.improvements ?? improvements
-  const feedbackPace = t.feedback_pace ?? feedback.pace
-  const feedbackFiller = t.feedback_filler ?? feedback.filler
-  const feedbackStructure = t.feedback_structure ?? feedback.structure
-  const feedbackConfidence = t.feedback_confidence ?? feedback.confidence
-  const blEye = t.bl_eye_contact ?? blFeedback.eye_contact
-  const blPosture = t.bl_posture ?? blFeedback.posture
-  const blMovement = t.bl_movement ?? blFeedback.movement
-  const blGestures = t.bl_gestures ?? blFeedback.gestures
-
-  const handleLanguageChange = async (lang: string) => {
-    setSelectedLang(lang)
-    if (lang === 'en') { setTranslated(null); return }
-
-    setTranslating(true)
-    try {
-      const langLabel = LANGUAGES.find(l => l.code === lang)?.label.replace(/^.{2,3}\s/, '') || lang
-      const fields: Record<string, any> = {}
-      if (data?.coach_summary) fields.coach_summary = data.coach_summary
-      if (conviction?.reasoning) fields.conviction_reasoning = conviction.reasoning
-      if (strengths?.length) fields.strengths = strengths
-      if (improvements?.length) fields.improvements = improvements
-      if (feedback.pace) fields.feedback_pace = feedback.pace
-      if (feedback.filler) fields.feedback_filler = feedback.filler
-      if (feedback.structure) fields.feedback_structure = feedback.structure
-      if (feedback.confidence) fields.feedback_confidence = feedback.confidence
-      if (blFeedback.eye_contact && blFeedback.eye_contact !== 'No video data available.') fields.bl_eye_contact = blFeedback.eye_contact
-      if (blFeedback.posture && blFeedback.posture !== 'No video data available.') fields.bl_posture = blFeedback.posture
-      if (blFeedback.movement && blFeedback.movement !== 'No video data available.') fields.bl_movement = blFeedback.movement
-      if (blFeedback.gestures && blFeedback.gestures !== 'No video data available.') fields.bl_gestures = blFeedback.gestures
-
-      const res = await fetch(`${API_URL}/translate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields, language: langLabel }),
-      })
-      const result = await res.json()
-      setTranslated(result)
-    } catch (e) {
-      console.error('Translation error:', e)
-      setTranslated(null)
-    } finally {
-      setTranslating(false)
-    }
-  }
+  // Headline: did the buyer agree to what the rep wanted?
+  const gs = neg ? GOAL_STYLE[neg.goal_status] || null : null
+  const headLabel: string = gs ? gs.label : verdict.label
+  const headColor: string = gs ? gs.color : color
+  const headBg: string = gs ? gs.bg : 'rgba(255,255,255,0.04)'
+  const headBorder: string = gs ? gs.border : 'rgba(255,255,255,0.1)'
+  const headText: string = gs ? gs.text : '#d4d4d8'
+  const headReason: string = (neg && neg.goal_reasoning) || coachSummary || ''
+  const fixText: string = (neg && neg.fix_next) || displayImprovements[0] || ''
+  const questions: any[] = (neg && neg.per_question_feedback) || []
+  const firstOpenIdx = questions.findIndex(q => q.status !== 'handled')
 
   const speakResults = () => {
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
-    const parts = [
-      verdict.label + '.',
-      coachSummary || '',
-      displayImprovements[0] ? 'The one thing to focus on next: ' + displayImprovements[0] : '',
+    const text = [
+      headLabel + '.',
+      headReason,
+      fixText ? 'Fix this next: ' + fixText : '',
     ].filter(Boolean).join(' ')
-    const utterance = new SpeechSynthesisUtterance(parts)
-    utterance.rate = 0.9; utterance.lang = 'en-US'
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = 0.95; utterance.lang = 'en-US'
     window.speechSynthesis.speak(utterance)
   }
 
@@ -421,8 +430,14 @@ export default function ResultsPage() {
   }
 
   useEffect(() => {
-    if (!raw) { navigate('/setup'); return }
-    setTimeout(() => { if (voiceEnabled) speakResults() }, 800)
+    if (!raw || !params) { navigate('/setup'); return }
+
+    // Remembered on this device so Home can show "Last: ..." on the next visit
+    try {
+      localStorage.setItem('sua_last', JSON.stringify({ label: headLabel, score: overall || null, fix: fixText }))
+    } catch {}
+
+    const speakTimer = setTimeout(() => { if (voiceEnabled) speakResults() }, 800)
 
     const fetchMiraInsight = async () => {
       if (!email) return
@@ -436,41 +451,94 @@ export default function ResultsPage() {
             currentSession: {
               overall, pace: data?.scores?.pace || 0,
               fillerTotal: data?.filler_total || 0,
-              wpm, topic: params!.topic,
+              wpm, topic: params.topic,
             },
           }),
         })
         const result = await res.json()
-        setIsOnboarded(result.is_onboarded)
         if (result.message) setMiraInsight({ message: result.message, next_session: result.next_session })
-        const isTestAccount = email === 'm@bruj.com'
-        } catch (e) {
+      } catch (e) {
         console.error('Mira error:', e)
-        if (email === 'm@bruj.com') setShowMiraOnExit(true)
       } finally {
         setMiraLoading(false)
       }
     }
-
     fetchMiraInsight()
-    return () => { window.speechSynthesis?.cancel() }
+
+    // Weekly-email consent: asked once, here, after the first real result
+    if (email) {
+      let answered = false
+      try { answered = localStorage.getItem('consent_answered') === 'true' } catch {}
+      if (!answered) {
+        fetch(`${API_URL}/auth/check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        })
+          .then(r => r.json())
+          .then(d => {
+            if (d.newsletter_consent === null || d.newsletter_consent === undefined) {
+              setShowConsent(true)
+            } else {
+              try { localStorage.setItem('consent_answered', 'true') } catch {}
+            }
+          })
+          .catch(() => {})
+      }
+    }
+
+    return () => { clearTimeout(speakTimer); window.speechSynthesis?.cancel() }
   }, [])
 
+  const handleConsent = async (consent: boolean) => {
+    try {
+      await fetch(`${API_URL}/otp/consent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newsletterConsent: consent }),
+      })
+    } catch (e) {
+      console.error('Consent update error:', e)
+    }
+    try { localStorage.setItem('consent_answered', 'true') } catch {}
+    setShowConsent(false)
+  }
+
+  const handleTryAgain = async () => {
+    if (tryingAgain) return
+    setTryingAgain(true)
+    let blocked = false
+    // Free users out of pitches go to upgrade instead of bypassing the cap.
+    // Asks the backend (not the cached store) so a team member is never blocked by a stale plan.
+    if (!isPro && email) {
+      try {
+        const u = await checkUsage(email)
+        if (u.plan !== 'pro' && (u.sessions_remaining ?? 0) <= 0) blocked = true
+      } catch (e) {
+        console.error('Usage check failed:', e)
+      }
+    }
+    setTryingAgain(false)
+    window.speechSynthesis?.cancel()
+    // Same pitch, goal and buyer stay in the session store: no retyping
+    navigate(blocked ? '/upgrade' : '/get-ready')
+  }
+
   const handleEmailResults = async () => {
-    if (emailSending || emailSent || !email) return
+    if (emailSending || emailSent || !email || !params) return
     setEmailSending(true)
     try {
       await fetch(`${API_URL}/email-results`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email, topic: params!.topic, goal: params!.goal || '', overall,
+          email, topic: params.topic, goal: params.goal || '', overall,
           duration: fmt(data.actual_seconds || 0), wpm, wpmLabel,
           fillerTotal: data.filler_total || 0,
           strengths: displayStrengths, improvements: displayImprovements,
-          feedbackPace, feedbackFiller: isPro ? feedbackFiller : '',
-          feedbackStructure: isPro ? feedbackStructure : '',
-          feedbackConfidence: isPro ? feedbackConfidence : '',
+          feedbackPace: feedback.pace, feedbackFiller: isPro ? feedback.filler : '',
+          feedbackStructure: isPro ? feedback.structure : '',
+          feedbackConfidence: isPro ? feedback.confidence : '',
           fillerWords, transcript: data.transcript || '',
           isPro, conviction, coachSummary,
           confidenceLanguage, blScores: bl.scores || null, blFeedback: bl.feedback || null,
@@ -486,389 +554,291 @@ export default function ResultsPage() {
   if (!raw || !params) return null
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#09090B', padding: '48px 20px 40px', maxWidth: 480, margin: '0 auto' }}>
+    <div style={{ minHeight: '100dvh', background: '#09090B', padding: '28px 20px 110px', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-      {/* Header */}
-      <div style={{ marginBottom: 14 }}>
-        <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', lineHeight: 1.4, marginBottom: 12 }}>{params.topic}</p>
-        {/* 1. All controls in one row: language, replay, voice toggle */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select
-            value={selectedLang}
-            onChange={e => handleLanguageChange(e.target.value)}
-            disabled={translating}
-            style={{
-              background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
-              color: translating ? '#52525B' : '#d4d4d8', fontSize: 12, padding: '7px 10px',
-              fontFamily: 'inherit', cursor: 'pointer', flex: 1, appearance: 'none', outline: 'none',
-            }}
-          >
-            {LANGUAGES.map(l => (
-              <option key={l.code} value={l.code}>{l.label}</option>
-            ))}
-          </select>
+      {/* Top line: what was pitched + voice switch */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <p style={{ margin: 0, fontSize: 12, color: '#A1A1AA', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{params.topic}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: '#8B8B94' }}>Read aloud</span>
           <button
-            onClick={speakResults}
-            style={{
-              background: '#1A1A1E', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 8,
-              padding: '7px 14px', cursor: 'pointer', color: '#3B82F6', fontSize: 12,
-              fontWeight: 600, fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap',
-            }}
+            onClick={() => toggleVoice(!voiceEnabled)} role="switch" aria-checked={voiceEnabled} aria-label="Read results aloud"
+            style={{ width: 40, height: 24, borderRadius: 12, background: voiceEnabled ? '#2563EB' : '#3f3f46', border: 'none', position: 'relative', cursor: 'pointer', padding: 0 }}
           >
-            ▶ Replay
+            <span style={{ position: 'absolute', top: 3, left: voiceEnabled ? 19 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            <span style={{ fontSize: 11, color: '#52525B' }}>Voice</span>
-            <div onClick={() => toggleVoice(!voiceEnabled)} style={{ width: 40, height: 22, borderRadius: 11, background: voiceEnabled ? 'rgba(59,130,246,0.5)' : '#27272A', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
-              <div style={{ position: 'absolute', top: 2, left: voiceEnabled ? 20 : 2, width: 18, height: 18, borderRadius: '50%', background: voiceEnabled ? '#3B82F6' : '#52525B', transition: 'left 0.2s' }} />
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Trial unlocked banner */}
       {raw?.trial_unlocked && (
-        <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 14, padding: '16px 20px', marginBottom: 14, textAlign: 'center' }}>
-          <p style={{ fontSize: 16, fontWeight: 700, color: '#22C55E', marginBottom: 4 }}>You unlocked 7 days Pro</p>
-          <p style={{ fontSize: 13, color: '#A1A1AA' }}>Check your email for confirmation. Enjoy full Pro access for the next 7 days.</p>
+        <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 14, padding: '16px 20px', textAlign: 'center' }}>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#22C55E', margin: '0 0 4px 0' }}>You unlocked 7 days Pro</p>
+          <p style={{ fontSize: 13, color: '#A1A1AA', margin: 0 }}>Check your email for confirmation. Enjoy full Pro access for the next 7 days.</p>
         </div>
       )}
 
-      {/* Team sessions only: goal-achieved headline sits ABOVE the normal score card,
-          since for team users whether the goal was achieved matters more than the 0-100 number.
-          Solo/Pro sessions never have data.negotiation, so this block simply doesn't render for them. */}
-      {data?.negotiation && (
-        <div style={{
-          background: data.negotiation.goal_status === 'achieved' ? 'rgba(34,197,94,0.08)' : data.negotiation.goal_status === 'partially_achieved' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)',
-          border: `1px solid ${data.negotiation.goal_status === 'achieved' ? 'rgba(34,197,94,0.3)' : data.negotiation.goal_status === 'partially_achieved' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'}`,
-          borderRadius: 16, padding: '20px 22px', textAlign: 'center', marginBottom: 14,
-        }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
-            color: data.negotiation.goal_status === 'achieved' ? '#22C55E' : data.negotiation.goal_status === 'partially_achieved' ? '#F59E0B' : '#EF4444' }}>
-            {data.negotiation.goal_status === 'achieved' ? 'Goal achieved' : data.negotiation.goal_status === 'partially_achieved' ? 'Goal partially achieved' : 'Goal not achieved'}
-          </p>
-          <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.6, margin: 0 }}>{data.negotiation.goal_reasoning}</p>
-        </div>
-      )}
-
-      {/* 1. Overall score — no emoji */}
-      <div style={{ background: '#1A1A1E', borderRadius: 16, padding: 24, border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', marginBottom: 14 }}>
-        <p style={{ fontSize: 24, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>{verdict.label}</p>
-        <p style={{ fontSize: 56, fontWeight: 700, color, lineHeight: 1.1, marginBottom: 4 }}>
-          {overall}<span style={{ fontSize: 20, color: '#52525B', fontWeight: 400 }}>/100</span>
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 16 }}>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#ffffff' }}>{fmt(data.actual_seconds || 0)}</p>
-            <p style={{ fontSize: 10, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>Duration</p>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 18, fontWeight: 700, color: wpmColor }}>{wpm}</p>
-            <p style={{ fontSize: 10, color: wpmColor, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>{wpmLabel}</p>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#ffffff' }}>{data.filler_total || 0}</p>
-            <p style={{ fontSize: 10, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>Fillers</p>
+      {/* Headline: outcome + the one thing to fix */}
+      <div style={{ background: headBg, border: `1px solid ${headBorder}`, borderRadius: 18, padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.5px', color: headColor }}>{headLabel}</div>
+          <div style={{ fontSize: 30, fontWeight: 700, fontFamily: 'ui-monospace, Menlo, monospace', color: '#fff' }}>
+            {overall}<span style={{ fontSize: 14, color: '#8B8B94' }}>/100</span>
           </div>
         </div>
+        {headReason && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: headText }}>{headReason}</p>}
+        {fixText && (
+          <>
+            <div style={{ height: 1, background: headBorder }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: headColor }}>FIX THIS NEXT</div>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: '#fff' }}>{fixText}</p>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Team sessions only: how the rep handled the buyer's follow-up questions */}
-      {data?.negotiation && (
-        <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.05)', marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-            How you handled the follow-up questions
-          </p>
-          {(data.negotiation.per_question_feedback || []).map((qf: any, i: number) => (
-            <div key={i} style={{ marginBottom: i < data.negotiation.per_question_feedback.length - 1 ? 14 : 0 }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#e4d5b0', marginBottom: 4 }}>"{qf.question}"</p>
-              <p style={{ fontSize: 13, color: '#d4d4d8', lineHeight: 1.6, margin: 0 }}>{qf.feedback}</p>
-            </div>
+      {/* The buyer's questions */}
+      {questions.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA', margin: '6px 0 2px 0' }}>THE BUYER'S {questions.length} QUESTIONS</div>
+          {questions.map((qf, i) => (
+            <QuestionRow key={i} qf={qf} isPro={isPro} defaultOpen={i === firstOpenIdx} onUnlock={() => navigate('/upgrade')} />
           ))}
         </div>
       )}
 
-      {/* #3 — Mira block in amber */}
-      {miraLoading ? (
-        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.2)', marginBottom: 14, textAlign: 'center' }}>
-          <p style={{ fontSize: 13, color: '#F59E0B', opacity: 0.6 }}>Mira is reviewing your session...</p>
-        </div>
-      ) : miraInsight ? (
-        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <img src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png" alt="Mira" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(245,158,11,0.4)' }} />
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Mira</p>
-          </div>
-          <p style={{ fontSize: 15, color: '#e4d5b0', lineHeight: 1.7, marginBottom: miraInsight.next_session ? 14 : 0 }}>{miraInsight.message}</p>
-          {/* #4 — "Focus on this next" instead of "Next session suggestion" */}
-          {miraInsight.next_session && (
-            <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(245,158,11,0.2)' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Focus on this next</p>
-              <p style={{ fontSize: 14, color: '#e4d5b0', lineHeight: 1.6, margin: 0 }}>{miraInsight.next_session}</p>
-            </div>
-          )}
-        </div>
-      ) : coachSummary ? (
-        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Your coach says</p>
-          <p style={{ fontSize: 15, color: '#e4d5b0', lineHeight: 1.7, margin: 0 }}>{coachSummary}</p>
-        </div>
-      ) : null}
-
-      {/* 3. Goal */}
-      {params.goal && (
-        <Section>
-          <SectionTitle>Your goal</SectionTitle>
-          <p style={{ fontSize: 14, fontWeight: 600, color: '#ffffff', marginBottom: 10 }}>{params.goal}</p>
-          <div style={{ display: 'inline-block', padding: '6px 12px', borderRadius: 8, background: convictionConvinced ? 'rgba(34,197,94,0.1)' : 'rgba(161,161,170,0.1)', marginBottom: convictionReasoning ? 10 : 0 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: convictionConvinced ? '#22C55E' : '#A1A1AA' }}>
-              {convictionConvinced ? 'You made a strong case' : 'Room to grow here'}
-            </span>
-          </div>
-          {convictionReasoning && <p style={{ fontSize: 14, color: '#d4d4d8', lineHeight: 1.65, margin: 0 }}>{convictionReasoning}</p>}
-        </Section>
-      )}
-
-      {/* 4. What you did well */}
-      {displayStrengths.length > 0 && (
-        <Section>
-          <SectionTitle>What you did well</SectionTitle>
-          {displayStrengths.map((s: string, i: number) => <BulletItem key={i} text={s} color="#22C55E" />)}
-        </Section>
-      )}
-
-      {/* #7 — Improvements moved here, right after strengths */}
-      {displayImprovements.length > 1 && (
-        <Section>
-          <SectionTitle>What to improve</SectionTitle>
-          {(isPro ? displayImprovements : displayImprovements.slice(0, 1)).map((s: string, i: number) => (
-            <BulletItem key={i} text={s} color="#F59E0B" />
-          ))}
-          {!isPro && displayImprovements.length > 1 && (
-            <ProGate text={`${displayImprovements.length - 1} more improvements unlocked with Pro`} onUnlock={() => navigate('/upgrade')} />
-          )}
-        </Section>
-      )}
-
-      {/* 6. Speech timeline */}
-      {data.word_timestamps && data.word_timestamps.length > 2 && (
-        <SpeechTimeline
-          wordTimestamps={data.word_timestamps}
-          actualSeconds={data.actual_seconds || params.targetSeconds}
-          isPro={isPro}
-          onUpgrade={() => navigate('/upgrade')}
-        />
-      )}
-
-
-      {/* Stage presence heatmap */}
-      {zoneUsage && isPro && (
-        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Stage presence</p>
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ display: 'flex', height: 80, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(245,158,11,0.15)' }}>
-              {[
-                { label: 'Left', pct: zoneUsage.left || 0 },
-                { label: 'Center', pct: zoneUsage.center || 0 },
-                { label: 'Right', pct: zoneUsage.right || 0 },
-              ].map((zone, i) => (
-                <div key={zone.label} style={{
-                  flex: 1, display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
-                  background: `rgba(245,158,11,${(zone.pct / 100) * 0.6 + 0.04})`,
-                  borderRight: i < 2 ? '1px solid rgba(245,158,11,0.1)' : 'none',
-                }}>
-                  <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: zone.pct > 20 ? '#F59E0B' : '#71717a' }}>{zone.pct}%</p>
-                  <p style={{ margin: 0, fontSize: 10, color: '#71717a', marginTop: 2 }}>{zone.label}</p>
-                </div>
-              ))}
-            </div>
-            <p style={{ margin: 0, fontSize: 10, color: '#52525B', textAlign: 'center', marginTop: 6 }}>Audience perspective</p>
-          </div>
-        </div>
-      )}
-
-      {/* 7. Speech evaluation (renamed from Feedback, moved before body language) */}
-      <Section>
-        <SectionTitle>Speech evaluation</SectionTitle>
-        {feedbackPace && <FeedbackRow label="Pace" text={feedbackPace} last={!isPro} />}
-        {isPro ? (
-          <>
-            {feedbackFiller && <FeedbackRow label="Filler Words" text={feedbackFiller} />}
-            {feedbackStructure && <FeedbackRow label="Structure" text={feedbackStructure} />}
-            {feedbackConfidence && <FeedbackRow label="Confidence" text={feedbackConfidence} last />}
-          </>
-        ) : (
-          <ProGate text="Full feedback unlocked with Pro" onUnlock={() => navigate('/upgrade')} />
-        )}
-      </Section>
-
-      {/* 8. Body language — amber styling */}
-      {hasBodyLanguage && (
-        isPro ? (
-          <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
-            <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Body language</p>
-            {[
-              { label: 'Eye contact', text: blEye },
-              { label: 'Posture', text: blPosture },
-              { label: 'Movement', text: blMovement },
-              { label: 'Gestures', text: blGestures },
-            ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }, i, arr) => (
-              <FeedbackRow key={label} label={label} text={text} last={i === arr.length - 1} />
-            ))}
-          </div>
-        ) : (
-          <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
-            <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Body language</p>
-            <BlurredRows onUnlock={() => navigate('/upgrade')} />
-          </div>
-        )
-      )}
-
-      {/* Weak language */}
-      {confidenceLanguage && confidenceLanguage.total > 0 && (
-        isPro ? (
-          <Section>
-            <SectionTitle>Weak language detected</SectionTitle>
-            <p style={{ fontSize: 24, fontWeight: 700, color: confidenceLanguage.total >= 5 ? '#EF4444' : '#F59E0B', marginBottom: 12 }}>
-              {confidenceLanguage.total} instances
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {(confidenceLanguage.phrases || []).map((p: string, i: number) => {
-                const strongMap: Record<string, string> = {
-                  'i think': 'I know',
-                  'i believe': 'I am confident',
-                  'i feel like': 'The evidence shows',
-                  'kind of': 'precisely',
-                  'sort of': 'specifically',
-                  'maybe': 'This will',
-                  'perhaps': 'The result is',
-                  'probably': 'This will',
-                  'i just': 'I',
-                  'just': '',
-                  'i guess': 'I know',
-                  'i suppose': 'I know',
-                  'a little bit': '',
-                  'a bit': '',
-                  'try to': 'will',
-                  'trying to': 'working to',
-                  'hopefully': 'We will',
-                  'i wish': 'My goal is',
-                  'it seems': 'The data shows',
-                  'it looks like': 'The evidence shows',
-                  'not sure': 'clear on the direction',
-                  'i was wondering': 'I want to know',
-                }
-                const key = p.toLowerCase()
-                const strong = strongMap[key]
-                return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(245,158,11,0.25)' }}>"{p}"</span>
-                    {strong !== undefined && (
-                      <>
-                        <span style={{ fontSize: 11, color: '#52525B' }}>→</span>
-                        <span style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(34,197,94,0.25)' }}>"{strong || 'remove it'}"</span>
-                      </>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-            {confidenceLanguage.examples && confidenceLanguage.examples.slice(0, 2).map((ex: string, i: number) => (
-              <p key={i} style={{ fontSize: 14, color: '#d4d4d8', fontStyle: 'italic', marginTop: 10 }}>"{ex}"</p>
-            ))}
-          </Section>
-        ) : (
-          <Section>
-            <SectionTitle>Weak language detected</SectionTitle>
-            <BlurredRows onUnlock={() => navigate('/upgrade')} />
-          </Section>
-        )
-      )}
-
-      {/* Filler words */}
-      {fillerEntries.length > 0 && (
-        <Section>
-          <SectionTitle>Filler words</SectionTitle>
-          <div>
-            {fillerEntries.map(([word, count]) => (
-              <FillerChip key={word} word={word} count={count as number} />
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Transcript */}
-      {data.transcript && (
-        <Section>
-          <SectionTitle>Transcript</SectionTitle>
-          {isPro ? (
-            <HighlightedTranscript
-              transcript={data.transcript}
-              fillerWords={fillerWords}
-              weakPhrases={confidenceLanguage?.phrases || []}
-            />
-          ) : (
-            <div style={{ position: 'relative' }}>
-              <div style={{ filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none', maxHeight: 120, overflow: 'hidden', fontSize: 14, lineHeight: 1.7, color: '#d4d4d8' }}>
-                {data.transcript}
-              </div>
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                <span style={{ fontSize: 13, color: '#A1A1AA', textAlign: 'center' }}>Full transcript available on Pro</span>
-                <button
-                  onClick={() => navigate('/upgrade')}
-                  style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 13, padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  Unlock Pro
-                </button>
-              </div>
-            </div>
-          )}
-        </Section>
-      )}
-
-      {/* Action buttons */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-        {params && (
-          <button
-            onClick={() => {
-              // Same topic, goal, audience, duration and scenario: no retyping.
-              // params persist in the session store, so go straight to the recording steps.
-              // Free users out of sessions go to upgrade instead of bypassing the cap
-              const outOfSessions = !isPro && !(params as any).teamSession && !(params as any).isChallenge && sessionsRemaining <= 0
-              if (outOfSessions) { handleNavigation('/upgrade'); return }
-              const { hideInstructions } = useSessionStore.getState()
-              handleNavigation(hideInstructions ? '/permissions' : '/instructions')
-            }}
-            style={{ width: '100%', background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 15, padding: '14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            Try Again
-          </button>
-        )}
+      {/* Actions */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
         <button
-          onClick={() => handleNavigation('/setup')}
-          style={params
-            ? { width: '100%', background: 'transparent', color: '#A1A1AA', fontWeight: 400, fontSize: 14, padding: '14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontFamily: 'inherit' }
-            : { width: '100%', background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 15, padding: '14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+          onClick={handleTryAgain}
+          disabled={tryingAgain}
+          style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 16, padding: 16, borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52, opacity: tryingAgain ? 0.6 : 1 }}
         >
-          New Topic
+          Try again
         </button>
+        <button
+          onClick={() => { window.speechSynthesis?.cancel(); navigate('/setup') }}
+          style={{ width: '100%', background: 'transparent', color: '#d4d4d8', fontWeight: 600, fontSize: 15, padding: 15, borderRadius: 12, border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52 }}
+        >
+          New pitch
+        </button>
+      </div>
+
+      {/* Details, collapsed by default */}
+      <div style={{ marginTop: 4 }}>
+        <DetailsWrap title="Delivery details">
+          <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.05)', marginBottom: 14, display: 'flex', justifyContent: 'space-around' }}>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', margin: 0 }}>{fmt(data.actual_seconds || 0)}</p>
+              <p style={{ fontSize: 10, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '2px 0 0 0' }}>Duration</p>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 18, fontWeight: 700, color: wpmColor, margin: 0 }}>{wpm}</p>
+              <p style={{ fontSize: 10, color: wpmColor, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '2px 0 0 0' }}>{wpmLabel}</p>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', margin: 0 }}>{data.filler_total || 0}</p>
+              <p style={{ fontSize: 10, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '2px 0 0 0' }}>Fillers</p>
+            </div>
+          </div>
+
+          {miraLoading ? (
+            <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.2)', marginBottom: 14, textAlign: 'center' }}>
+              <p style={{ fontSize: 13, color: '#F59E0B', opacity: 0.6, margin: 0 }}>Mira is reviewing your session...</p>
+            </div>
+          ) : miraInsight ? (
+            <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <img src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png" alt="Mira" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(245,158,11,0.4)' }} />
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>Mira</p>
+              </div>
+              <p style={{ fontSize: 15, color: '#e4d5b0', lineHeight: 1.7, margin: miraInsight.next_session ? '0 0 14px 0' : 0 }}>{miraInsight.message}</p>
+              {miraInsight.next_session && (
+                <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(245,158,11,0.2)' }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>Focus on this next</p>
+                  <p style={{ fontSize: 14, color: '#e4d5b0', lineHeight: 1.6, margin: 0 }}>{miraInsight.next_session}</p>
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {displayStrengths.length > 0 && (
+            <Section>
+              <SectionTitle>What you did well</SectionTitle>
+              {displayStrengths.map((s: string, i: number) => <BulletItem key={i} text={s} color="#22C55E" />)}
+            </Section>
+          )}
+
+          {displayImprovements.length > 0 && (
+            <Section>
+              <SectionTitle>What to improve</SectionTitle>
+              {(isPro ? displayImprovements : displayImprovements.slice(0, 1)).map((s: string, i: number) => (
+                <BulletItem key={i} text={s} color="#F59E0B" />
+              ))}
+              {!isPro && displayImprovements.length > 1 && (
+                <ProGate text={`${displayImprovements.length - 1} more improvements unlocked with Pro`} onUnlock={() => navigate('/upgrade')} />
+              )}
+            </Section>
+          )}
+
+          {data.word_timestamps && data.word_timestamps.length > 2 && (
+            <SpeechTimeline
+              wordTimestamps={data.word_timestamps}
+              actualSeconds={data.actual_seconds || params.targetSeconds}
+              isPro={isPro}
+              onUpgrade={() => navigate('/upgrade')}
+            />
+          )}
+
+          <Section>
+            <SectionTitle>Delivery feedback</SectionTitle>
+            {feedback.pace && <FeedbackRow label="Pace" text={feedback.pace} last={!isPro} />}
+            {isPro ? (
+              <>
+                {feedback.filler && <FeedbackRow label="Filler Words" text={feedback.filler} />}
+                {feedback.structure && <FeedbackRow label="Structure" text={feedback.structure} />}
+                {feedback.confidence && <FeedbackRow label="Confidence" text={feedback.confidence} last />}
+              </>
+            ) : (
+              <ProGate text="Full feedback unlocked with Pro" onUnlock={() => navigate('/upgrade')} />
+            )}
+          </Section>
+
+          {hasBodyLanguage && (
+            <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px 0' }}>Body language</p>
+              {isPro ? (
+                [
+                  { label: 'Eye contact', text: blFeedback.eye_contact },
+                  { label: 'Posture', text: blFeedback.posture },
+                  { label: 'Movement', text: blFeedback.movement },
+                  { label: 'Gestures', text: blFeedback.gestures },
+                ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }, i, arr) => (
+                  <FeedbackRow key={label} label={label} text={text} last={i === arr.length - 1} />
+                ))
+              ) : (
+                <BlurredRows onUnlock={() => navigate('/upgrade')} />
+              )}
+            </div>
+          )}
+
+          {confidenceLanguage && confidenceLanguage.total > 0 && (
+            isPro ? (
+              <Section>
+                <SectionTitle>Weak language detected</SectionTitle>
+                <p style={{ fontSize: 24, fontWeight: 700, color: confidenceLanguage.total >= 5 ? '#EF4444' : '#F59E0B', margin: '0 0 12px 0' }}>
+                  {confidenceLanguage.total} instances
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {(confidenceLanguage.phrases || []).map((p: string, i: number) => {
+                    const strongMap: Record<string, string> = {
+                      'i think': 'I know',
+                      'i believe': 'I am confident',
+                      'i feel like': 'The evidence shows',
+                      'kind of': 'precisely',
+                      'sort of': 'specifically',
+                      'maybe': 'This will',
+                      'perhaps': 'The result is',
+                      'probably': 'This will',
+                      'i just': 'I',
+                      'just': '',
+                      'i guess': 'I know',
+                      'i suppose': 'I know',
+                      'a little bit': '',
+                      'a bit': '',
+                      'try to': 'will',
+                      'trying to': 'working to',
+                      'hopefully': 'We will',
+                      'i wish': 'My goal is',
+                      'it seems': 'The data shows',
+                      'it looks like': 'The evidence shows',
+                      'not sure': 'clear on the direction',
+                      'i was wondering': 'I want to know',
+                    }
+                    const strong = strongMap[p.toLowerCase()]
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(245,158,11,0.25)' }}>"{p}"</span>
+                        {strong !== undefined && (
+                          <>
+                            <span style={{ fontSize: 11, color: '#52525B' }}>→</span>
+                            <span style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(34,197,94,0.25)' }}>"{strong || 'remove it'}"</span>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </Section>
+            ) : (
+              <Section>
+                <SectionTitle>Weak language detected</SectionTitle>
+                <BlurredRows onUnlock={() => navigate('/upgrade')} />
+              </Section>
+            )
+          )}
+
+          {fillerEntries.length > 0 && (
+            <Section>
+              <SectionTitle>Filler words</SectionTitle>
+              <div>
+                {fillerEntries.map(([word, count]) => (
+                  <FillerChip key={word} word={word} count={count as number} />
+                ))}
+              </div>
+            </Section>
+          )}
+        </DetailsWrap>
+
+        {data.transcript && (
+          isPro ? (
+            <DetailsWrap title="Full transcript">
+              <Section>
+                <HighlightedTranscript
+                  transcript={data.transcript}
+                  fillerWords={fillerWords}
+                  weakPhrases={confidenceLanguage?.phrases || []}
+                />
+              </Section>
+            </DetailsWrap>
+          ) : (
+            <button
+              onClick={() => navigate('/upgrade')}
+              style={{ width: '100%', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '0 4px', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <span style={{ fontSize: 14, color: '#d4d4d8' }}>Full transcript and better answers</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6' }}>PRO</span>
+            </button>
+          )
+        )}
+
         <button
           onClick={handleEmailResults}
           disabled={emailSending || emailSent}
-          style={{ width: '100%', background: 'transparent', color: emailSent ? '#22C55E' : '#A1A1AA', fontWeight: 400, fontSize: 14, padding: '14px', borderRadius: 10, border: `1px solid ${emailSent ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'}`, cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ width: '100%', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '0 4px', cursor: 'pointer', fontFamily: 'inherit' }}
         >
-          {emailSending ? 'Sending...' : emailSent ? 'Sent!' : 'Email Results'}
-        </button>
-        <button
-          onClick={() => handleNavigation('/history')}
-          style={{ width: '100%', background: 'transparent', color: '#A1A1AA', fontWeight: 400, fontSize: 14, padding: '14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontFamily: 'inherit' }}
-        >
-          History
+          <span style={{ fontSize: 14, color: emailSent ? '#22C55E' : '#d4d4d8' }}>{emailSending ? 'Sending...' : emailSent ? 'Sent' : 'Email me these results'}</span>
         </button>
       </div>
 
+      {/* Mira: weekly email consent, asked once after the first result */}
+      {showConsent && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 14, padding: '14px 16px', marginTop: 6 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#3a2c10', border: '2px solid rgba(245,158,11,0.5)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#F59E0B' }}>M</div>
+          <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#e4d5b0' }}>Weekly coaching email from Mira?</span>
+            <span style={{ fontSize: 12, color: '#A1A1AA' }}>Based on your pitches. Unsubscribe any time.</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <button onClick={() => handleConsent(true)} style={{ background: 'none', border: 'none', color: '#F59E0B', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', padding: '14px 8px' }}>Yes</button>
+            <button onClick={() => handleConsent(false)} style={{ background: 'none', border: 'none', color: '#8B8B94', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', padding: '14px 6px' }}>No</button>
+          </div>
+        </div>
+      )}
+
       <LegalFooter />
+      <BottomNav active="practice" />
     </div>
   )
 }

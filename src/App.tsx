@@ -15,6 +15,8 @@ import { AffiliatePage, FeedbackPage } from './pages/AffiliateFeedbackPages'
 import MiraEditPage from './pages/MiraEditPage'
 import NegotiationPage from './pages/NegotiationPage'
 import ManagerDashboardPage from './pages/ManagerDashboardPage'
+import GetReadyPage from './pages/GetReadyPage'
+import AccountPage from './pages/AccountPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const email = useAuthStore((s) => s.email)
@@ -31,11 +33,13 @@ export default function App() {
         <Route path="/instructions" element={<RequireAuth><InstructionsPage /></RequireAuth>} />
         <Route path="/permissions" element={<RequireAuth><PermissionsPage /></RequireAuth>} />
         <Route path="/position" element={<RequireAuth><PositionPage /></RequireAuth>} />
+        <Route path="/get-ready" element={<RequireAuth><GetReadyPage /></RequireAuth>} />
         <Route path="/recording" element={<RequireAuth><RecordingPage /></RequireAuth>} />
         <Route path="/grading" element={<RequireAuth><GradingPage /></RequireAuth>} />
         <Route path="/negotiate" element={<RequireAuth><NegotiationPage /></RequireAuth>} />
         <Route path="/results" element={<RequireAuth><ResultsPage /></RequireAuth>} />
         <Route path="/upgrade" element={<RequireAuth><UpgradePage /></RequireAuth>} />
+        <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
         <Route path="/history" element={<RequireAuth><HistoryPage /></RequireAuth>} />
         <Route path="/affiliate" element={<RequireAuth><AffiliatePage /></RequireAuth>} />
         <Route path="/feedback" element={<RequireAuth><FeedbackPage /></RequireAuth>} />
