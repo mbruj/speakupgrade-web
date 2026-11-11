@@ -292,11 +292,11 @@ export default function SetupPage() {
   const canRecord = usageChecked && (plan === 'pro' || !!orgRole || (usageData?.remaining ?? 0) > 0)
   const canRecordChallenge = !challengeDoneToday // challenges always available, 1 per day
 
-  // A team scenario is its own thing, independent from the daily challenge —
-  // it prefills fields the same way, but must NOT inherit the daily challenge's
-  // fixed 2-minute duration or its one-per-day limit.
-  const isTeamScenario = !!(orgRole && selectedCategory)
-  const fieldsLocked = challengeActive || isTeamScenario
+  // A sales scenario is available to everyone and is independent from the daily
+  // challenge: it prefills fields but must NOT inherit the challenge's fixed
+  // 2-minute duration or its one-per-day limit.
+  const isScenario = !!selectedCategory
+  const fieldsLocked = challengeActive || isScenario
   const durationMax = orgRole ? 30 : 10
 
   const handleStart = (isChallenge = false) => {
@@ -324,9 +324,12 @@ export default function SetupPage() {
       audience: finalAudience,
       targetSeconds: challengeActive ? 120 : targetMinutes * 60,
       isChallenge,
-      // category is only set for team scenario sessions — undefined for everyone else,
-      // which is what GradingPage checks to decide whether to run the negotiation phase
-      ...(orgRole && selectedCategory ? { category: selectedCategory } : {}),
+      // category is set whenever a sales scenario is chosen (all plans) — this is
+      // what GradingPage checks to run the AI follow-up questions phase.
+      // Never set for the daily challenge.
+      ...(!isChallenge && selectedCategory ? { category: selectedCategory } : {}),
+      // 30-minute recording cap applies to team members only
+      teamSession: !!orgRole,
     } as any)
     const { hideInstructions } = useSessionStore.getState()
     navigate(hideInstructions ? '/permissions' : '/instructions')
@@ -442,6 +445,41 @@ export default function SetupPage() {
         }
       `}</style>
 
+      {/* Sales practice picker: the main entry point for every plan.
+          Custom topic fields and the daily challenge sit below it. */}
+      <div style={{ marginBottom: 22 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', margin: '0 0 4px 0' }}>
+          SALES PRACTICE{pageReady && orgName ? ` — ${orgName.toUpperCase()}` : ''}
+        </p>
+        <p style={{ fontSize: 12, color: '#71717A', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+          Pitch it. An AI buyer asks follow-up questions. You get a verdict: did you win the deal?
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {SALES_CATEGORIES.map((cat) => (
+            <button
+              key={cat.key}
+              onClick={() => {
+                const scenario = randomScenario(cat.key)
+                if (!scenario) return
+                setChallengeActive(false)
+                setTopic(scenario.topic)
+                setGoal(scenario.goal)
+                setAudience(scenario.audience)
+                setSelectedCategory(cat.key)
+              }}
+              style={{
+                background: selectedCategory === cat.key ? 'rgba(59,130,246,0.12)' : '#1A1A1E',
+                border: `1px solid ${selectedCategory === cat.key ? '#3B82F6' : 'rgba(255,255,255,0.06)'}`,
+                borderRadius: 10, padding: '10px 12px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', margin: '0 0 3px 0' }}>{cat.label}</p>
+              <p style={{ fontSize: 10.5, color: '#A1A1AA', margin: 0, lineHeight: 1.3 }}>{cat.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Form */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 24 }}>
         <div>
@@ -497,7 +535,7 @@ export default function SetupPage() {
         className={isPrefilled && !challengeActive ? 'pulse-btn' : ''}
         style={{ width: '100%', background: challengeActive ? '#F59E0B' : isPrefilled ? '#F59E0B' : '#3B82F6', color: (challengeActive || isPrefilled) ? '#1a1a1a' : '#ffffff', fontWeight: 700, fontSize: 16, padding: '16px', borderRadius: 12, border: 'none', cursor: (challengeActive ? !canRecordChallenge : (!topic.trim() || !goal.trim() || !canRecord)) ? 'not-allowed' : 'pointer', opacity: (challengeActive ? !canRecordChallenge : (!topic.trim() || !goal.trim() || !canRecord)) ? 0.4 : 1, fontFamily: 'inherit', marginBottom: challengeActive ? 8 : 20 }}
       >
-        {challengeActive ? 'Start Challenge' : isTeamScenario ? 'Start Practice' : isPrefilled ? 'Start my first session' : 'Start Recording'}
+        {challengeActive ? 'Start Challenge' : isScenario ? 'Start Practice' : isPrefilled ? 'Start my first session' : 'Start Recording'}
       </button>
 
       {!challengeActive && (
@@ -569,7 +607,7 @@ export default function SetupPage() {
           .pulse-btn { animation: pulseBtn 1.2s ease-in-out infinite; }
         `}} />
 
-      {(challengeActive || isTeamScenario) && (
+      {(challengeActive || isScenario) && (
         <button
           onClick={() => {
             setChallengeActive(false)
@@ -584,44 +622,10 @@ export default function SetupPage() {
         </button>
       )}
 
-      {/* Team users see a sales scenario picker here instead of the daily challenge.
-          Solo/Pro users below this condition see the exact daily challenge card as before.
-          Gated on pageReady so it never flashes the wrong option before org/usage checks resolve. */}
+      {/* Daily challenge card, below the sales picker. Gated on pageReady so it
+          never flashes before the usage/streak checks resolve. */}
       {!pageReady ? (
         <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, height: 74, marginBottom: 20 }} />
-      ) : orgRole ? (
-        <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', margin: '0 0 10px 0' }}>
-            SALES PRACTICE{orgName ? ` — ${orgName.toUpperCase()}` : ''}
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {SALES_CATEGORIES.map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => {
-                  const scenario = randomScenario(cat.key)
-                  if (!scenario) return
-                  setTopic(scenario.topic)
-                  setGoal(scenario.goal)
-                  setAudience(scenario.audience)
-                  setSelectedCategory(cat.key)
-                  // Deliberately NOT setChallengeActive(true) here — that flag is
-                  // exclusively for the free daily challenge (fixed 2-min duration,
-                  // one per day). Team scenarios are unlimited, full-length practice
-                  // sessions and must not inherit those constraints.
-                }}
-                style={{
-                  background: selectedCategory === cat.key ? 'rgba(59,130,246,0.12)' : '#1A1A1E',
-                  border: `1px solid ${selectedCategory === cat.key ? '#3B82F6' : 'rgba(255,255,255,0.06)'}`,
-                  borderRadius: 10, padding: '10px 12px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                <p style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', margin: '0 0 3px 0' }}>{cat.label}</p>
-                <p style={{ fontSize: 10.5, color: '#A1A1AA', margin: 0, lineHeight: 1.3 }}>{cat.description}</p>
-              </button>
-            ))}
-          </div>
-        </div>
       ) : !challengeDoneToday ? (
         <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -640,6 +644,7 @@ export default function SetupPage() {
               onClick={() => {
                 setTopic(challenge.topic)
                 setGoal(challenge.goal)
+                setSelectedCategory(null)
                 setChallengeActive(true)
               }}
               disabled={!canRecordChallenge}

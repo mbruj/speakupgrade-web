@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSessionStore } from '../store'
 
-// Solo/Pro keep the existing 12-minute cap. Team sessions (category set) get 30
-// minutes — this only ever raises the ceiling for team users, per design decision.
+// Free/Pro keep the existing 12-minute cap. Team members (teamSession flag set by
+// SetupPage from the org check) get 30 minutes. A sales scenario alone does not.
 const SOLO_MAX_SECONDS = 12 * 60
 const TEAM_MAX_SECONDS = 30 * 60
 
@@ -51,10 +51,8 @@ export default function RecordingPage() {
   const [cameraHidden, setCameraHidden] = useState(hideCameraPreference)
   const isMobile = isMobileDevice()
 
-  // Team sessions (category set on params) get the 30-minute ceiling; everyone
-  // else keeps the existing 12-minute one, unchanged. maxSeconds still drives the
-  // actual auto-stop cutoff below — only the visual countdown/progress bar was reverted.
-  const maxSeconds = (params as any)?.category ? TEAM_MAX_SECONDS : SOLO_MAX_SECONDS
+  // Team members get the 30-minute ceiling; everyone else keeps 12 minutes.
+  const maxSeconds = (params as any)?.teamSession ? TEAM_MAX_SECONDS : SOLO_MAX_SECONDS
   const frameIntervalMs = Math.round((maxSeconds * 1000) / TARGET_FRAME_COUNT)
 
   useEffect(() => {
