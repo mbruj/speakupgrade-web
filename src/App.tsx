@@ -44,7 +44,7 @@ export default function App() {
         <Route path="/history" element={<RequireAuth><div style={{ paddingBottom: 90, background: '#09090B', minHeight: '100dvh' }}><HistoryPage /></div><BottomNav active="history" /></RequireAuth>} />
         <Route path="/affiliate" element={<RequireAuth><AffiliatePage /></RequireAuth>} />
         <Route path="/feedback" element={<RequireAuth><FeedbackPage /></RequireAuth>} />
-        <Route path="/mira-edit" element={<RequireAuth><MiraEditPage /></RequireAuth>} />
+        <Route path="/mira-edit" element={<RequireAuth><div style={{ paddingBottom: 90, background: '#09090B', minHeight: '100dvh' }}><MiraEditPage /></div><BottomNav active="account" /></RequireAuth>} />
         <Route path="/onboarding" element={<Navigate to="/setup" replace />} />
         <Route path="/team" element={<RequireAuth><ManagerDashboardPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />

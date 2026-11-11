@@ -19,11 +19,6 @@ function scoreColor(score: number) {
   return '#EF4444'
 }
 
-function fmt(s: number) {
-  if (!s) return '0:00'
-  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')
-}
-
 function formatDate(iso: string) {
   const d = new Date(iso)
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) +
@@ -63,18 +58,13 @@ function TrendChart({ sessions }: { sessions: Session[] }) {
 
 export default function HistoryPage() {
   const navigate = useNavigate()
-  const { email, plan } = useAuthStore()
-  const { results, setResults, setParams } = useSessionStore()
+  const { email } = useAuthStore()
+  const { setResults, setParams } = useSessionStore()
   const { isPro, checked } = useEffectiveAccess()
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null)
-
-  const handleBack = () => {
-    if (results) navigate('/results')
-    else navigate('/setup')
-  }
 
   useEffect(() => {
     if (!email) { navigate('/'); return }
@@ -97,22 +87,24 @@ export default function HistoryPage() {
       const res = await fetch(`${API_URL}/history/${session.id}?email=${encodeURIComponent(email)}`)
       const data = await res.json()
       if (!res.ok || !data.session?.raw_result) {
-        alert('Full results are not available for this session. Only new sessions save full details.')
+        alert('Full results are not available for this pitch. Only newer pitches save full details.')
         return
       }
       const raw = data.session.raw_result
       // Set params from session data so ResultsPage doesn't redirect
+      // category 'sales' means Try again from a past result still runs the buyer questions
       setParams({
-        topic: session.topic || raw.topic || 'Session',
-        goal: raw.conviction?.goal || '',
+        topic: raw.negotiation?.topic || session.topic || raw.topic || 'Pitch',
+        goal: raw.negotiation?.goal || '',
         audience: '',
-        targetSeconds: session.actual_seconds || 0,
+        targetSeconds: 180,
         isChallenge: false,
-      })
+        category: 'sales',
+      } as any)
       setResults(raw)
       navigate('/results')
     } catch {
-      alert('Could not load session. Please try again.')
+      alert('Could not load this pitch. Please try again.')
     } finally {
       setLoadingSessionId(null)
     }
@@ -128,11 +120,7 @@ export default function HistoryPage() {
     <div style={{ minHeight: '100dvh', background: '#09090B', display: 'flex', flexDirection: 'column', padding: '48px 20px 40px', maxWidth: 480, margin: '0 auto' }}>
       <style>{'@keyframes spin { to { transform: rotate(360deg); } }'}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-        <button onClick={handleBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3B82F6', fontSize: 15, fontFamily: 'inherit' }}>Back</button>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', flex: 1, textAlign: 'center' }}>History</h1>
-        <div style={{ width: 40 }} />
-      </div>
+      <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.5px', color: '#ffffff', margin: '0 0 24px 0' }}>History</h1>
 
       {!checked && (
         <div style={{ textAlign: 'center', marginTop: 60 }}>
@@ -154,7 +142,7 @@ export default function HistoryPage() {
                 </div>
                 <div>
                   <p style={{ fontWeight: 600, fontSize: 14 }}>Sample topic</p>
-                  <p style={{ color: '#A1A1AA', fontSize: 12 }}>18 May · 3:00 · 140 WPM</p>
+                  <p style={{ color: '#A1A1AA', fontSize: 12 }}>18 May</p>
                 </div>
               </div>
             ))}
@@ -179,7 +167,7 @@ export default function HistoryPage() {
 
       {isPro && !loading && !error && sessions.length === 0 && (
         <div style={{ background: '#1A1A1E', borderRadius: 14, padding: 32, textAlign: 'center', marginTop: 20 }}>
-          <p style={{ color: '#A1A1AA', marginBottom: 16 }}>No sessions yet. Record your first speech!</p>
+          <p style={{ color: '#A1A1AA', marginBottom: 16 }}>No pitches yet. Practise your first pitch!</p>
           <button onClick={() => navigate('/setup')} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 14, padding: '12px 24px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
             Start recording
           </button>
@@ -203,7 +191,7 @@ export default function HistoryPage() {
           </div>
 
           <p style={{ fontSize: 10, fontWeight: 700, color: '#A1A1AA', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>All sessions</p>
-          <p style={{ fontSize: 12, color: '#52525B', marginBottom: 14 }}>Tap a session to view full results</p>
+          <p style={{ fontSize: 12, color: '#52525B', marginBottom: 14 }}>Tap a pitch to view full results</p>
 
           {sessions.map((s) => (
             <button
@@ -238,7 +226,7 @@ export default function HistoryPage() {
                   {s.topic || 'Untitled session'}
                 </p>
                 <p style={{ color: '#A1A1AA', fontSize: 12 }}>
-                  {formatDate(s.created_at)} · {fmt(s.actual_seconds)} · {s.words_per_minute} WPM
+                  {formatDate(s.created_at)}
                 </p>
               </div>
               <span style={{ color: '#3B82F6', fontSize: 20, flexShrink: 0, lineHeight: 1 }}>›</span>

@@ -4,20 +4,20 @@ import { gradeSession, incrementUsage } from '../lib/api'
 import { useAuthStore, useSessionStore } from '../store'
 
 const TIPS = [
-  { title: 'Pause before key points', body: 'Silence commands more attention than words.' },
-  { title: 'Vary your pace', body: 'Speed up for excitement. Slow down for emphasis.' },
-  { title: 'Look at the camera', body: 'Eye contact builds trust with your audience.' },
-  { title: 'Open with strength', body: 'Your first sentence sets the tone for everything.' },
-  { title: 'Use concrete numbers', body: 'Specific facts are more persuasive than vague claims.' },
-  { title: 'Avoid filler words', body: 'Pause instead of saying "um", "like", or "you know".' },
-  { title: 'Speak conversationally', body: 'The best speakers sound like they\'re having a chat.' },
-  { title: 'End with clarity', body: 'Tell them exactly what you want them to do or think.' },
+  { title: 'Open with the buyer\'s problem', body: 'Start with their pain, not your product.' },
+  { title: 'Say the price plainly', body: 'State the number, then explain the value. Hiding it costs trust.' },
+  { title: 'Answer the question you were asked', body: 'A dodge reads as hiding something. Answer first, then reframe.' },
+  { title: 'Ask for one next step', body: 'End by asking for one specific commitment, not "let me know".' },
+  { title: 'Use their words', body: 'Repeat the buyer\'s own phrasing back to them.' },
+  { title: 'Cut the hedges', body: '"I think" and "maybe" signal doubt. Say it plainly.' },
+  { title: 'Name a customer result', body: 'Use a number only if it is real. Invented proof gets caught.' },
+  { title: 'Stop talking after the ask', body: 'Ask for the next step, then wait for the answer.' },
 ]
 
 export default function GradingPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { audioBase64, audioType, frames } = location.state ?? {}
+  const { audioBase64, audioType } = location.state ?? {}
 
   const { email, plan, decrementSessions } = useAuthStore()
   const { params, setResults } = useSessionStore()
@@ -27,12 +27,6 @@ export default function GradingPage() {
   const [error, setError] = useState<string | null>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tipTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  // A 30-minute team recording genuinely takes longer to grade than a 3-minute
-  // one — 90s flat was a false alarm waiting to happen for any long session.
-  // Scale generously with actual recorded length instead of a fixed number.
-  const actualSeconds = (location.state as any)?.actualSeconds || 180
-  const timeoutMs = Math.max(90_000, actualSeconds * 1000 * 0.5 + 60_000)
 
   useEffect(() => {
     if (!params || !email || !audioBase64) {
@@ -51,7 +45,7 @@ export default function GradingPage() {
 
     timeoutRef.current = setTimeout(() => {
       setError('Analysis is taking longer than expected. Please try again.')
-    }, timeoutMs)
+    }, 90_000)
 
     analyse()
 
@@ -66,7 +60,7 @@ export default function GradingPage() {
       const raw = await gradeSession({
         audio: audioBase64,
         audioType: audioType || 'audio/webm',
-        frames: JSON.stringify(frames ?? []),
+        frames: '[]',
         topic: params!.topic,
         goal: params!.goal,
         audience: params!.audience,
@@ -110,7 +104,7 @@ export default function GradingPage() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
     timeoutRef.current = setTimeout(() => {
       setError('Analysis is taking longer than expected. Please try again.')
-    }, timeoutMs)
+    }, 90_000)
     analyse()
   }
 
@@ -144,7 +138,7 @@ export default function GradingPage() {
             <div style={{ width: 56, height: 56, borderRadius: '50%', border: '3px solid rgba(59,130,246,0.15)', borderTopColor: '#3B82F6', animation: 'spin 1s linear infinite', margin: '0 auto 32px' }} />
 
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#ffffff', marginBottom: 6 }}>
-              Analysing your speech
+              Analysing your pitch
             </h2>
             <p style={{ fontSize: 13, color: '#52525B', marginBottom: 40 }}>
               This usually takes under a minute
@@ -161,7 +155,7 @@ export default function GradingPage() {
               transition: 'opacity 0.4s ease, transform 0.4s ease',
             }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#3B82F6', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>
-                Speaking tip
+                Sales tip
               </p>
               <p style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', marginBottom: 8 }}>
                 {tip.title}

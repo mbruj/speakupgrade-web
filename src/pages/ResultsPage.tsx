@@ -11,10 +11,6 @@ import MiraAvatar from '../components/MiraAvatar'
 function scoreColor(v: number) {
   return v >= 70 ? '#22C55E' : v >= 50 ? '#F59E0B' : '#EF4444'
 }
-function fmt(s: number) {
-  if (!s) return '0:00'
-  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')
-}
 // #1 — no emoji in verdict
 function getVerdict(score: number) {
   if (score >= 80) return { label: 'Outstanding session' }
@@ -161,116 +157,6 @@ function HighlightedTranscript({ transcript, fillerWords, weakPhrases = [] }: { 
   )
 }
 
-// #8 — only show pauses >= 2 seconds to reduce noise
-function SpeechTimeline({ wordTimestamps, actualSeconds, isPro, onUpgrade }: { wordTimestamps: any[]; actualSeconds: number; isPro: boolean; onUpgrade: () => void }) {
-  const [scrubPos, setScrubPos] = useState<number | null>(null)
-  const [scrubInfo, setScrubInfo] = useState<any>(null)
-
-  const duration = actualSeconds || wordTimestamps[wordTimestamps.length - 1]?.end || 60
-  const chunkSize = 5
-  const numChunks = Math.ceil(duration / chunkSize)
-  const minWpm = 60, maxWpm = 200
-  const graphH = 120, padTop = 10, padBot = 20
-  const plotH = graphH - padTop - padBot
-  const width = 320
-
-  const segments = Array.from({ length: numChunks }, (_, i) => {
-    const start = i * chunkSize; const end = start + chunkSize
-    const words = wordTimestamps.filter(w => w.start >= start && w.start < end)
-    const wpm = words.length > 0 ? Math.round((words.length / chunkSize) * 60) : 0
-    return { start, end, wpm, text: words.map(w => w.word).join(' ') }
-  })
-
-  // #8 — only pauses >= 2s shown (strategic = 3s+, hesitation = 2-3s)
-  const pauses: any[] = []
-  for (let i = 1; i < wordTimestamps.length; i++) {
-    const gap = wordTimestamps[i].start - wordTimestamps[i - 1].end
-    if (gap >= 2) pauses.push({ start: wordTimestamps[i - 1].end, end: wordTimestamps[i].start, duration: gap, type: gap >= 3 ? 'strategic' : 'hesitation' })
-  }
-
-  const xFor = (t: number) => (t / duration) * width
-  const yFor = (wpm: number) => padTop + plotH - ((Math.min(wpm, maxWpm) - minWpm) / (maxWpm - minWpm)) * plotH
-  const points = segments.map(s => ({ x: xFor((s.start + s.end) / 2), y: s.wpm > 0 ? yFor(s.wpm) : null })).filter(p => p.y !== null)
-
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!isPro) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const t = (x / rect.width) * duration
-    setScrubPos(x / rect.width * width)
-    const onPause = pauses.find(p => t >= p.start && t <= p.end)
-    if (onPause) { setScrubInfo({ isPause: true, duration: onPause.duration.toFixed(1), type: onPause.type }); return }
-    const seg = segments.find(s => t >= s.start && t < s.end) || segments[segments.length - 1]
-    setScrubInfo({ isPause: false, wpm: seg.wpm, text: seg.text, wpmLabel: seg.wpm > 160 ? 'Too fast' : seg.wpm < 110 ? 'Too slow' : 'Good pace', time: fmt(Math.round(t)) })
-  }
-
-  if (!segments || segments.length < 2) return null
-
-  return (
-    <Section>
-      <SectionTitle>Speech timeline</SectionTitle>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 16, height: 8, borderRadius: 2, background: 'rgba(34,197,94,0.3)' }} />
-          <span style={{ fontSize: 11, color: '#A1A1AA' }}>Ideal pace zone</span>
-        </div>
-        {isPro && <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 8, height: 8, background: 'rgba(34,197,94,0.6)' }} />
-            <span style={{ fontSize: 11, color: '#A1A1AA' }}>Strategic pause</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 8, height: 8, background: 'rgba(245,158,11,0.6)' }} />
-            <span style={{ fontSize: 11, color: '#A1A1AA' }}>Unplanned pause</span>
-          </div>
-        </>}
-      </div>
-      <svg width="100%" viewBox={`0 0 ${width} ${graphH}`} preserveAspectRatio="none" style={{ display: 'block', cursor: isPro ? 'crosshair' : 'default' }}
-        onMouseMove={handleMouseMove} onMouseLeave={() => { setScrubPos(null); setScrubInfo(null) }}>
-        <rect x={0} y={yFor(150)} width={width} height={yFor(110) - yFor(150)} fill="rgba(34,197,94,0.08)" />
-        {isPro && pauses.map((p, i) => (
-          <rect key={i} x={xFor(p.start)} y={padTop} width={Math.max(3, xFor(p.end) - xFor(p.start))} height={plotH}
-            fill={p.type === 'strategic' ? 'rgba(34,197,94,0.25)' : 'rgba(245,158,11,0.25)'} />
-        ))}
-        {points.slice(1).map((p, i) => (
-          <line key={i} x1={points[i].x} y1={points[i].y!} x2={p.x} y2={p.y!} stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" />
-        ))}
-        {isPro && scrubPos !== null && <line x1={scrubPos} y1={padTop} x2={scrubPos} y2={graphH - padBot} stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" />}
-        <text x={4} y={padTop + 10} fill="rgba(255,255,255,0.3)" fontSize="9">200</text>
-        <text x={4} y={yFor(150) + 4} fill="rgba(34,197,94,0.6)" fontSize="9">150</text>
-        <text x={4} y={yFor(110) + 4} fill="rgba(34,197,94,0.6)" fontSize="9">110</text>
-      </svg>
-      {isPro ? (
-        <>
-          <p style={{ fontSize: 11, color: '#52525B', textAlign: 'center', margin: '4px 0' }}>Drag to explore your speech</p>
-          <div style={{ background: '#111316', borderRadius: 8, padding: 12, minHeight: 60, marginTop: 4 }}>
-            {!scrubInfo && <p style={{ fontSize: 13, color: '#52525B', fontStyle: 'italic' }}>{segments[Math.floor(segments.length / 2)]?.text || ''}</p>}
-            {scrubInfo?.isPause && (
-              <>
-                <p style={{ fontSize: 11, color: '#A1A1AA', marginBottom: 4 }}>{scrubInfo.type === 'strategic' ? 'Strategic pause' : 'Unplanned pause'} — {scrubInfo.duration}s</p>
-                <p style={{ fontSize: 13, color: '#d4d4d8', lineHeight: 1.5 }}>{scrubInfo.type === 'strategic' ? 'Good — a deliberate pause for effect' : 'Watch out — unplanned mid-speech pause'}</p>
-              </>
-            )}
-            {scrubInfo && !scrubInfo.isPause && (
-              <>
-                <p style={{ fontSize: 11, color: '#A1A1AA', marginBottom: 4 }}>{scrubInfo.time} — {scrubInfo.wpm} WPM — {scrubInfo.wpmLabel}</p>
-                <p style={{ fontSize: 13, color: '#d4d4d8', lineHeight: 1.5 }}>{scrubInfo.text}</p>
-              </>
-            )}
-          </div>
-        </>
-      ) : (
-        <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 10, padding: 14, border: '1px solid rgba(59,130,246,0.2)', textAlign: 'center', marginTop: 8 }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>Interactive timeline is Pro</p>
-          <p style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 10 }}>Drag to explore your speech moment by moment.</p>
-          <button onClick={onUpgrade} style={{ background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-            Unlock with Pro
-          </button>
-        </div>
-      )}
-    </Section>
-  )
-}
 
 // ─── Sales-mode pieces ────────────────────────────────────────────────────────
 
@@ -364,52 +250,51 @@ export default function ResultsPage() {
     }
   }, [raw?.trial_unlocked])
 
-  const [emailSending, setEmailSending] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
   const [voiceEnabled, setVoiceEnabled] = useState(true)
   const [tryingAgain, setTryingAgain] = useState(false)
   const [showConsent, setShowConsent] = useState(false)
-
-  // Mira state
   const [miraInsight, setMiraInsight] = useState<{ message: string; next_session: string } | null>(null)
   const [miraLoading, setMiraLoading] = useState(false)
 
   const data = raw as any
   const neg = data?.negotiation || null
-  const bl = data?.body_language || {}
-  const blFeedback = bl.feedback || {}
   const feedback = data?.feedback || {}
-  const displayStrengths: string[] = data?.strengths || []
-  const displayImprovements: string[] = data?.improvements || []
-  const overall = data?.scores?.overall || 0
-  const color = scoreColor(overall)
+  const strengths: string[] = data?.strengths || []
+  const improvements: string[] = data?.improvements || []
+  const pitchOverall = data?.scores?.overall || 0
+  // Sales score: average of pitch, objection handling, clarity, confidence (calculated on the server)
+  const overall: number = neg && typeof neg.overall_score === 'number' ? neg.overall_score : pitchOverall
   const verdict = getVerdict(overall)
-  const wpm = data?.words_per_minute || 0
-  const wpmColor = wpm === 0 ? '#A1A1AA' : wpm < 110 ? '#F59E0B' : wpm > 160 ? '#F59E0B' : '#22C55E'
-  const wpmLabel = wpm === 0 ? 'WPM' : wpm < 110 ? 'Too slow' : wpm > 160 ? 'Too fast' : 'Good pace'
-  const conviction = data?.conviction || null
   const coachSummary: string = data?.coach_summary || ''
   const rawCL = data?.confidence_language
-  const confidenceLanguage = rawCL
+  const hedging = rawCL
     ? Array.isArray(rawCL)
-      ? { total: rawCL.length, phrases: rawCL, examples: [] }
-      : rawCL
+      ? { total: rawCL.length, phrases: rawCL as string[] }
+      : (rawCL as { total: number; phrases: string[] })
     : null
   const fillerWords: Record<string, number> = data?.filler_words || {}
   const fillerEntries = Object.entries(fillerWords).filter(([, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number))
-  const hasBodyLanguage = blFeedback && Object.values(blFeedback).some((v: any) => v && v !== 'No video data available.')
 
   // Headline: did the buyer agree to what the rep wanted?
   const gs = neg ? GOAL_STYLE[neg.goal_status] || null : null
   const headLabel: string = gs ? gs.label : verdict.label
-  const headColor: string = gs ? gs.color : color
+  const headColor: string = gs ? gs.color : scoreColor(overall)
   const headBg: string = gs ? gs.bg : 'rgba(255,255,255,0.04)'
   const headBorder: string = gs ? gs.border : 'rgba(255,255,255,0.1)'
   const headText: string = gs ? gs.text : '#d4d4d8'
   const headReason: string = (neg && neg.goal_reasoning) || coachSummary || ''
-  const fixText: string = (neg && neg.fix_next) || displayImprovements[0] || ''
+  const fixText: string = (neg && neg.fix_next) || improvements[0] || ''
   const questions: any[] = (neg && neg.per_question_feedback) || []
   const firstOpenIdx = questions.findIndex(q => q.status !== 'handled')
+
+  const tiles: { label: string; value: number }[] = neg
+    ? [
+        { label: 'Pitch', value: typeof neg.pitch_score === 'number' ? neg.pitch_score : pitchOverall },
+        { label: 'Objections', value: neg.objection_handling_score || 0 },
+        { label: 'Clarity', value: neg.clarity_score || 0 },
+        { label: 'Confidence', value: neg.confidence_score || 0 },
+      ]
+    : []
 
   const speakResults = () => {
     if (!('speechSynthesis' in window)) return
@@ -450,9 +335,10 @@ export default function ResultsPage() {
           body: JSON.stringify({
             email,
             currentSession: {
-              overall, pace: data?.scores?.pace || 0,
-              fillerTotal: data?.filler_total || 0,
-              wpm, topic: params.topic,
+              overall,
+              goalStatus: neg ? neg.goal_status : null,
+              fixNext: fixText,
+              topic: params.topic,
             },
           }),
         })
@@ -525,34 +411,34 @@ export default function ResultsPage() {
     navigate(blocked ? '/upgrade' : '/get-ready')
   }
 
-  const handleEmailResults = async () => {
-    if (emailSending || emailSent || !email || !params) return
-    setEmailSending(true)
-    try {
-      await fetch(`${API_URL}/email-results`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email, topic: params.topic, goal: params.goal || '', overall,
-          duration: fmt(data.actual_seconds || 0), wpm, wpmLabel,
-          fillerTotal: data.filler_total || 0,
-          strengths: displayStrengths, improvements: displayImprovements,
-          feedbackPace: feedback.pace, feedbackFiller: isPro ? feedback.filler : '',
-          feedbackStructure: isPro ? feedback.structure : '',
-          feedbackConfidence: isPro ? feedback.confidence : '',
-          fillerWords, transcript: data.transcript || '',
-          isPro, conviction, coachSummary,
-          confidenceLanguage, blScores: bl.scores || null, blFeedback: bl.feedback || null,
-          scores: { relevance: data.scores?.relevance || 0, pace: data.scores?.pace || 0, filler: data.scores?.filler || 0, structure: data.scores?.structure || 0, confidence: data.scores?.confidence || 0 },
-        }),
-      })
-      setEmailSent(true)
-      setTimeout(() => setEmailSent(false), 3000)
-    } catch (err) { console.error(err) }
-    finally { setEmailSending(false) }
-  }
-
   if (!raw || !params) return null
+
+  const weakMap: Record<string, string> = {
+    'i think': 'I know',
+    'i believe': 'I am confident',
+    'i feel like': 'The evidence shows',
+    'kind of': 'precisely',
+    'sort of': 'specifically',
+    'maybe': 'This will',
+    'perhaps': 'The result is',
+    'probably': 'This will',
+    'i just': 'I',
+    'just': '',
+    'i guess': 'I know',
+    'i suppose': 'I know',
+    'a little bit': '',
+    'a bit': '',
+    'try to': 'will',
+    'trying to': 'working to',
+    'hopefully': 'We will',
+    'i wish': 'My goal is',
+    'it seems': 'The data shows',
+    'it looks like': 'The evidence shows',
+    'not sure': 'clear on the direction',
+    'i was wondering': 'I want to know',
+    'i was wondering if': 'Can we',
+    'to be honest': '',
+  }
 
   return (
     <div style={{ minHeight: '100dvh', background: '#09090B', padding: '28px 20px 110px', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -599,6 +485,18 @@ export default function ResultsPage() {
         )}
       </div>
 
+      {/* The four numbers behind the score */}
+      {tiles.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          {tiles.map(t => (
+            <div key={t.label} style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
+              <p style={{ fontSize: 20, fontWeight: 700, color: scoreColor(t.value), margin: '0 0 2px 0', fontFamily: 'ui-monospace, Menlo, monospace' }}>{t.value}</p>
+              <p style={{ fontSize: 10, color: '#A1A1AA', margin: 0, letterSpacing: '0.02em' }}>{t.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* The buyer's questions */}
       {questions.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -609,13 +507,13 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* Mira: personal coach note, visible without opening anything */}
+      {/* Mira: personal coach note */}
       {miraLoading ? (
-        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.2)', marginBottom: 14, textAlign: 'center' }}>
-          <p style={{ fontSize: 13, color: '#F59E0B', opacity: 0.6, margin: 0 }}>Mira is reviewing your session...</p>
+        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.2)', textAlign: 'center' }}>
+          <p style={{ fontSize: 13, color: '#F59E0B', opacity: 0.6, margin: 0 }}>Mira is reviewing your pitch...</p>
         </div>
       ) : miraInsight ? (
-        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.25)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <MiraAvatar size={32} />
             <p style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>Mira</p>
@@ -623,13 +521,12 @@ export default function ResultsPage() {
           <p style={{ fontSize: 15, color: '#e4d5b0', lineHeight: 1.7, margin: miraInsight.next_session ? '0 0 14px 0' : 0 }}>{miraInsight.message}</p>
           {miraInsight.next_session && (
             <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(245,158,11,0.2)' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>Focus on this next</p>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>Try this next</p>
               <p style={{ fontSize: 14, color: '#e4d5b0', lineHeight: 1.6, margin: 0 }}>{miraInsight.next_session}</p>
             </div>
           )}
         </div>
       ) : null}
-
 
       {/* Actions */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
@@ -650,116 +547,50 @@ export default function ResultsPage() {
 
       {/* Details, collapsed by default */}
       <div style={{ marginTop: 4 }}>
-        <DetailsWrap title="Delivery details">
-          <div style={{ background: '#1A1A1E', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.05)', marginBottom: 14, display: 'flex', justifyContent: 'space-around' }}>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', margin: 0 }}>{fmt(data.actual_seconds || 0)}</p>
-              <p style={{ fontSize: 10, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '2px 0 0 0' }}>Duration</p>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 18, fontWeight: 700, color: wpmColor, margin: 0 }}>{wpm}</p>
-              <p style={{ fontSize: 10, color: wpmColor, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '2px 0 0 0' }}>{wpmLabel}</p>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', margin: 0 }}>{data.filler_total || 0}</p>
-              <p style={{ fontSize: 10, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '2px 0 0 0' }}>Fillers</p>
-            </div>
-          </div>
-
-          {displayStrengths.length > 0 && (
+        <DetailsWrap title="Pitch feedback">
+          {strengths.length > 0 && (
             <Section>
-              <SectionTitle>What you did well</SectionTitle>
-              {displayStrengths.map((s: string, i: number) => <BulletItem key={i} text={s} color="#22C55E" />)}
+              <SectionTitle>What worked</SectionTitle>
+              {strengths.map((s: string, i: number) => <BulletItem key={i} text={s} color="#22C55E" />)}
             </Section>
           )}
 
-          {displayImprovements.length > 0 && (
+          {improvements.length > 0 && (
             <Section>
               <SectionTitle>What to improve</SectionTitle>
-              {(isPro ? displayImprovements : displayImprovements.slice(0, 1)).map((s: string, i: number) => (
+              {(isPro ? improvements : improvements.slice(0, 1)).map((s: string, i: number) => (
                 <BulletItem key={i} text={s} color="#F59E0B" />
               ))}
-              {!isPro && displayImprovements.length > 1 && (
-                <ProGate text={`${displayImprovements.length - 1} more improvements unlocked with Pro`} onUnlock={() => navigate('/upgrade')} />
+              {!isPro && improvements.length > 1 && (
+                <ProGate text={`${improvements.length - 1} more improvements unlocked with Pro`} onUnlock={() => navigate('/upgrade')} />
               )}
             </Section>
-          )}
-
-          {data.word_timestamps && data.word_timestamps.length > 2 && (
-            <SpeechTimeline
-              wordTimestamps={data.word_timestamps}
-              actualSeconds={data.actual_seconds || params.targetSeconds}
-              isPro={isPro}
-              onUpgrade={() => navigate('/upgrade')}
-            />
           )}
 
           <Section>
-            <SectionTitle>Delivery feedback</SectionTitle>
-            {feedback.pace && <FeedbackRow label="Pace" text={feedback.pace} last={!isPro} />}
+            <SectionTitle>How the pitch landed</SectionTitle>
+            {feedback.relevance && <FeedbackRow label="Buyer focus" text={feedback.relevance} last={!isPro} />}
             {isPro ? (
               <>
-                {feedback.filler && <FeedbackRow label="Filler Words" text={feedback.filler} />}
-                {feedback.structure && <FeedbackRow label="Structure" text={feedback.structure} />}
-                {feedback.confidence && <FeedbackRow label="Confidence" text={feedback.confidence} last />}
+                {feedback.structure && <FeedbackRow label="Pitch structure" text={feedback.structure} />}
+                {feedback.confidence && <FeedbackRow label="Confidence" text={feedback.confidence} />}
+                {feedback.filler && <FeedbackRow label="Filler words" text={feedback.filler} last />}
               </>
             ) : (
-              <ProGate text="Full feedback unlocked with Pro" onUnlock={() => navigate('/upgrade')} />
+              <ProGate text="Full pitch feedback unlocked with Pro" onUnlock={() => navigate('/upgrade')} />
             )}
           </Section>
 
-          {hasBodyLanguage && (
-            <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
-              <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px 0' }}>Body language</p>
-              {isPro ? (
-                [
-                  { label: 'Eye contact', text: blFeedback.eye_contact },
-                  { label: 'Posture', text: blFeedback.posture },
-                  { label: 'Movement', text: blFeedback.movement },
-                  { label: 'Gestures', text: blFeedback.gestures },
-                ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }, i, arr) => (
-                  <FeedbackRow key={label} label={label} text={text} last={i === arr.length - 1} />
-                ))
-              ) : (
-                <BlurredRows onUnlock={() => navigate('/upgrade')} />
-              )}
-            </div>
-          )}
-
-          {confidenceLanguage && confidenceLanguage.total > 0 && (
+          {hedging && hedging.total > 0 && (
             isPro ? (
               <Section>
-                <SectionTitle>Weak language detected</SectionTitle>
-                <p style={{ fontSize: 24, fontWeight: 700, color: confidenceLanguage.total >= 5 ? '#EF4444' : '#F59E0B', margin: '0 0 12px 0' }}>
-                  {confidenceLanguage.total} instances
+                <SectionTitle>Hedging words</SectionTitle>
+                <p style={{ fontSize: 24, fontWeight: 700, color: hedging.total >= 5 ? '#EF4444' : '#F59E0B', margin: '0 0 12px 0' }}>
+                  {hedging.total} instances
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {(confidenceLanguage.phrases || []).map((p: string, i: number) => {
-                    const strongMap: Record<string, string> = {
-                      'i think': 'I know',
-                      'i believe': 'I am confident',
-                      'i feel like': 'The evidence shows',
-                      'kind of': 'precisely',
-                      'sort of': 'specifically',
-                      'maybe': 'This will',
-                      'perhaps': 'The result is',
-                      'probably': 'This will',
-                      'i just': 'I',
-                      'just': '',
-                      'i guess': 'I know',
-                      'i suppose': 'I know',
-                      'a little bit': '',
-                      'a bit': '',
-                      'try to': 'will',
-                      'trying to': 'working to',
-                      'hopefully': 'We will',
-                      'i wish': 'My goal is',
-                      'it seems': 'The data shows',
-                      'it looks like': 'The evidence shows',
-                      'not sure': 'clear on the direction',
-                      'i was wondering': 'I want to know',
-                    }
-                    const strong = strongMap[p.toLowerCase()]
+                  {(hedging.phrases || []).map((p: string, i: number) => {
+                    const strong = weakMap[p.toLowerCase()]
                     return (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(245,158,11,0.25)' }}>"{p}"</span>
@@ -776,7 +607,7 @@ export default function ResultsPage() {
               </Section>
             ) : (
               <Section>
-                <SectionTitle>Weak language detected</SectionTitle>
+                <SectionTitle>Hedging words</SectionTitle>
                 <BlurredRows onUnlock={() => navigate('/upgrade')} />
               </Section>
             )
@@ -801,28 +632,20 @@ export default function ResultsPage() {
                 <HighlightedTranscript
                   transcript={data.transcript}
                   fillerWords={fillerWords}
-                  weakPhrases={confidenceLanguage?.phrases || []}
+                  weakPhrases={hedging?.phrases || []}
                 />
               </Section>
             </DetailsWrap>
           ) : (
             <button
               onClick={() => navigate('/upgrade')}
-              style={{ width: '100%', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '0 4px', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ width: '100%', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '0 4px', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               <span style={{ fontSize: 14, color: '#d4d4d8' }}>Full transcript and better answers</span>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6' }}>PRO</span>
             </button>
           )
         )}
-
-        <button
-          onClick={handleEmailResults}
-          disabled={emailSending || emailSent}
-          style={{ width: '100%', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '0 4px', cursor: 'pointer', fontFamily: 'inherit' }}
-        >
-          <span style={{ fontSize: 14, color: emailSent ? '#22C55E' : '#d4d4d8' }}>{emailSending ? 'Sending...' : emailSent ? 'Sent' : 'Email me these results'}</span>
-        </button>
       </div>
 
       {/* Mira: weekly email consent, asked once after the first result */}
@@ -830,7 +653,7 @@ export default function ResultsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 14, padding: '14px 16px', marginTop: 6 }}>
           <MiraAvatar size={36} />
           <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#e4d5b0' }}>Weekly coaching email from Mira?</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#e4d5b0' }}>Coaching emails from Mira?</span>
             <span style={{ fontSize: 12, color: '#A1A1AA' }}>Based on your pitches. Unsubscribe any time.</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>

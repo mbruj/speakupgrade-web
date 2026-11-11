@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Logo } from '../components/Logo'
 import { STRIPE_ANNUAL, STRIPE_MONTHLY, STRIPE_PORTAL } from '../lib/constants'
 import { useAuthStore } from '../store'
-const PRO_FEATURES = ['Unlimited sessions','Full written feedback on every score','All improvement bullets','Weak language detection','Interactive speech timeline with pause markers','Session history and trends']
+const PRO_FEATURES = ['Unlimited pitches','A stronger answer to every buyer question','Full pitch feedback','All improvement points','Hedging-word detection','Full transcript','Pitch history']
 export default function UpgradePage() {
   const navigate = useNavigate()
   const plan = useAuthStore((s) => s.plan)

@@ -8,7 +8,6 @@ import MiraAvatar from '../components/MiraAvatar'
 
 const PITCH_KEY = 'sua_pitch'
 const LAST_KEY = 'sua_last'
-const CAMERA_KEY = 'sua_camera_on'
 const DEFAULT_GOAL = 'Get the buyer to agree to a next step'
 
 interface Parsed { product: string; buyer: string; goal: string }
@@ -44,10 +43,6 @@ export default function SetupPage() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [miraMessage, setMiraMessage] = useState<string | null>(null)
-
-  const [cameraOn, setCameraOn] = useState(() => {
-    try { return localStorage.getItem(CAMERA_KEY) !== '0' } catch { return true }
-  })
 
   const [orgRole, setOrgRole] = useState<string | null>(null)
   const [orgChecked, setOrgChecked] = useState(false)
@@ -115,12 +110,6 @@ export default function SetupPage() {
   const canRecord = usageChecked && (plan === 'pro' || !!orgRole || (usageRemaining ?? 0) > 0)
   const oneLeft = usageChecked && plan !== 'pro' && !orgRole && usageRemaining === 1
   const outOfSessions = usageChecked && !canRecord
-
-  const toggleCamera = () => {
-    const next = !cameraOn
-    setCameraOn(next)
-    try { localStorage.setItem(CAMERA_KEY, next ? '1' : '0') } catch {}
-  }
 
   // ---- Backend: turn free text into product / buyer / goal ----
   const parsePitch = async (raw: string): Promise<Parsed> => {
@@ -273,16 +262,6 @@ export default function SetupPage() {
           </div>
 
           <div style={{ flexGrow: 1 }} />
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 14px', minHeight: 44 }}>
-            <span style={{ fontSize: 13, color: '#d4d4d8' }}>Camera on while I pitch</span>
-            <button
-              onClick={toggleCamera} role="switch" aria-checked={cameraOn} aria-label="Camera on while I pitch"
-              style={{ width: 44, height: 26, borderRadius: 13, background: cameraOn ? '#2563EB' : '#3f3f46', border: 'none', position: 'relative', cursor: 'pointer' }}
-            >
-              <span style={{ position: 'absolute', top: 3, left: cameraOn ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
-            </button>
-          </div>
 
           {outOfSessions && (
             <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#FCA5A5' }}>
