@@ -8,6 +8,8 @@ import LegalFooter from '../components/LegalFooter'
 import BottomNav from '../components/BottomNav'
 import MiraAvatar from '../components/MiraAvatar'
 import { markChallengeDone } from '../lib/dailyChallenge'
+import { addWins } from '../lib/progress'
+import ExecFace from '../components/ExecFace'
 
 function scoreColor(v: number) {
   return v >= 70 ? '#22C55E' : v >= 50 ? '#F59E0B' : '#EF4444'
@@ -254,9 +256,12 @@ function ExecCard({ m, isPro, playing, loading, onPlay, onUnlock }: {
   return (
     <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{m.role}</div>
-          <div style={{ fontSize: 11, color: '#8B8B94' }}>{ROLE_TITLE[m.role] || ''}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <ExecFace role={m.role} size={44} />
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{m.role}</div>
+            <div style={{ fontSize: 11, color: '#8B8B94' }}>{ROLE_TITLE[m.role] || ''}</div>
+          </div>
         </div>
         <span style={{ fontSize: 11, fontWeight: 700, color: bs.color, background: bs.bg, borderRadius: 20, padding: '5px 10px' }}>{bs.label}</span>
       </div>
@@ -460,7 +465,11 @@ export default function ResultsPage() {
 
     // Remembered on this device so Home can show "Last: ..." on the next visit
     try {
-      localStorage.setItem('sua_last', JSON.stringify({ label: headLabel, score: null, fix: fixText }))
+      localStorage.setItem('sua_last', JSON.stringify({
+        label: headLabel, score: null, fix: fixText,
+        exec: panel.length > 0 ? Object.fromEntries(panel.map((m: any) => [m.role, m.would_buy])) : null,
+      }))
+      addWins(String(data?.session_id || data?.id || (params.topic + '|' + Math.floor(Date.now() / 60000))), wouldBuyCount)
     } catch {}
 
     if (isChallenge) {

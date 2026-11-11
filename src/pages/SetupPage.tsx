@@ -6,6 +6,8 @@ import { API_URL } from '../lib/constants'
 import BottomNav from '../components/BottomNav'
 import { getTodayChallenge, isChallengeDoneToday, getChallengeStreak, CHALLENGE_SECONDS, CHALLENGE_BUYER, CHALLENGE_GOAL } from '../lib/dailyChallenge'
 import MiraAvatar from '../components/MiraAvatar'
+import ExecFace from '../components/ExecFace'
+import { getRank, timeUntilDrop } from '../lib/progress'
 import { SCENARIOS, type Scenario } from '../lib/scenarios'
 
 const PITCH_KEY = 'sua_pitch'
@@ -14,7 +16,7 @@ const DEFAULT_GOAL = 'Get the buyer to agree to a next step'
 
 interface Parsed { product: string; buyer: string; goal: string }
 interface SavedPitch { text: string; parsed: Parsed }
-interface LastResult { label: string; score: number | null; fix: string }
+interface LastResult { label: string; score: number | null; fix: string; exec?: Record<string, string> | null }
 
 function readJSON<T>(key: string): T | null {
   try {
@@ -246,34 +248,27 @@ export default function SetupPage() {
     navigate('/get-ready')
   }
 
-  // Secondary on purpose: the main button on every screen is the pitch itself
-  const challengeCard = (
-    <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '14px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ minWidth: 0 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#60A5FA', margin: '0 0 3px 0' }}>
-            TODAY'S CHALLENGE{challengeStreak.streak > 0 ? ' · ' + challengeStreak.streak + ' DAY STREAK' : ''}
-          </p>
-          <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.3 }}>
-            {challengeDone ? 'Done today. New one tomorrow.' : challenge.title}
-          </p>
-        </div>
-        {!challengeDone && (
-          <button
-            onClick={startChallenge}
-            style={{ flexShrink: 0, background: 'transparent', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.5)', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}
-          >
-            Play
-          </button>
-        )}
-      </div>
-      {!challengeDone && (
-        <p style={{ fontSize: 13, color: '#A1A1AA', lineHeight: 1.5, margin: '8px 0 0 0' }}>
-          {challenge.setup} Up to 5 minutes. Most people need two.
-        </p>
-      )}
-    </div>
-  )
+  const rank = getRank()
+  const dropIn = timeUntilDrop()
+
+  // Hero title: last word in blue, size follows length so long titles still fit
+  const heroTitle = challenge.title + '.'
+  const lastSpace = heroTitle.lastIndexOf(' ')
+  const heroHead = lastSpace > 0 ? heroTitle.slice(0, lastSpace + 1) : ''
+  const heroTail = lastSpace > 0 ? heroTitle.slice(lastSpace + 1) : heroTitle
+  const heroSize = challenge.title.length <= 18 ? 48 : challenge.title.length <= 30 ? 38 : 30
+
+  const EXEC_LINES: { role: 'CEO' | 'CFO' | 'CRO'; line: string }[] = [
+    { role: 'CEO', line: 'Decides in ten seconds.' },
+    { role: 'CFO', line: 'Wants the number.' },
+    { role: 'CRO', line: 'Wants the close.' },
+  ]
+
+  const VERDICT_CHIP: Record<string, { text: string; color: string; bg: string }> = {
+    yes: { text: 'in', color: '#22C55E', bg: 'rgba(34,197,94,0.12)' },
+    maybe: { text: 'maybe', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+    no: { text: 'out', color: '#F87171', bg: 'rgba(239,68,68,0.12)' },
+  }
 
   const outOfNotice = outOfSessions && (
     <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#FCA5A5' }}>
@@ -288,15 +283,28 @@ export default function SetupPage() {
     <div style={{ minHeight: '100dvh', background: '#09090B', display: 'flex', flexDirection: 'column', padding: '28px 20px 110px', maxWidth: 480, margin: '0 auto' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.3px', color: '#fff' }}>
           <span style={{ color: '#3B82F6' }}>SPEAKUP</span>GRADE
         </div>
-        {oneLeft && (
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#F59E0B', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 20, padding: '5px 11px' }}>
-            1 free pitch left
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {oneLeft && (
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#F59E0B', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 20, padding: '5px 11px' }}>
+              1 free pitch left
+            </div>
+          )}
+          {challengeStreak.streak > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, height: 34, padding: '0 12px 0 9px', borderRadius: 17, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z" /></svg>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#F59E0B' }}>{challengeStreak.streak}</span>
+            </div>
+          )}
+          {(isRepeat && saved) && (
+            <div style={{ height: 34, display: 'flex', alignItems: 'center', padding: '0 13px', borderRadius: 17, background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.1)', fontSize: 13, fontWeight: 600, color: '#E4E4E7' }}>
+              {rank.name}
+            </div>
+          )}
+        </div>
       </div>
 
       {trialExpiry && plan !== 'pro' && (
@@ -309,24 +317,12 @@ export default function SetupPage() {
       {!pageReady ? (
         <div style={{ background: '#1A1A1E', borderRadius: 16, height: 120, marginBottom: 20 }} />
       ) : isRepeat && saved ? (
-        /* ---------- From pitch 2: one main button ---------- */
+        /* ---------- Returning user ---------- */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flexGrow: 1 }}>
-          <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 18, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA', margin: '0 0 6px 0' }}>YOU ARE PITCHING</p>
-              <p style={{ fontSize: 18, fontWeight: 700, color: '#fff', lineHeight: 1.3, margin: '0 0 6px 0' }}>{saved.parsed.product}</p>
-              {saved.parsed.buyer && <p style={{ fontSize: 14, color: '#A1A1AA', margin: '0 0 4px 0' }}>to {saved.parsed.buyer}</p>}
-              {saved.parsed.goal && <p style={{ fontSize: 13, color: '#8B8B94', margin: 0 }}>Goal: {saved.parsed.goal}</p>}
-            </div>
-            <button onClick={startEdit} style={{ background: 'none', border: 'none', color: '#3B82F6', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', padding: '12px 4px' }}>
-              Edit
-            </button>
-          </div>
-
           {(miraMessage || last) && (
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 14, padding: '12px 14px' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 16, padding: '14px' }}>
               <MiraAvatar size={36} />
-              <p style={{ fontSize: 13.5, lineHeight: 1.55, color: '#e4d5b0', margin: 0 }}>
+              <p style={{ fontSize: 14, lineHeight: 1.5, color: '#e4d5b0', margin: 0 }}>
                 {miraMessage || ('Last pitch: ' + (last as LastResult).label + '.' + ((last as LastResult).fix ? ' Fix next: ' + (last as LastResult).fix : ''))}
               </p>
             </div>
@@ -334,54 +330,137 @@ export default function SetupPage() {
 
           {outOfNotice}
 
-          <button
-            onClick={handleStart}
-            disabled={!canStart}
-            style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 17, padding: 18, borderRadius: 14, border: 'none', cursor: canStart ? 'pointer' : 'not-allowed', opacity: canStart ? 1 : 0.45, fontFamily: 'inherit', minHeight: 56 }}
-          >
-            Start pitch
-          </button>
+          {challengeDone ? (
+            <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '16px 18px' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', color: '#60A5FA', margin: '0 0 4px 0' }}>TODAY'S DROP</p>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: 0 }}>Done. New one in {dropIn}.</p>
+            </div>
+          ) : (
+            <div style={{ background: '#2563EB', borderRadius: 28, padding: '22px 20px 20px 20px', color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.14em' }}>TODAY'S DROP</span>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>New one in {dropIn}</span>
+              </div>
+              <p style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.02em', margin: '10px 0 0 0' }}>{challenge.title}.</p>
+              <p style={{ fontSize: 15, lineHeight: 1.4, margin: '8px 0 0 0' }}>{challenge.setup}</p>
+              <button
+                onClick={startChallenge}
+                style={{ marginTop: 18, width: '100%', height: 56, border: 'none', borderRadius: 18, background: '#09090B', color: '#fff', fontWeight: 700, fontSize: 19, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Play now
+              </button>
+            </div>
+          )}
 
-          {challengeCard}
-
-        </div>
-      ) : (!editing && !custom) ? (
-        /* ---------- First run: tap a scenario, no typing ---------- */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flexGrow: 1 }}>
-          <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.4px', color: '#fff', margin: '0 0 6px 0' }}>Pick a pitch to practise</h1>
-            <p style={{ fontSize: 14, color: '#A1A1AA', lineHeight: 1.5, margin: 0 }}>Tap one. You will be recording in under a minute. A CEO, CFO and CRO will judge you.</p>
+          <div style={{ background: '#1A1A1E', borderRadius: 20, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', color: '#A1A1AA', margin: '0 0 4px 0' }}>YOUR PITCH</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', lineHeight: 1.3, margin: 0 }}>
+                {saved.parsed.product}{saved.parsed.buyer ? ', to ' + saved.parsed.buyer : ''}
+              </p>
+              <button onClick={startEdit} style={{ background: 'none', border: 'none', color: '#60A5FA', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0 0 0', minHeight: 36 }}>
+                Edit
+              </button>
+            </div>
+            <button
+              onClick={handleStart}
+              disabled={!canStart}
+              style={{ flexShrink: 0, minHeight: 48, padding: '0 20px', borderRadius: 24, border: challengeDone ? 'none' : '1px solid #3F3F46', background: challengeDone ? '#2563EB' : 'transparent', color: '#fff', fontSize: 15, fontWeight: 700, cursor: canStart ? 'pointer' : 'not-allowed', opacity: canStart ? 1 : 0.45, fontFamily: 'inherit' }}
+            >
+              Pitch it
+            </button>
           </div>
 
-          {outOfNotice}
+          {last && last.exec && (
+            <div style={{ background: '#1A1A1E', borderRadius: 20, padding: 16 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', color: '#A1A1AA', margin: '0 0 12px 0' }}>LAST TIME THEY SAID</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {(['CEO', 'CFO', 'CRO'] as const).map(r => {
+                  const chip = VERDICT_CHIP[(last.exec as Record<string, string>)[r]] || VERDICT_CHIP.no
+                  return (
+                    <div key={r} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                      <ExecFace role={r} size={44} />
+                      <div style={{ padding: '4px 12px', borderRadius: 12, background: chip.bg, color: chip.color, fontSize: 12, fontWeight: 700 }}>{r} {chip.text}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
-          {SCENARIOS.map(sc => (
-            <button
-              key={sc.id}
-              onClick={() => startScenario(sc)}
-              disabled={!canRecord}
-              style={{ textAlign: 'left', background: '#1A1A1E', border: '1px solid rgba(59,130,246,0.35)', borderRadius: 16, padding: '16px 18px', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.5, fontFamily: 'inherit', minHeight: 64 }}
-            >
-              <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', lineHeight: 1.35, margin: '0 0 4px 0' }}>{sc.title}</p>
-              <p style={{ fontSize: 13, color: '#A1A1AA', margin: 0 }}>{sc.sub}</p>
-            </button>
-          ))}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: '#A1A1AA' }}>
+              <span>{rank.name}</span><span>{rank.next || ''}</span>
+            </div>
+            <div style={{ marginTop: 8, height: 10, borderRadius: 5, background: '#27272A' }}>
+              <div style={{ width: rank.pct + '%', height: 10, borderRadius: 5, background: '#2563EB' }} />
+            </div>
+            <p style={{ fontSize: 12, color: '#A1A1AA', margin: '8px 0 0 0' }}>
+              {rank.next ? 'Win over ' + rank.toNext + ' more executive' + (rank.toNext === 1 ? '' : 's') + ' to become a ' + rank.next + '.' : 'You are a ' + rank.name + '.'}
+            </p>
+          </div>
+        </div>
+      ) : (!editing && !custom) ? (
+        /* ---------- New user: today's challenge is the whole screen ---------- */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0, flexGrow: 1 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.14em', color: '#60A5FA', margin: 0 }}>
+            {challengeDone ? 'DONE FOR TODAY' : "TODAY'S CHALLENGE"}
+          </p>
+          <h1 style={{ fontSize: challengeDone ? 38 : heroSize, fontWeight: 700, lineHeight: 1.04, letterSpacing: '-0.02em', color: '#fff', margin: '10px 0 0 0' }}>
+            {challengeDone ? 'New one tomorrow.' : <>{heroHead}<span style={{ color: '#60A5FA' }}>{heroTail}</span></>}
+          </h1>
+          <p style={{ fontSize: 17, lineHeight: 1.4, color: '#D4D4D8', margin: '14px 0 0 0' }}>Three executives. No mercy.</p>
+          {!challengeDone && <p style={{ fontSize: 14, lineHeight: 1.45, color: '#A1A1AA', margin: '6px 0 0 0' }}>{challenge.setup}</p>}
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+            {EXEC_LINES.map(e => (
+              <div key={e.role} style={{ flex: 1, background: '#1A1A1E', borderRadius: 20, padding: '16px 6px 14px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <ExecFace role={e.role} size={56} />
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{e.role}</div>
+                <div style={{ fontSize: 12, lineHeight: 1.35, color: '#A1A1AA', textAlign: 'center' }}>{e.line}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ flexGrow: 1, minHeight: 20 }} />
+
+          {outOfNotice && <div style={{ marginBottom: 12 }}>{outOfNotice}</div>}
 
           <button
-            onClick={() => setCustom(true)}
-            style={{ background: 'none', border: 'none', color: '#60A5FA', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', padding: 10, minHeight: 44 }}
+            onClick={() => (challengeDone ? startScenario(SCENARIOS[0]) : startChallenge())}
+            disabled={challengeDone && !canRecord}
+            style={{ width: '100%', height: 64, border: 'none', borderRadius: 20, background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 22, cursor: 'pointer', fontFamily: 'inherit', opacity: challengeDone && !canRecord ? 0.45 : 1 }}
           >
-            Or describe your own pitch
+            {challengeDone ? 'Pitch the pen' : 'Pitch now'}
           </button>
+          <p style={{ textAlign: 'center', fontSize: 13, color: '#A1A1AA', margin: '10px 0 0 0' }}>Mic and camera on. Up to 5 minutes. Most people need two.</p>
 
-          {challengeCard}
+          <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.14em', color: '#A1A1AA', margin: '22px 0 0 0' }}>MORE WAYS TO PLAY</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+            {SCENARIOS.filter(sc => sc.id !== 'pen').map(sc => (
+              <button
+                key={sc.id}
+                onClick={() => startScenario(sc)}
+                disabled={!canRecord}
+                style={{ minHeight: 44, padding: '0 16px', borderRadius: 22, border: '1px solid #27272A', background: '#1A1A1E', color: '#fff', fontSize: 14, fontWeight: 600, cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.5, fontFamily: 'inherit' }}
+              >
+                {sc.title}
+              </button>
+            ))}
+            <button
+              onClick={() => setCustom(true)}
+              style={{ minHeight: 44, padding: '0 16px', borderRadius: 22, border: '1px solid #27272A', background: '#1A1A1E', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              Use my own pitch
+            </button>
+          </div>
         </div>
       ) : (
         /* ---------- First run / editing: one box, type or speak ---------- */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, flexGrow: 1 }}>
           {custom && !editing && (
             <button onClick={() => setCustom(false)} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: '#A1A1AA', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0', minHeight: 36 }}>
-              Back to ready-made pitches
+              Back
             </button>
           )}
           {!editing && (
