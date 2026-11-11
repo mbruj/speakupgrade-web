@@ -49,7 +49,8 @@ export default function RecordingPage() {
   const [cameraHidden, setCameraHidden] = useState(hideCameraPreference)
   const isMobile = isMobileDevice()
 
-  const maxSeconds = (params as any)?.teamSession ? TEAM_MAX_SECONDS : SOLO_MAX_SECONDS
+  const isChallenge = !!(params as any)?.isChallenge
+  const maxSeconds = isChallenge ? 5 * 60 : (params as any)?.teamSession ? TEAM_MAX_SECONDS : SOLO_MAX_SECONDS
   const frameIntervalMs = Math.round((maxSeconds * 1000) / TARGET_FRAME_COUNT)
 
   useEffect(() => {
@@ -227,7 +228,7 @@ export default function RecordingPage() {
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'blink 1.2s ease-in-out infinite' }} />
         )}
         <span style={{ fontSize: 28, fontWeight: 700, color: '#ffffff', fontFamily: 'monospace', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-          {fmt(elapsed)}
+          {fmt(elapsed)}{isChallenge ? ' / 5:00' : ''}
         </span>
       </div>
 

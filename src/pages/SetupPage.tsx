@@ -4,6 +4,7 @@ import { useAuthStore, useSessionStore } from '../store'
 import { checkUsage } from '../lib/api'
 import { API_URL } from '../lib/constants'
 import BottomNav from '../components/BottomNav'
+import { getTodayChallenge, isChallengeDoneToday, getChallengeStreak, CHALLENGE_SECONDS, CHALLENGE_BUYER, CHALLENGE_GOAL } from '../lib/dailyChallenge'
 import MiraAvatar from '../components/MiraAvatar'
 
 const PITCH_KEY = 'sua_pitch'
@@ -222,6 +223,68 @@ export default function SetupPage() {
     setEditing(true)
   }
 
+  // ---- Daily challenge: 5 minutes to convince the buying committee ----
+  const challenge = getTodayChallenge()
+  const challengeDone = isChallengeDoneToday()
+  const challengeStreak = getChallengeStreak()
+  const [challengeOpen, setChallengeOpen] = useState(false)
+
+  const startChallenge = () => {
+    setParams({
+      topic: challenge.name + ': ' + challenge.line + ' (' + challenge.price + ')',
+      // The facts go into the goal so the grader can check every claim against them
+      goal: CHALLENGE_GOAL + '. Facts the rep may use: ' + challenge.facts.join('; ') + '.',
+      audience: CHALLENGE_BUYER,
+      targetSeconds: CHALLENGE_SECONDS,
+      isChallenge: true,
+      category: 'sales',
+      teamSession: false,
+    } as any)
+    navigate('/get-ready')
+  }
+
+  const challengeCard = (
+    <div style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(59,130,246,0.35)', borderRadius: 16, padding: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#60A5FA', margin: 0 }}>DAILY CHALLENGE</p>
+        {challengeStreak.streak > 0 && (
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', margin: 0 }}>{challengeStreak.streak} day streak</p>
+        )}
+      </div>
+      <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', lineHeight: 1.35, margin: '0 0 4px 0' }}>
+        Sell {challenge.name} in 5 minutes
+      </p>
+      <p style={{ fontSize: 13, color: '#A1A1AA', lineHeight: 1.5, margin: '0 0 12px 0' }}>
+        {challenge.line}. {challenge.price}. Your buyers: a Fortune 500 CEO, CFO and CRO.
+      </p>
+      {challengeDone ? (
+        <p style={{ fontSize: 13, color: '#22C55E', fontWeight: 600, margin: 0 }}>
+          Done today{challengeStreak.todayScore !== null ? ', scored ' + challengeStreak.todayScore : ''}. New product tomorrow.
+        </p>
+      ) : (
+        <>
+          <button
+            onClick={() => setChallengeOpen(o => !o)}
+            style={{ background: 'none', border: 'none', color: '#60A5FA', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0', minHeight: 44 }}
+          >
+            {challengeOpen ? 'Hide the facts' : 'Read the facts you can use'}
+          </button>
+          {challengeOpen && (
+            <ul style={{ margin: '0 0 12px 0', paddingLeft: 18, color: '#d4d4d8', fontSize: 13, lineHeight: 1.6 }}>
+              {challenge.facts.map(f => <li key={f}>{f}</li>)}
+            </ul>
+          )}
+          <button
+            onClick={startChallenge}
+            style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 15, padding: 15, borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52 }}
+          >
+            Start the challenge
+          </button>
+        </>
+      )}
+    </div>
+  )
+
   const canStart = isRepeat ? canRecord : (text.trim().length > 3 && canRecord)
 
   return (
@@ -260,6 +323,7 @@ export default function SetupPage() {
               </div>
             </div>
           )}
+          {challengeCard}
           <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 18, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA', margin: '0 0 6px 0' }}>YOU ARE PITCHING</p>
@@ -309,6 +373,7 @@ export default function SetupPage() {
       ) : (
         /* ---------- First run / editing: one box, type or speak ---------- */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, flexGrow: 1 }}>
+          {!editing && challengeCard}
           {!editing && (
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 16, padding: 16 }}>
               <MiraAvatar size={48} />

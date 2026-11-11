@@ -7,6 +7,7 @@ import { useEffectiveAccess } from '../hooks/useEffectiveAccess'
 import LegalFooter from '../components/LegalFooter'
 import BottomNav from '../components/BottomNav'
 import MiraAvatar from '../components/MiraAvatar'
+import { markChallengeDone } from '../lib/dailyChallenge'
 
 function scoreColor(v: number) {
   return v >= 70 ? '#22C55E' : v >= 50 ? '#F59E0B' : '#EF4444'
@@ -232,6 +233,73 @@ function DetailsWrap({ title, children }: { title: string; children: React.React
   )
 }
 
+// ─── Buying committee (CEO / CFO / CRO) ─────────────────────────────────────
+
+const ROLE_TITLE: Record<string, string> = {
+  CEO: 'Chief Executive Officer',
+  CFO: 'Chief Financial Officer',
+  CRO: 'Chief Revenue Officer',
+}
+const BUY_STYLE: Record<string, { label: string; color: string; bg: string }> = {
+  yes: { label: 'Would buy', color: '#22C55E', bg: 'rgba(34,197,94,0.12)' },
+  maybe: { label: 'Second meeting', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+  no: { label: 'Would pass', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
+}
+
+function ExecCard({ m, isPro, onUnlock }: { m: any; isPro: boolean; onUnlock: () => void }) {
+  const [open, setOpen] = useState(false)
+  const bs = BUY_STYLE[m.would_buy] || BUY_STYLE.no
+  return (
+    <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '14px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{m.role}</div>
+          <div style={{ fontSize: 11, color: '#8B8B94' }}>{ROLE_TITLE[m.role] || ''}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: bs.color, background: bs.bg, borderRadius: 20, padding: '5px 10px' }}>{bs.label}</span>
+          <span style={{ fontSize: 20, fontWeight: 700, color: scoreColor(m.score), fontFamily: 'ui-monospace, Menlo, monospace' }}>{m.score}</span>
+        </div>
+      </div>
+      {m.verdict && <p style={{ margin: '10px 0 0 0', fontSize: 14, lineHeight: 1.55, color: '#e4e4e7', fontStyle: 'italic' }}>"{m.verdict}"</p>}
+      {isPro ? (
+        <>
+          <button
+            onClick={() => setOpen(o => !o)}
+            style={{ background: 'none', border: 'none', color: '#60A5FA', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: '10px 0 0 0', minHeight: 44 }}
+          >
+            {open ? 'Hide detail' : 'Why, and how to win them'}
+          </button>
+          {open && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+              {m.what_landed && <ExecLine label="What landed" color="#22C55E" text={m.what_landed} />}
+              {m.what_blocked && <ExecLine label="What blocks the yes" color="#EF4444" text={m.what_blocked} />}
+              {m.would_ask_next && <ExecLine label="They would ask next" color="#A1A1AA" text={m.would_ask_next} />}
+              {m.fix && <ExecLine label="Fix" color="#60A5FA" text={m.fix} />}
+            </div>
+          )}
+        </>
+      ) : (
+        <button
+          onClick={onUnlock}
+          style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '10px 0 0 0', minHeight: 44 }}
+        >
+          See why and how to win them: PRO
+        </button>
+      )}
+    </div>
+  )
+}
+
+function ExecLine({ label, color, text }: { label: string; color: string; text: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color, textTransform: 'uppercase', marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 13, lineHeight: 1.55, color: '#d4d4d8' }}>{text}</div>
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ResultsPage() {
@@ -289,6 +357,11 @@ export default function ResultsPage() {
   const headReason: string = (neg && neg.goal_reasoning) || coachSummary || ''
   const fixText: string = (neg && neg.fix_next) || improvements[0] || ''
   const questions: any[] = (neg && neg.per_question_feedback) || []
+  const panel: any[] = (neg && Array.isArray(neg.buyer_panel)) ? neg.buyer_panel : []
+  const panelScore: number = (neg && typeof neg.panel_score === 'number') ? neg.panel_score : 0
+  const wouldBuyCount: number = panel.filter(m => m.would_buy === 'yes').length
+  const isChallenge = !!(params as any)?.isChallenge
+  const [challengeStreak, setChallengeStreak] = useState<number | null>(null)
   const firstOpenIdx = questions.findIndex(q => q.status !== 'handled')
 
   const tiles: { label: string; value: number }[] = neg
@@ -301,12 +374,14 @@ export default function ResultsPage() {
     : []
   // Delivery on camera: shown as its own tile whenever the camera was on
   if (hasDelivery) tiles.push({ label: 'Delivery', value: blScore })
+  if (panel.length > 0) tiles.push({ label: 'Committee', value: panelScore })
 
   const speakResults = () => {
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
     const text = [
       headLabel + '.',
+      panel.length > 0 ? wouldBuyCount + ' of 3 executives would buy.' : '',
       headReason,
       fixText ? 'Fix this next: ' + fixText : '',
     ].filter(Boolean).join(' ')
@@ -328,6 +403,10 @@ export default function ResultsPage() {
     try {
       localStorage.setItem('sua_last', JSON.stringify({ label: headLabel, score: overall || null, fix: fixText }))
     } catch {}
+
+    if (isChallenge) {
+      try { setChallengeStreak(markChallengeDone(overall).streak) } catch {}
+    }
 
     const speakTimer = setTimeout(() => { if (voiceEnabled) speakResults() }, 800)
 
@@ -403,7 +482,7 @@ export default function ResultsPage() {
     let blocked = false
     // Free users out of pitches go to upgrade instead of bypassing the cap.
     // Asks the backend (not the cached store) so a team member is never blocked by a stale plan.
-    if (!isPro && email) {
+    if (!isPro && email && !isChallenge) {
       try {
         const u = await checkUsage(email)
         if (u.plan !== 'pro' && (u.sessions_remaining ?? 0) <= 0) blocked = true
@@ -414,7 +493,7 @@ export default function ResultsPage() {
     setTryingAgain(false)
     window.speechSynthesis?.cancel()
     // Same pitch, goal and buyer stay in the session store: no retyping
-    navigate(blocked ? '/upgrade' : '/get-ready')
+    navigate(isChallenge ? '/setup' : blocked ? '/upgrade' : '/get-ready')
   }
 
   if (!raw || !params) return null
@@ -471,6 +550,14 @@ export default function ResultsPage() {
         </div>
       )}
 
+      {/* Daily challenge result */}
+      {isChallenge && challengeStreak !== null && (
+        <div style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(59,130,246,0.35)', borderRadius: 14, padding: '14px 18px', textAlign: 'center' }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#60A5FA', margin: '0 0 2px 0' }}>Daily challenge complete</p>
+          <p style={{ fontSize: 13, color: '#A1A1AA', margin: 0 }}>{challengeStreak} day streak. New product tomorrow.</p>
+        </div>
+      )}
+
       {/* Headline: outcome + the one thing to fix */}
       <div style={{ background: headBg, border: `1px solid ${headBorder}`, borderRadius: 18, padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
@@ -493,7 +580,7 @@ export default function ResultsPage() {
 
       {/* The numbers behind the score */}
       {tiles.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tiles.length}, 1fr)`, gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tiles.length > 4 ? 3 : tiles.length}, 1fr)`, gap: 8 }}>
           {tiles.map(t => (
             <div key={t.label} style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
               <p style={{ fontSize: 20, fontWeight: 700, color: scoreColor(t.value), margin: '0 0 2px 0', fontFamily: 'ui-monospace, Menlo, monospace' }}>{t.value}</p>
@@ -503,10 +590,28 @@ export default function ResultsPage() {
         </div>
       )}
 
+      {/* The buying committee: CEO, CFO, CRO */}
+      {panel.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '6px 0 2px 0' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA' }}>THE BUYING COMMITTEE</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: wouldBuyCount >= 2 ? '#22C55E' : wouldBuyCount === 1 ? '#F59E0B' : '#EF4444' }}>
+              {wouldBuyCount} of 3 would buy
+            </div>
+          </div>
+          {panel.map((m, i) => (
+            <ExecCard key={i} m={m} isPro={isPro} onUnlock={() => navigate('/upgrade')} />
+          ))}
+          <p style={{ fontSize: 11, color: '#8B8B94', lineHeight: 1.5, margin: '2px 0 0 0' }}>
+            Judged from each executive's point of view. Typical practice pitches score 35 to 65. Above 80 is rare.
+          </p>
+        </div>
+      )}
+
       {/* The buyer's questions */}
       {questions.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA', margin: '6px 0 2px 0' }}>THE BUYER'S {questions.length} QUESTIONS</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA', margin: '6px 0 2px 0' }}>THE {questions.length} QUESTIONS THEY ASKED</div>
           {questions.map((qf, i) => (
             <QuestionRow key={i} qf={qf} isPro={isPro} defaultOpen={i === firstOpenIdx} onUnlock={() => navigate('/upgrade')} />
           ))}
@@ -541,7 +646,7 @@ export default function ResultsPage() {
           disabled={tryingAgain}
           style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 16, padding: 16, borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52, opacity: tryingAgain ? 0.6 : 1 }}
         >
-          Try again
+          {isChallenge ? 'Back to home' : 'Try again'}
         </button>
         <button
           onClick={() => { window.speechSynthesis?.cancel(); navigate('/setup') }}
