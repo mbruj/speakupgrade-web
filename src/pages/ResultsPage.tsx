@@ -259,6 +259,10 @@ export default function ResultsPage() {
   const data = raw as any
   const neg = data?.negotiation || null
   const feedback = data?.feedback || {}
+  const bl = data?.body_language || {}
+  const blFeedback = bl.feedback || {}
+  const blScore: number = (bl.scores && bl.scores.overall_body_language) || 0
+  const hasDelivery = blScore > 0 && Object.values(blFeedback).some((v: any) => v && v !== 'No video data available.')
   const strengths: string[] = data?.strengths || []
   const improvements: string[] = data?.improvements || []
   const pitchOverall = data?.scores?.overall || 0
@@ -295,6 +299,8 @@ export default function ResultsPage() {
         { label: 'Confidence', value: neg.confidence_score || 0 },
       ]
     : []
+  // Delivery on camera: shown as its own tile whenever the camera was on
+  if (hasDelivery) tiles.push({ label: 'Delivery', value: blScore })
 
   const speakResults = () => {
     if (!('speechSynthesis' in window)) return
@@ -485,9 +491,9 @@ export default function ResultsPage() {
         )}
       </div>
 
-      {/* The four numbers behind the score */}
+      {/* The numbers behind the score */}
       {tiles.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tiles.length}, 1fr)`, gap: 8 }}>
           {tiles.map(t => (
             <div key={t.label} style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
               <p style={{ fontSize: 20, fontWeight: 700, color: scoreColor(t.value), margin: '0 0 2px 0', fontFamily: 'ui-monospace, Menlo, monospace' }}>{t.value}</p>
@@ -580,6 +586,27 @@ export default function ResultsPage() {
               <ProGate text="Full pitch feedback unlocked with Pro" onUnlock={() => navigate('/upgrade')} />
             )}
           </Section>
+
+          {hasDelivery && (
+            <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px 0' }}>How you came across on camera</p>
+              {isPro ? (
+                [
+                  { label: 'Eye contact', text: blFeedback.eye_contact },
+                  { label: 'Posture', text: blFeedback.posture },
+                  { label: 'Presence', text: blFeedback.movement },
+                  { label: 'Gestures', text: blFeedback.gestures },
+                ].filter(f => f.text && f.text !== 'No video data available.').map(({ label, text }, i, arr) => (
+                  <FeedbackRow key={label} label={label} text={text} last={i === arr.length - 1} />
+                ))
+              ) : (
+                <>
+                  {blFeedback.eye_contact && <FeedbackRow label="Eye contact" text={blFeedback.eye_contact} last />}
+                  <ProGate text="Posture, presence and gestures unlocked with Pro" onUnlock={() => navigate('/upgrade')} />
+                </>
+              )}
+            </div>
+          )}
 
           {hedging && hedging.total > 0 && (
             isPro ? (

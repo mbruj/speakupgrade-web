@@ -17,7 +17,7 @@ const TIPS = [
 export default function GradingPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { audioBase64, audioType } = location.state ?? {}
+  const { audioBase64, audioType, frames } = (location.state ?? {}) as any
 
   const { email, plan, decrementSessions } = useAuthStore()
   const { params, setResults } = useSessionStore()
@@ -60,7 +60,7 @@ export default function GradingPage() {
       const raw = await gradeSession({
         audio: audioBase64,
         audioType: audioType || 'audio/webm',
-        frames: '[]',
+        frames: JSON.stringify(Array.isArray(frames) ? frames : []),
         topic: params!.topic,
         goal: params!.goal,
         audience: params!.audience,
