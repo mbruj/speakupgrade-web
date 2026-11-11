@@ -6,6 +6,7 @@ import { checkUsage } from '../lib/api'
 import { useEffectiveAccess } from '../hooks/useEffectiveAccess'
 import LegalFooter from '../components/LegalFooter'
 import BottomNav from '../components/BottomNav'
+import MiraAvatar from '../components/MiraAvatar'
 
 function scoreColor(v: number) {
   return v >= 70 ? '#22C55E' : v >= 50 ? '#F59E0B' : '#EF4444'
@@ -608,6 +609,28 @@ export default function ResultsPage() {
         </div>
       )}
 
+      {/* Mira: personal coach note, visible without opening anything */}
+      {miraLoading ? (
+        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.2)', marginBottom: 14, textAlign: 'center' }}>
+          <p style={{ fontSize: 13, color: '#F59E0B', opacity: 0.6, margin: 0 }}>Mira is reviewing your session...</p>
+        </div>
+      ) : miraInsight ? (
+        <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <MiraAvatar size={32} />
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>Mira</p>
+          </div>
+          <p style={{ fontSize: 15, color: '#e4d5b0', lineHeight: 1.7, margin: miraInsight.next_session ? '0 0 14px 0' : 0 }}>{miraInsight.message}</p>
+          {miraInsight.next_session && (
+            <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(245,158,11,0.2)' }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>Focus on this next</p>
+              <p style={{ fontSize: 14, color: '#e4d5b0', lineHeight: 1.6, margin: 0 }}>{miraInsight.next_session}</p>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+
       {/* Actions */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
         <button
@@ -642,26 +665,6 @@ export default function ResultsPage() {
               <p style={{ fontSize: 10, color: '#A1A1AA', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '2px 0 0 0' }}>Fillers</p>
             </div>
           </div>
-
-          {miraLoading ? (
-            <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.2)', marginBottom: 14, textAlign: 'center' }}>
-              <p style={{ fontSize: 13, color: '#F59E0B', opacity: 0.6, margin: 0 }}>Mira is reviewing your session...</p>
-            </div>
-          ) : miraInsight ? (
-            <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 18, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                <img src="https://www.speakupgrade.com/wp-content/uploads/2026/05/Mira.png" alt="Mira" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(245,158,11,0.4)' }} />
-                <p style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>Mira</p>
-              </div>
-              <p style={{ fontSize: 15, color: '#e4d5b0', lineHeight: 1.7, margin: miraInsight.next_session ? '0 0 14px 0' : 0 }}>{miraInsight.message}</p>
-              {miraInsight.next_session && (
-                <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(245,158,11,0.2)' }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>Focus on this next</p>
-                  <p style={{ fontSize: 14, color: '#e4d5b0', lineHeight: 1.6, margin: 0 }}>{miraInsight.next_session}</p>
-                </div>
-              )}
-            </div>
-          ) : null}
 
           {displayStrengths.length > 0 && (
             <Section>
@@ -825,7 +828,7 @@ export default function ResultsPage() {
       {/* Mira: weekly email consent, asked once after the first result */}
       {showConsent && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 14, padding: '14px 16px', marginTop: 6 }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#3a2c10', border: '2px solid rgba(245,158,11,0.5)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#F59E0B' }}>M</div>
+          <MiraAvatar size={36} />
           <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: '#e4d5b0' }}>Weekly coaching email from Mira?</span>
             <span style={{ fontSize: 12, color: '#A1A1AA' }}>Based on your pitches. Unsubscribe any time.</span>

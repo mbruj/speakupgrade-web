@@ -17,7 +17,10 @@ export default function GetReadyPage() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const cancelledRef = useRef(false)
 
-  const quick = (() => { try { return localStorage.getItem(READY_KEY) === '1' } catch { return false } })()
+  // Decided once on mount. Re-reading it every render flipped it to true right after the
+  // first permission grant and left the first-run screen black.
+  const [quick] = useState(() => { try { return localStorage.getItem(READY_KEY) === '1' } catch { return false } })
+  const [slow, setSlow] = useState(false)
 
   const [cameraOn, setCameraOn] = useState(() => {
     try { return localStorage.getItem(CAMERA_KEY) !== '0' } catch { return true }
@@ -100,8 +103,11 @@ export default function GetReadyPage() {
   useEffect(() => {
     if (!params) { navigate('/setup'); return }
     cancelledRef.current = false
+    // If the quick path has not started within 5s, show the full screen instead of a blank one
+    const slowTimer = setTimeout(() => setSlow(true), 5000)
     getStream().then((ok) => { if (ok && quick) startCountdown() })
     return () => {
+      clearTimeout(slowTimer)
       cancelledRef.current = true
       if (timerRef.current) clearInterval(timerRef.current)
       stopStream()
@@ -142,7 +148,7 @@ export default function GetReadyPage() {
   }
 
   // Quick mode while permission resolves: neutral screen, no flash of the full form
-  if (quick && !error) {
+  if (quick && !error && !slow) {
     return <div style={{ position: 'fixed', inset: 0, background: '#09090B' }} />
   }
 

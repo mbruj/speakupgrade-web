@@ -17,6 +17,7 @@ import NegotiationPage from './pages/NegotiationPage'
 import ManagerDashboardPage from './pages/ManagerDashboardPage'
 import GetReadyPage from './pages/GetReadyPage'
 import AccountPage from './pages/AccountPage'
+import BottomNav from './components/BottomNav'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const email = useAuthStore((s) => s.email)
@@ -40,7 +41,7 @@ export default function App() {
         <Route path="/results" element={<RequireAuth><ResultsPage /></RequireAuth>} />
         <Route path="/upgrade" element={<RequireAuth><UpgradePage /></RequireAuth>} />
         <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
-        <Route path="/history" element={<RequireAuth><HistoryPage /></RequireAuth>} />
+        <Route path="/history" element={<RequireAuth><div style={{ paddingBottom: 90, background: '#09090B', minHeight: '100dvh' }}><HistoryPage /></div><BottomNav active="history" /></RequireAuth>} />
         <Route path="/affiliate" element={<RequireAuth><AffiliatePage /></RequireAuth>} />
         <Route path="/feedback" element={<RequireAuth><FeedbackPage /></RequireAuth>} />
         <Route path="/mira-edit" element={<RequireAuth><MiraEditPage /></RequireAuth>} />

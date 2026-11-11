@@ -4,6 +4,7 @@ import { useAuthStore, useSessionStore } from '../store'
 import { checkUsage } from '../lib/api'
 import { API_URL } from '../lib/constants'
 import BottomNav from '../components/BottomNav'
+import MiraAvatar from '../components/MiraAvatar'
 
 const PITCH_KEY = 'sua_pitch'
 const LAST_KEY = 'sua_last'
@@ -19,14 +20,6 @@ function readJSON<T>(key: string): T | null {
     const v = localStorage.getItem(key)
     return v ? (JSON.parse(v) as T) : null
   } catch { return null }
-}
-
-function MiraAvatar({ size }: { size: number }) {
-  return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: '#3a2c10', border: '2px solid rgba(245,158,11,0.5)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.42, fontWeight: 700, color: '#F59E0B' }}>
-      M
-    </div>
-  )
 }
 
 const MIC_PATH = (
@@ -50,6 +43,7 @@ export default function SetupPage() {
   const [parsedFor, setParsedFor] = useState('')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
+  const [miraMessage, setMiraMessage] = useState<string | null>(null)
 
   const [cameraOn, setCameraOn] = useState(() => {
     try { return localStorage.getItem(CAMERA_KEY) !== '0' } catch { return true }
@@ -93,6 +87,16 @@ export default function SetupPage() {
       })
       .catch(() => {})
       .finally(() => setOrgChecked(true))
+
+    // Mira's live message (same source the old Home used)
+    fetch(`${API_URL}/coach/insight`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, currentSession: null, contextType: 'motivation' }),
+    })
+      .then((r) => r.json())
+      .then((data) => { if (data.message) setMiraMessage(data.message) })
+      .catch(() => {})
 
     fetch(`${API_URL}/trial/status?email=${encodeURIComponent(email)}`)
       .then((r) => r.json())
@@ -247,6 +251,15 @@ export default function SetupPage() {
       ) : isRepeat && saved ? (
         /* ---------- From pitch 2: no typing ---------- */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, flexGrow: 1 }}>
+          {miraMessage && (
+            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 16, padding: 16 }}>
+              <MiraAvatar size={44} />
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#F59E0B', margin: '0 0 6px 0' }}>MIRA</p>
+                <p style={{ fontSize: 14, lineHeight: 1.55, color: '#e4d5b0', margin: 0 }}>{miraMessage}</p>
+              </div>
+            </div>
+          )}
           <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 18, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA', margin: '0 0 6px 0' }}>YOU ARE PITCHING</p>
