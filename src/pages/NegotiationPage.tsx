@@ -61,6 +61,7 @@ export default function NegotiationPage() {
   const mimeTypeRef = useRef('audio/webm')
   const stopEarlyRef = useRef<(() => void) | null>(null)
   const cancelledRef = useRef(false)
+  const lastQaRef = useRef<{ question: string; answer: string }[] | null>(null)
 
   useEffect(() => {
     if (!params || !sessionId || !pitchTranscript) {
@@ -203,29 +204,44 @@ export default function NegotiationPage() {
   }
 
   const finishNegotiation = async (finalQa: { question: string; answer: string }[]) => {
-    try {
-      const res = await fetch(`${API_URL}/negotiate/finish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          topic: params!.topic,
-          goal: params!.goal,
-          category,
-          qa: finalQa,
-          email,
-        }),
-      })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
+    lastQaRef.current = finalQa
+    let lastErr: unknown = null
+    // One automatic retry: a single bad model response should not cost the whole session
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetch(`${API_URL}/negotiate/finish`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            topic: params!.topic,
+            goal: params!.goal,
+            category,
+            qa: finalQa,
+            email,
+          }),
+        })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
 
-      setResults({ ...pitchResult, negotiation: { qa: finalQa, ...data } } as any)
-      navigate('/results')
-    } catch (err) {
-      console.error(err)
-      setError('Could not finish grading. Please try again.')
-      setPhase('error')
+        setResults({ ...pitchResult, negotiation: { qa: finalQa, ...data } } as any)
+        navigate('/results')
+        return
+      } catch (err) {
+        console.error(err)
+        lastErr = err
+      }
     }
+    const detail = lastErr instanceof Error ? lastErr.message : ''
+    setError('Could not finish grading. ' + (detail ? '(' + detail + ') ' : '') + 'Your answers are saved, so you can retry.')
+    setPhase('error')
+  }
+
+  const retryGrading = () => {
+    if (!lastQaRef.current) { navigate('/setup'); return }
+    setError('')
+    setPhase('grading')
+    finishNegotiation(lastQaRef.current)
   }
 
   const currentQuestion = questions[qIndex]
@@ -241,9 +257,17 @@ export default function NegotiationPage() {
             <div style={{ fontSize: 48, marginBottom: 20 }}>⚠️</div>
             <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12, color: '#fff' }}>Something went wrong</h2>
             <p style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 28, lineHeight: 1.6 }}>{error}</p>
+            {lastQaRef.current && (
+              <button
+                onClick={retryGrading}
+                style={{ width: '100%', background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 15, padding: '14px', borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10 }}
+              >
+                Retry grading
+              </button>
+            )}
             <button
               onClick={() => navigate('/setup')}
-              style={{ width: '100%', background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 15, padding: '14px', borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ width: '100%', background: lastQaRef.current ? 'transparent' : '#3B82F6', color: lastQaRef.current ? '#A1A1AA' : '#fff', fontWeight: lastQaRef.current ? 400 : 700, fontSize: 15, padding: '14px', borderRadius: 12, border: lastQaRef.current ? '1px solid rgba(255,255,255,0.1)' : 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               Back to setup
             </button>
