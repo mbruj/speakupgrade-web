@@ -49,3 +49,11 @@ export function timeUntilDrop(): string {
   const mins = Math.max(1, Math.round((mid.getTime() - now.getTime()) / 60000))
   return mins >= 60 ? Math.floor(mins / 60) + 'h' : mins + 'm'
 }
+
+// 0 Rookie, 1 Rep, 2 Closer, 3 Rainmaker. Sent to the server to set buyer difficulty.
+export function getRankIndex(): number {
+  const total = read().total
+  let idx = 0
+  for (let i = 0; i < RANKS.length; i++) if (total >= RANKS[i].at) idx = i
+  return idx
+}
