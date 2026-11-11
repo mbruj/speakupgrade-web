@@ -6,6 +6,9 @@ import { API_URL } from '../lib/constants'
 import BottomNav from '../components/BottomNav'
 import { getTodayChallenge, isChallengeDoneToday, getChallengeStreak, CHALLENGE_SECONDS, CHALLENGE_BUYER, CHALLENGE_GOAL } from '../lib/dailyChallenge'
 import MiraAvatar from '../components/MiraAvatar'
+import Sparkline from '../components/Sparkline'
+import { getScores } from '../lib/scoreHistory'
+import { SCENARIOS, Scenario } from '../lib/scenarios'
 
 const PITCH_KEY = 'sua_pitch'
 const CAMERA_KEY = 'sua_camera_on'
@@ -39,6 +42,8 @@ export default function SetupPage() {
   const [saved] = useState<SavedPitch | null>(() => readJSON<SavedPitch>(PITCH_KEY))
   const [last] = useState<LastResult | null>(() => readJSON<LastResult>(LAST_KEY))
   const [editing, setEditing] = useState(false)
+  const [custom, setCustom] = useState(false)
+  const scoreTrend = getScores().map(p => p.score)
   const [text, setText] = useState('')
   const [parsed, setParsed] = useState<Parsed | null>(null)
   const [parsedFor, setParsedFor] = useState('')
@@ -243,45 +248,97 @@ export default function SetupPage() {
     navigate('/get-ready')
   }
 
+  const startScenario = (sc: Scenario) => {
+    if (!canRecord) return
+    setParams({
+      topic: sc.product,
+      goal: sc.goal + '. Facts the rep may use: ' + sc.facts.join('; ') + '.',
+      audience: sc.buyer,
+      targetSeconds: sc.seconds,
+      quick: sc.seconds <= 90,
+      isChallenge: false,
+      category: 'sales',
+      teamSession: !!orgRole,
+    } as any)
+    navigate('/get-ready')
+  }
+
+  // 90-second round with the saved pitch
+  const startQuick = () => {
+    if (!saved || !canRecord) return
+    setParams({
+      topic: saved.parsed.product,
+      goal: saved.parsed.goal || DEFAULT_GOAL,
+      audience: saved.parsed.buyer,
+      targetSeconds: 90,
+      quick: true,
+      isChallenge: false,
+      category: 'sales',
+      teamSession: !!orgRole,
+    } as any)
+    navigate('/get-ready')
+  }
+
+  // Secondary on purpose: the main button on every screen is the pitch itself
   const challengeCard = (
-    <div style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(59,130,246,0.35)', borderRadius: 16, padding: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#60A5FA', margin: 0 }}>DAILY CHALLENGE</p>
-        {challengeStreak.streak > 0 && (
-          <p style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', margin: 0 }}>{challengeStreak.streak} day streak</p>
+    <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '14px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#60A5FA', margin: '0 0 3px 0' }}>
+            DAILY CHALLENGE{challengeStreak.streak > 0 ? ' · ' + challengeStreak.streak + ' DAY STREAK' : ''}
+          </p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: 0, lineHeight: 1.35 }}>
+            {challengeDone ? 'Done today' + (challengeStreak.todayScore !== null ? ', scored ' + challengeStreak.todayScore : '') : 'Sell ' + challenge.name + ' in 5 minutes'}
+          </p>
+        </div>
+        {!challengeDone && (
+          <button
+            onClick={startChallenge}
+            style={{ flexShrink: 0, background: 'transparent', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.5)', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}
+          >
+            Start
+          </button>
         )}
       </div>
-      <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', lineHeight: 1.35, margin: '0 0 4px 0' }}>
-        Sell {challenge.name} in 5 minutes
-      </p>
-      <p style={{ fontSize: 13, color: '#A1A1AA', lineHeight: 1.5, margin: '0 0 12px 0' }}>
-        {challenge.line}. {challenge.price}. Your buyers: a Fortune 500 CEO, CFO and CRO.
-      </p>
-      {challengeDone ? (
-        <p style={{ fontSize: 13, color: '#22C55E', fontWeight: 600, margin: 0 }}>
-          Done today{challengeStreak.todayScore !== null ? ', scored ' + challengeStreak.todayScore : ''}. New product tomorrow.
-        </p>
-      ) : (
+      {!challengeDone && (
         <>
           <button
             onClick={() => setChallengeOpen(o => !o)}
-            style={{ background: 'none', border: 'none', color: '#60A5FA', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0', minHeight: 44 }}
+            style={{ background: 'none', border: 'none', color: '#8B8B94', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0 0 0', minHeight: 32 }}
           >
-            {challengeOpen ? 'Hide the facts' : 'Read the facts you can use'}
+            {challengeOpen ? 'Hide details' : 'What is it? See the facts'}
           </button>
           {challengeOpen && (
-            <ul style={{ margin: '0 0 12px 0', paddingLeft: 18, color: '#d4d4d8', fontSize: 13, lineHeight: 1.6 }}>
-              {challenge.facts.map(f => <li key={f}>{f}</li>)}
-            </ul>
+            <div style={{ marginTop: 6 }}>
+              <p style={{ fontSize: 13, color: '#A1A1AA', lineHeight: 1.5, margin: '0 0 6px 0' }}>
+                {challenge.line}. {challenge.price}. Your buyers: a Fortune 500 CEO, CFO and CRO.
+              </p>
+              <ul style={{ margin: 0, paddingLeft: 18, color: '#d4d4d8', fontSize: 13, lineHeight: 1.6 }}>
+                {challenge.facts.map(f => <li key={f}>{f}</li>)}
+              </ul>
+            </div>
           )}
-          <button
-            onClick={startChallenge}
-            style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 15, padding: 15, borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52 }}
-          >
-            Start the challenge
-          </button>
         </>
       )}
+    </div>
+  )
+
+  const cameraRow = (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 14px', minHeight: 44 }}>
+      <span style={{ fontSize: 13, color: '#d4d4d8' }}>Camera on while I pitch</span>
+      <button
+        onClick={toggleCamera} role="switch" aria-checked={cameraOn} aria-label="Camera on while I pitch"
+        style={{ width: 44, height: 26, borderRadius: 13, background: cameraOn ? '#2563EB' : '#3f3f46', border: 'none', position: 'relative', cursor: 'pointer' }}
+      >
+        <span style={{ position: 'absolute', top: 3, left: cameraOn ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
+      </button>
+    </div>
+  )
+
+  const outOfNotice = outOfSessions && (
+    <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#FCA5A5' }}>
+      You have used all your free pitches this month.{' '}
+      <button onClick={() => navigate('/upgrade')} style={{ color: '#3B82F6', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Upgrade to Pro</button>
     </div>
   )
 
@@ -312,18 +369,8 @@ export default function SetupPage() {
       {!pageReady ? (
         <div style={{ background: '#1A1A1E', borderRadius: 16, height: 120, marginBottom: 20 }} />
       ) : isRepeat && saved ? (
-        /* ---------- From pitch 2: no typing ---------- */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, flexGrow: 1 }}>
-          {miraMessage && (
-            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 16, padding: 16 }}>
-              <MiraAvatar size={44} />
-              <div>
-                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#F59E0B', margin: '0 0 6px 0' }}>MIRA</p>
-                <p style={{ fontSize: 14, lineHeight: 1.55, color: '#e4d5b0', margin: 0 }}>{miraMessage}</p>
-              </div>
-            </div>
-          )}
-          {challengeCard}
+        /* ---------- From pitch 2: one main button ---------- */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flexGrow: 1 }}>
           <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 18, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA', margin: '0 0 6px 0' }}>YOU ARE PITCHING</p>
@@ -336,44 +383,89 @@ export default function SetupPage() {
             </button>
           </div>
 
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 14px', minHeight: 44 }}>
-            <span style={{ fontSize: 13, color: '#d4d4d8' }}>Camera on while I pitch</span>
-            <button
-              onClick={toggleCamera} role="switch" aria-checked={cameraOn} aria-label="Camera on while I pitch"
-              style={{ width: 44, height: 26, borderRadius: 13, background: cameraOn ? '#2563EB' : '#3f3f46', border: 'none', position: 'relative', cursor: 'pointer' }}
-            >
-              <span style={{ position: 'absolute', top: 3, left: cameraOn ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
-            </button>
-          </div>
-
-          <div style={{ flexGrow: 1 }} />
-
-          {outOfSessions && (
-            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#FCA5A5' }}>
-              You have used all your free pitches this month.{' '}
-              <button onClick={() => navigate('/upgrade')} style={{ color: '#3B82F6', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Upgrade to Pro</button>
-            </div>
-          )}
+          {outOfNotice}
 
           <button
             onClick={handleStart}
             disabled={!canStart}
-            style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 16, padding: 17, borderRadius: 12, border: 'none', cursor: canStart ? 'pointer' : 'not-allowed', opacity: canStart ? 1 : 0.45, fontFamily: 'inherit' }}
+            style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 17, padding: 18, borderRadius: 14, border: 'none', cursor: canStart ? 'pointer' : 'not-allowed', opacity: canStart ? 1 : 0.45, fontFamily: 'inherit', minHeight: 56 }}
           >
             Start pitch
           </button>
+          <button
+            onClick={startQuick}
+            disabled={!canRecord}
+            style={{ background: 'none', border: 'none', color: '#60A5FA', fontWeight: 600, fontSize: 14, cursor: canRecord ? 'pointer' : 'not-allowed', fontFamily: 'inherit', padding: 8, minHeight: 44, opacity: canRecord ? 1 : 0.45 }}
+          >
+            Or a quick round: 90 seconds
+          </button>
 
-          {last && (
-            <p style={{ fontSize: 12.5, color: '#A1A1AA', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
-              Last: {last.label}{last.score !== null ? `, ${last.score}` : ''}.{last.fix ? ` Fix next: ${last.fix}` : ''}
-            </p>
+          {(scoreTrend.length >= 2 || last) && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '12px 16px' }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA', margin: '0 0 4px 0' }}>
+                  {scoreTrend.length >= 2 ? 'YOUR LAST ' + scoreTrend.length + ' PITCHES' : 'LAST PITCH'}
+                </p>
+                {last && (
+                  <p style={{ fontSize: 13, color: '#d4d4d8', lineHeight: 1.45, margin: 0 }}>
+                    {last.label}{last.score !== null ? ', ' + last.score : ''}.{last.fix ? ' Fix next: ' + last.fix : ''}
+                  </p>
+                )}
+              </div>
+              <Sparkline values={scoreTrend} />
+            </div>
           )}
+
+          {challengeCard}
+          {cameraRow}
+
+          {miraMessage && (
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '4px 2px' }}>
+              <MiraAvatar size={28} />
+              <p style={{ fontSize: 12.5, lineHeight: 1.5, color: '#C9B98E', margin: 0 }}>{miraMessage}</p>
+            </div>
+          )}
+        </div>
+      ) : (!editing && !custom) ? (
+        /* ---------- First run: tap a scenario, no typing ---------- */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flexGrow: 1 }}>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.4px', color: '#fff', margin: '0 0 6px 0' }}>Pick a pitch to practise</h1>
+            <p style={{ fontSize: 14, color: '#A1A1AA', lineHeight: 1.5, margin: 0 }}>Tap one. You will be recording in under a minute. A CEO, CFO and CRO will judge you.</p>
+          </div>
+
+          {outOfNotice}
+
+          {SCENARIOS.map(sc => (
+            <button
+              key={sc.id}
+              onClick={() => startScenario(sc)}
+              disabled={!canRecord}
+              style={{ textAlign: 'left', background: '#1A1A1E', border: '1px solid rgba(59,130,246,0.35)', borderRadius: 16, padding: '16px 18px', cursor: canRecord ? 'pointer' : 'not-allowed', opacity: canRecord ? 1 : 0.5, fontFamily: 'inherit', minHeight: 64 }}
+            >
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', lineHeight: 1.35, margin: '0 0 4px 0' }}>{sc.title}</p>
+              <p style={{ fontSize: 13, color: '#A1A1AA', margin: 0 }}>{sc.sub}</p>
+            </button>
+          ))}
+
+          <button
+            onClick={() => setCustom(true)}
+            style={{ background: 'none', border: 'none', color: '#60A5FA', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', padding: 10, minHeight: 44 }}
+          >
+            Or describe your own pitch
+          </button>
+
+          {challengeCard}
+          {cameraRow}
         </div>
       ) : (
         /* ---------- First run / editing: one box, type or speak ---------- */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, flexGrow: 1 }}>
-          {!editing && challengeCard}
+          {custom && !editing && (
+            <button onClick={() => setCustom(false)} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: '#A1A1AA', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0', minHeight: 36 }}>
+              Back to ready-made pitches
+            </button>
+          )}
           {!editing && (
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 16, padding: 16 }}>
               <MiraAvatar size={48} />

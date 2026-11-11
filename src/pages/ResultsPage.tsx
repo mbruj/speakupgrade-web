@@ -8,6 +8,7 @@ import LegalFooter from '../components/LegalFooter'
 import BottomNav from '../components/BottomNav'
 import MiraAvatar from '../components/MiraAvatar'
 import { markChallengeDone } from '../lib/dailyChallenge'
+import { pushScore } from '../lib/scoreHistory'
 
 function scoreColor(v: number) {
   return v >= 70 ? '#22C55E' : v >= 50 ? '#F59E0B' : '#EF4444'
@@ -320,7 +321,7 @@ export default function ResultsPage() {
 
   const [voiceEnabled, setVoiceEnabled] = useState(true)
   const [tryingAgain, setTryingAgain] = useState(false)
-  const [showConsent, setShowConsent] = useState(false)
+  const [prevScore, setPrevScore] = useState<number | null>(null)
   const [miraInsight, setMiraInsight] = useState<{ message: string; next_session: string } | null>(null)
   const [miraLoading, setMiraLoading] = useState(false)
 
@@ -364,17 +365,17 @@ export default function ResultsPage() {
   const [challengeStreak, setChallengeStreak] = useState<number | null>(null)
   const firstOpenIdx = questions.findIndex(q => q.status !== 'handled')
 
+  // Three numbers, plain names. Delivery on camera is inside the pitch details.
+  const qaAvg = neg
+    ? Math.round(((neg.objection_handling_score || 0) + (neg.clarity_score || 0) + (neg.confidence_score || 0)) / 3)
+    : 0
   const tiles: { label: string; value: number }[] = neg
     ? [
-        { label: 'Pitch', value: typeof neg.pitch_score === 'number' ? neg.pitch_score : pitchOverall },
-        { label: 'Objections', value: neg.objection_handling_score || 0 },
-        { label: 'Clarity', value: neg.clarity_score || 0 },
-        { label: 'Confidence', value: neg.confidence_score || 0 },
+        { label: 'Your pitch', value: typeof neg.pitch_score === 'number' ? neg.pitch_score : pitchOverall },
+        { label: 'Tough questions', value: qaAvg },
+        ...(panel.length > 0 ? [{ label: 'The buyers', value: panelScore }] : []),
       ]
     : []
-  // Delivery on camera: shown as its own tile whenever the camera was on
-  if (hasDelivery) tiles.push({ label: 'Delivery', value: blScore })
-  if (panel.length > 0) tiles.push({ label: 'Committee', value: panelScore })
 
   const speakResults = () => {
     if (!('speechSynthesis' in window)) return
@@ -402,6 +403,11 @@ export default function ResultsPage() {
     // Remembered on this device so Home can show "Last: ..." on the next visit
     try {
       localStorage.setItem('sua_last', JSON.stringify({ label: headLabel, score: overall || null, fix: fixText }))
+    } catch {}
+
+    try {
+      const sid = String(data?.session_id || data?.id || (params.topic + '|' + Math.floor(Date.now() / 60000)))
+      setPrevScore(pushScore(sid, overall))
     } catch {}
 
     if (isChallenge) {
@@ -437,44 +443,8 @@ export default function ResultsPage() {
     }
     fetchMiraInsight()
 
-    // Weekly-email consent: asked once, here, after the first real result
-    if (email) {
-      let answered = false
-      try { answered = localStorage.getItem('consent_answered') === 'true' } catch {}
-      if (!answered) {
-        fetch(`${API_URL}/auth/check`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        })
-          .then(r => r.json())
-          .then(d => {
-            if (d.newsletter_consent === null || d.newsletter_consent === undefined) {
-              setShowConsent(true)
-            } else {
-              try { localStorage.setItem('consent_answered', 'true') } catch {}
-            }
-          })
-          .catch(() => {})
-      }
-    }
-
     return () => { clearTimeout(speakTimer); window.speechSynthesis?.cancel() }
   }, [])
-
-  const handleConsent = async (consent: boolean) => {
-    try {
-      await fetch(`${API_URL}/otp/consent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newsletterConsent: consent }),
-      })
-    } catch (e) {
-      console.error('Consent update error:', e)
-    }
-    try { localStorage.setItem('consent_answered', 'true') } catch {}
-    setShowConsent(false)
-  }
 
   const handleTryAgain = async () => {
     if (tryingAgain) return
@@ -566,6 +536,11 @@ export default function ResultsPage() {
             {overall}<span style={{ fontSize: 14, color: '#8B8B94' }}>/100</span>
           </div>
         </div>
+        {prevScore !== null && (
+          <div style={{ fontSize: 12, fontWeight: 700, color: overall >= prevScore ? '#22C55E' : '#F59E0B', marginTop: -6 }}>
+            {overall === prevScore ? 'Same as your last pitch' : (overall > prevScore ? '+' : '') + (overall - prevScore) + ' vs your last pitch'}
+          </div>
+        )}
         {headReason && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: headText }}>{headReason}</p>}
         {fixText && (
           <>
@@ -578,9 +553,26 @@ export default function ResultsPage() {
         )}
       </div>
 
+      {/* Actions */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 0 }}>
+        <button
+          onClick={handleTryAgain}
+          disabled={tryingAgain}
+          style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 16, padding: 16, borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52, opacity: tryingAgain ? 0.6 : 1 }}
+        >
+          {isChallenge ? 'Back to home' : prevScore !== null || overall > 0 ? 'Beat ' + overall + ': try again' : 'Try again'}
+        </button>
+        <button
+          onClick={() => { window.speechSynthesis?.cancel(); navigate('/setup') }}
+          style={{ width: '100%', background: 'transparent', color: '#d4d4d8', fontWeight: 600, fontSize: 15, padding: 15, borderRadius: 12, border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52 }}
+        >
+          New pitch
+        </button>
+      </div>
+
       {/* The numbers behind the score */}
       {tiles.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tiles.length > 4 ? 3 : tiles.length}, 1fr)`, gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tiles.length}, 1fr)`, gap: 8 }}>
           {tiles.map(t => (
             <div key={t.label} style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
               <p style={{ fontSize: 20, fontWeight: 700, color: scoreColor(t.value), margin: '0 0 2px 0', fontFamily: 'ui-monospace, Menlo, monospace' }}>{t.value}</p>
@@ -594,7 +586,7 @@ export default function ResultsPage() {
       {panel.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '6px 0 2px 0' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA' }}>THE BUYING COMMITTEE</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA' }}>WOULD THEY BUY?</div>
             <div style={{ fontSize: 12, fontWeight: 700, color: wouldBuyCount >= 2 ? '#22C55E' : wouldBuyCount === 1 ? '#F59E0B' : '#EF4444' }}>
               {wouldBuyCount} of 3 would buy
             </div>
@@ -605,16 +597,6 @@ export default function ResultsPage() {
           <p style={{ fontSize: 11, color: '#8B8B94', lineHeight: 1.5, margin: '2px 0 0 0' }}>
             Judged from each executive's point of view. Typical practice pitches score 35 to 65. Above 80 is rare.
           </p>
-        </div>
-      )}
-
-      {/* The buyer's questions */}
-      {questions.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA', margin: '6px 0 2px 0' }}>THE {questions.length} QUESTIONS THEY ASKED</div>
-          {questions.map((qf, i) => (
-            <QuestionRow key={i} qf={qf} isPro={isPro} defaultOpen={i === firstOpenIdx} onUnlock={() => navigate('/upgrade')} />
-          ))}
         </div>
       )}
 
@@ -639,25 +621,17 @@ export default function ResultsPage() {
         </div>
       ) : null}
 
-      {/* Actions */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
-        <button
-          onClick={handleTryAgain}
-          disabled={tryingAgain}
-          style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 16, padding: 16, borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52, opacity: tryingAgain ? 0.6 : 1 }}
-        >
-          {isChallenge ? 'Back to home' : 'Try again'}
-        </button>
-        <button
-          onClick={() => { window.speechSynthesis?.cancel(); navigate('/setup') }}
-          style={{ width: '100%', background: 'transparent', color: '#d4d4d8', fontWeight: 600, fontSize: 15, padding: 15, borderRadius: 12, border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52 }}
-        >
-          New pitch
-        </button>
-      </div>
-
       {/* Details, collapsed by default */}
       <div style={{ marginTop: 4 }}>
+        {questions.length > 0 && (
+          <DetailsWrap title={`How you answered the ${questions.length} questions`}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '6px 0' }}>
+          {questions.map((qf, i) => (
+            <QuestionRow key={i} qf={qf} isPro={isPro} defaultOpen={i === firstOpenIdx} onUnlock={() => navigate('/upgrade')} />
+          ))}
+            </div>
+          </DetailsWrap>
+        )}
         <DetailsWrap title="Pitch feedback">
           {strengths.length > 0 && (
             <Section>
@@ -694,7 +668,7 @@ export default function ResultsPage() {
 
           {hasDelivery && (
             <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 12, padding: 16, border: '1px solid rgba(245,158,11,0.25)', marginBottom: 14 }}>
-              <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px 0' }}>How you came across on camera</p>
+              <p style={{ fontSize: 10, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px 0' }}>On camera: how you came across</p>
               {isPro ? (
                 [
                   { label: 'Eye contact', text: blFeedback.eye_contact },
@@ -779,21 +753,6 @@ export default function ResultsPage() {
           )
         )}
       </div>
-
-      {/* Mira: weekly email consent, asked once after the first result */}
-      {showConsent && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 14, padding: '14px 16px', marginTop: 6 }}>
-          <MiraAvatar size={36} />
-          <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#e4d5b0' }}>Coaching emails from Mira?</span>
-            <span style={{ fontSize: 12, color: '#A1A1AA' }}>Based on your pitches. Unsubscribe any time.</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <button onClick={() => handleConsent(true)} style={{ background: 'none', border: 'none', color: '#F59E0B', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', padding: '14px 8px' }}>Yes</button>
-            <button onClick={() => handleConsent(false)} style={{ background: 'none', border: 'none', color: '#8B8B94', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', padding: '14px 6px' }}>No</button>
-          </div>
-        </div>
-      )}
 
       <LegalFooter />
       <BottomNav active="practice" />

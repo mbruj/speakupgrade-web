@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSessionStore, useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
+import ProgressSteps from '../components/ProgressSteps'
 
 const ANSWER_SECONDS = 30
 
@@ -276,11 +277,20 @@ export default function NegotiationPage() {
 
         {(phase === 'loading_questions' || phase === 'grading') && (
           <>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', border: '3px solid rgba(245,158,11,0.15)', borderTopColor: '#F59E0B', animation: 'spin 1s linear infinite', margin: '0 auto 28px' }} />
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#ffffff', marginBottom: 6 }}>
-              {phase === 'loading_questions' ? 'The buyer is thinking of questions...' : 'Grading how you handled it...'}
+              {phase === 'loading_questions' ? 'The buyers are preparing their questions' : 'The buyers are deciding'}
             </h2>
-            <p style={{ fontSize: 13, color: '#52525B' }}>This usually takes a few seconds</p>
+            <p style={{ fontSize: 13, color: '#8B8B94', marginBottom: 28 }}>
+              {phase === 'loading_questions' ? 'A few seconds.' : 'Usually 15 to 30 seconds.'}
+            </p>
+            <ProgressSteps
+              key={phase}
+              accent="#F59E0B"
+              stepMs={phase === 'loading_questions' ? 3000 : 6000}
+              steps={phase === 'loading_questions'
+                ? ['Reading what you said', 'CFO: checking the numbers', 'CRO: checking the revenue case', 'CEO: preparing the hard question']
+                : ['Transcribing your answers', 'CFO is scoring the money case', 'CRO is scoring the revenue case', 'CEO is making the call']}
+            />
           </>
         )}
 

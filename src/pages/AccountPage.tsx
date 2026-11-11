@@ -25,6 +25,7 @@ export default function AccountPage() {
   const [orgRole, setOrgRole] = useState<string | null>(null)
   const [orgName, setOrgName] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
+  const [coachEmails, setCoachEmails] = useState<boolean | null>(null)
 
   useEffect(() => {
     if (!email) { navigate('/'); return }
@@ -33,7 +34,34 @@ export default function AccountPage() {
       .then((d) => { setOrgRole(d.org_role || null); setOrgName(d.org_name || null) })
       .catch(() => {})
       .finally(() => setChecked(true))
+
+    // Weekly coaching emails from Mira (moved here from the Results screen)
+    fetch(`${API_URL}/auth/check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+      .then((r) => r.json())
+      .then((d) => setCoachEmails(d.newsletter_consent === true))
+      .catch(() => {})
   }, [email])
+
+  const toggleCoachEmails = async () => {
+    if (coachEmails === null) return
+    const next = !coachEmails
+    setCoachEmails(next)
+    try {
+      await fetch(`${API_URL}/otp/consent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newsletterConsent: next }),
+      })
+      try { localStorage.setItem('consent_answered', 'true') } catch {}
+    } catch (e) {
+      console.error('Consent update error:', e)
+      setCoachEmails(!next)
+    }
+  }
 
   const tier: 'free' | 'pro' | 'team' = orgRole ? 'team' : plan === 'pro' ? 'pro' : 'free'
   const tierColor = TIER_COLORS[tier]
@@ -60,7 +88,21 @@ export default function AccountPage() {
       {orgRole === 'rep' && (
         <Row title="Team" subtitle={`You are on ${orgName || 'a team'}. Your manager can see your progress.`} />
       )}
-      <Row title="Visit my coach" subtitle="Update your focus and coaching preferences." onClick={() => navigate('/mira-edit')} />
+      <Row title="My coach profile" subtitle="Update what you sell and what you want to improve." onClick={() => navigate('/mira-edit')} />
+      {coachEmails !== null && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+          <div>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: '0 0 4px 0' }}>Coaching emails from Mira</p>
+            <p style={{ fontSize: 13, color: '#A1A1AA', margin: 0 }}>Tips based on your pitches. Unsubscribe any time.</p>
+          </div>
+          <button
+            onClick={toggleCoachEmails} role="switch" aria-checked={coachEmails} aria-label="Coaching emails from Mira"
+            style={{ width: 44, height: 26, borderRadius: 13, background: coachEmails ? '#2563EB' : '#3f3f46', border: 'none', position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+          >
+            <span style={{ position: 'absolute', top: 3, left: coachEmails ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
+          </button>
+        </div>
+      )}
       <Row title="Give feedback" subtitle="Tell us what you would improve." onClick={() => navigate('/feedback')} />
       {checked && !orgRole && (
         <Row title="Become an affiliate" subtitle="Earn 50% commission on every referral." onClick={() => navigate('/affiliate')} />
