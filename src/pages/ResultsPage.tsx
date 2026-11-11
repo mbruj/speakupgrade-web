@@ -829,11 +829,29 @@ export default function ResultsPage() {
 
       {/* Action buttons */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+        {params && (
+          <button
+            onClick={() => {
+              // Same topic, goal, audience, duration and scenario: no retyping.
+              // params persist in the session store, so go straight to the recording steps.
+              // Free users out of sessions go to upgrade instead of bypassing the cap
+              const outOfSessions = !isPro && !(params as any).teamSession && !(params as any).isChallenge && sessionsRemaining <= 0
+              if (outOfSessions) { handleNavigation('/upgrade'); return }
+              const { hideInstructions } = useSessionStore.getState()
+              handleNavigation(hideInstructions ? '/permissions' : '/instructions')
+            }}
+            style={{ width: '100%', background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 15, padding: '14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            Try Again
+          </button>
+        )}
         <button
           onClick={() => handleNavigation('/setup')}
-          style={{ width: '100%', background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 15, padding: '14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={params
+            ? { width: '100%', background: 'transparent', color: '#A1A1AA', fontWeight: 400, fontSize: 14, padding: '14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontFamily: 'inherit' }
+            : { width: '100%', background: '#3B82F6', color: '#fff', fontWeight: 700, fontSize: 15, padding: '14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
         >
-          Practice Again
+          New Topic
         </button>
         <button
           onClick={handleEmailResults}
