@@ -36,12 +36,12 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'ceo-why-now',
-    title: 'Win a CEO in 90 seconds: why now?',
-    sub: 'Shieldline, $240,000 per year. Quick round.',
+    title: 'Win a CEO: why now?',
+    sub: 'Shieldline, $240,000 per year. 3 minutes.',
     product: 'Shieldline: real-time payment fraud detection ($240,000 per year)',
     buyer: 'Fortune 500 CEO',
     goal: 'Get the CEO to sponsor a pilot',
     facts: ['Cut fraud losses by 38% in pilots', 'False declines fell by 22%', 'Decisions in under 80 milliseconds', 'Pricing is flat, not per transaction'],
-    seconds: 90,
+    seconds: 180,
   },
 ]

@@ -26,6 +26,9 @@ export default function AccountPage() {
   const [orgName, setOrgName] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
   const [coachEmails, setCoachEmails] = useState<boolean | null>(null)
+  const [showVideo, setShowVideo] = useState(() => {
+    try { return localStorage.getItem('sua_camera_on') !== '0' } catch { return true }
+  })
 
   useEffect(() => {
     if (!email) { navigate('/'); return }
@@ -45,6 +48,12 @@ export default function AccountPage() {
       .then((d) => setCoachEmails(d.newsletter_consent === true))
       .catch(() => {})
   }, [email])
+
+  const toggleShowVideo = () => {
+    const next = !showVideo
+    setShowVideo(next)
+    try { localStorage.setItem('sua_camera_on', next ? '1' : '0') } catch {}
+  }
 
   const toggleCoachEmails = async () => {
     if (coachEmails === null) return
@@ -89,6 +98,18 @@ export default function AccountPage() {
         <Row title="Team" subtitle={`You are on ${orgName || 'a team'}. Your manager can see your progress.`} />
       )}
       <Row title="My coach profile" subtitle="Update what you sell and what you want to improve." onClick={() => navigate('/mira-edit')} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+        <div>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: '0 0 4px 0' }}>Show my video while I pitch</p>
+          <p style={{ fontSize: 13, color: '#A1A1AA', margin: 0 }}>Off hides your preview. Your delivery is still analysed.</p>
+        </div>
+        <button
+          onClick={toggleShowVideo} role="switch" aria-checked={showVideo} aria-label="Show my video while I pitch"
+          style={{ width: 44, height: 26, borderRadius: 13, background: showVideo ? '#2563EB' : '#3f3f46', border: 'none', position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+        >
+          <span style={{ position: 'absolute', top: 3, left: showVideo ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
+        </button>
+      </div>
       {coachEmails !== null && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
           <div>

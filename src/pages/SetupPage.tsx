@@ -6,12 +6,9 @@ import { API_URL } from '../lib/constants'
 import BottomNav from '../components/BottomNav'
 import { getTodayChallenge, isChallengeDoneToday, getChallengeStreak, CHALLENGE_SECONDS, CHALLENGE_BUYER, CHALLENGE_GOAL } from '../lib/dailyChallenge'
 import MiraAvatar from '../components/MiraAvatar'
-import Sparkline from '../components/Sparkline'
-import { getScores } from '../lib/scoreHistory'
 import { SCENARIOS, type Scenario } from '../lib/scenarios'
 
 const PITCH_KEY = 'sua_pitch'
-const CAMERA_KEY = 'sua_camera_on'
 const LAST_KEY = 'sua_last'
 const DEFAULT_GOAL = 'Get the buyer to agree to a next step'
 
@@ -43,7 +40,6 @@ export default function SetupPage() {
   const [last] = useState<LastResult | null>(() => readJSON<LastResult>(LAST_KEY))
   const [editing, setEditing] = useState(false)
   const [custom, setCustom] = useState(false)
-  const scoreTrend = getScores().map(p => p.score)
   const [text, setText] = useState('')
   const [parsed, setParsed] = useState<Parsed | null>(null)
   const [parsedFor, setParsedFor] = useState('')
@@ -59,10 +55,6 @@ export default function SetupPage() {
 
   // Voice dictation (browser speech recognition; hidden where unsupported)
   const SR: any = typeof window !== 'undefined' ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) : null
-  const [cameraOn, setCameraOn] = useState(() => {
-    try { return localStorage.getItem(CAMERA_KEY) !== '0' } catch { return true }
-  })
-
   const [listening, setListening] = useState(false)
   const recogRef = useRef<any>(null)
   const baseTextRef = useRef('')
@@ -216,12 +208,6 @@ export default function SetupPage() {
     navigate('/get-ready')
   }
 
-  const toggleCamera = () => {
-    const next = !cameraOn
-    setCameraOn(next)
-    try { localStorage.setItem(CAMERA_KEY, next ? '1' : '0') } catch {}
-  }
-
   const startEdit = () => {
     setText(saved?.text || '')
     setParsed(null)
@@ -255,23 +241,6 @@ export default function SetupPage() {
       goal: sc.goal + '. Facts the rep may use: ' + sc.facts.join('; ') + '.',
       audience: sc.buyer,
       targetSeconds: sc.seconds,
-      quick: sc.seconds <= 90,
-      isChallenge: false,
-      category: 'sales',
-      teamSession: !!orgRole,
-    } as any)
-    navigate('/get-ready')
-  }
-
-  // 90-second round with the saved pitch
-  const startQuick = () => {
-    if (!saved || !canRecord) return
-    setParams({
-      topic: saved.parsed.product,
-      goal: saved.parsed.goal || DEFAULT_GOAL,
-      audience: saved.parsed.buyer,
-      targetSeconds: 90,
-      quick: true,
       isChallenge: false,
       category: 'sales',
       teamSession: !!orgRole,
@@ -300,38 +269,24 @@ export default function SetupPage() {
           </button>
         )}
       </div>
+      <p style={{ fontSize: 13, color: '#A1A1AA', lineHeight: 1.5, margin: '8px 0 0 0' }}>
+        {challenge.name} is a practice product: {challenge.line.charAt(0).toLowerCase() + challenge.line.slice(1)}, {challenge.price}. Your buyers: a Fortune 500 CEO, CFO and CRO.
+      </p>
       {!challengeDone && (
         <>
           <button
             onClick={() => setChallengeOpen(o => !o)}
             style={{ background: 'none', border: 'none', color: '#8B8B94', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0 0 0', minHeight: 32 }}
           >
-            {challengeOpen ? 'Hide details' : 'What is it? See the facts'}
+            {challengeOpen ? 'Hide the facts' : 'See the facts you can use'}
           </button>
           {challengeOpen && (
-            <div style={{ marginTop: 6 }}>
-              <p style={{ fontSize: 13, color: '#A1A1AA', lineHeight: 1.5, margin: '0 0 6px 0' }}>
-                {challenge.line}. {challenge.price}. Your buyers: a Fortune 500 CEO, CFO and CRO.
-              </p>
-              <ul style={{ margin: 0, paddingLeft: 18, color: '#d4d4d8', fontSize: 13, lineHeight: 1.6 }}>
-                {challenge.facts.map(f => <li key={f}>{f}</li>)}
-              </ul>
-            </div>
+            <ul style={{ margin: '6px 0 0 0', paddingLeft: 18, color: '#d4d4d8', fontSize: 13, lineHeight: 1.6 }}>
+              {challenge.facts.map(f => <li key={f}>{f}</li>)}
+            </ul>
           )}
         </>
       )}
-    </div>
-  )
-
-  const cameraRow = (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 14px', minHeight: 44 }}>
-      <span style={{ fontSize: 13, color: '#d4d4d8' }}>Camera on while I pitch</span>
-      <button
-        onClick={toggleCamera} role="switch" aria-checked={cameraOn} aria-label="Camera on while I pitch"
-        style={{ width: 44, height: 26, borderRadius: 13, background: cameraOn ? '#2563EB' : '#3f3f46', border: 'none', position: 'relative', cursor: 'pointer' }}
-      >
-        <span style={{ position: 'absolute', top: 3, left: cameraOn ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
-      </button>
     </div>
   )
 
@@ -383,6 +338,15 @@ export default function SetupPage() {
             </button>
           </div>
 
+          {(miraMessage || last) && (
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 14, padding: '12px 14px' }}>
+              <MiraAvatar size={36} />
+              <p style={{ fontSize: 13.5, lineHeight: 1.55, color: '#e4d5b0', margin: 0 }}>
+                {miraMessage || ('Last pitch: ' + (last as LastResult).label + ((last as LastResult).score !== null ? ', ' + (last as LastResult).score : '') + '.' + ((last as LastResult).fix ? ' Fix next: ' + (last as LastResult).fix : ''))}
+              </p>
+            </div>
+          )}
+
           {outOfNotice}
 
           <button
@@ -392,39 +356,9 @@ export default function SetupPage() {
           >
             Start pitch
           </button>
-          <button
-            onClick={startQuick}
-            disabled={!canRecord}
-            style={{ background: 'none', border: 'none', color: '#60A5FA', fontWeight: 600, fontSize: 14, cursor: canRecord ? 'pointer' : 'not-allowed', fontFamily: 'inherit', padding: 8, minHeight: 44, opacity: canRecord ? 1 : 0.45 }}
-          >
-            Or a quick round: 90 seconds
-          </button>
-
-          {(scoreTrend.length >= 2 || last) && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '12px 16px' }}>
-              <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA', margin: '0 0 4px 0' }}>
-                  {scoreTrend.length >= 2 ? 'YOUR LAST ' + scoreTrend.length + ' PITCHES' : 'LAST PITCH'}
-                </p>
-                {last && (
-                  <p style={{ fontSize: 13, color: '#d4d4d8', lineHeight: 1.45, margin: 0 }}>
-                    {last.label}{last.score !== null ? ', ' + last.score : ''}.{last.fix ? ' Fix next: ' + last.fix : ''}
-                  </p>
-                )}
-              </div>
-              <Sparkline values={scoreTrend} />
-            </div>
-          )}
 
           {challengeCard}
-          {cameraRow}
 
-          {miraMessage && (
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '4px 2px' }}>
-              <MiraAvatar size={28} />
-              <p style={{ fontSize: 12.5, lineHeight: 1.5, color: '#C9B98E', margin: 0 }}>{miraMessage}</p>
-            </div>
-          )}
         </div>
       ) : (!editing && !custom) ? (
         /* ---------- First run: tap a scenario, no typing ---------- */
@@ -456,7 +390,6 @@ export default function SetupPage() {
           </button>
 
           {challengeCard}
-          {cameraRow}
         </div>
       ) : (
         /* ---------- First run / editing: one box, type or speak ---------- */
