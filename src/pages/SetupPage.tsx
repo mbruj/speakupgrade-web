@@ -218,13 +218,11 @@ export default function SetupPage() {
   const challenge = getTodayChallenge()
   const challengeDone = isChallengeDoneToday()
   const challengeStreak = getChallengeStreak()
-  const [challengeOpen, setChallengeOpen] = useState(false)
 
   const startChallenge = () => {
     setParams({
-      topic: challenge.name + ': ' + challenge.line + ' (' + challenge.price + ')',
-      // The facts go into the goal so the grader can check every claim against them
-      goal: CHALLENGE_GOAL + '. Facts the rep may use: ' + challenge.facts.join('; ') + '.',
+      topic: challenge.title + (challenge.twist ? ' Twist: ' + challenge.twist : ''),
+      goal: CHALLENGE_GOAL,
       audience: CHALLENGE_BUYER,
       targetSeconds: CHALLENGE_SECONDS,
       isChallenge: true,
@@ -238,7 +236,7 @@ export default function SetupPage() {
     if (!canRecord) return
     setParams({
       topic: sc.product,
-      goal: sc.goal + '. Facts the rep may use: ' + sc.facts.join('; ') + '.',
+      goal: sc.goal,
       audience: sc.buyer,
       targetSeconds: sc.seconds,
       isChallenge: false,
@@ -254,10 +252,10 @@ export default function SetupPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#60A5FA', margin: '0 0 3px 0' }}>
-            DAILY CHALLENGE{challengeStreak.streak > 0 ? ' · ' + challengeStreak.streak + ' DAY STREAK' : ''}
+            TODAY'S CHALLENGE{challengeStreak.streak > 0 ? ' · ' + challengeStreak.streak + ' DAY STREAK' : ''}
           </p>
-          <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: 0, lineHeight: 1.35 }}>
-            {challengeDone ? 'Done today' + (challengeStreak.todayScore !== null ? ', scored ' + challengeStreak.todayScore : '') : 'Sell ' + challenge.name + ' in 5 minutes'}
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.3 }}>
+            {challengeDone ? 'Done today. New one tomorrow.' : challenge.title}
           </p>
         </div>
         {!challengeDone && (
@@ -265,27 +263,14 @@ export default function SetupPage() {
             onClick={startChallenge}
             style={{ flexShrink: 0, background: 'transparent', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.5)', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}
           >
-            Start
+            Play
           </button>
         )}
       </div>
-      <p style={{ fontSize: 13, color: '#A1A1AA', lineHeight: 1.5, margin: '8px 0 0 0' }}>
-        {challenge.name} is a practice product: {challenge.line.charAt(0).toLowerCase() + challenge.line.slice(1)}, {challenge.price}. Your buyers: a Fortune 500 CEO, CFO and CRO.
-      </p>
       {!challengeDone && (
-        <>
-          <button
-            onClick={() => setChallengeOpen(o => !o)}
-            style={{ background: 'none', border: 'none', color: '#8B8B94', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0 0 0', minHeight: 32 }}
-          >
-            {challengeOpen ? 'Hide the facts' : 'See the facts you can use'}
-          </button>
-          {challengeOpen && (
-            <ul style={{ margin: '6px 0 0 0', paddingLeft: 18, color: '#d4d4d8', fontSize: 13, lineHeight: 1.6 }}>
-              {challenge.facts.map(f => <li key={f}>{f}</li>)}
-            </ul>
-          )}
-        </>
+        <p style={{ fontSize: 13, color: '#A1A1AA', lineHeight: 1.5, margin: '8px 0 0 0' }}>
+          {challenge.setup} Up to 5 minutes. Most people need two.
+        </p>
       )}
     </div>
   )
@@ -342,7 +327,7 @@ export default function SetupPage() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 14, padding: '12px 14px' }}>
               <MiraAvatar size={36} />
               <p style={{ fontSize: 13.5, lineHeight: 1.55, color: '#e4d5b0', margin: 0 }}>
-                {miraMessage || ('Last pitch: ' + (last as LastResult).label + ((last as LastResult).score !== null ? ', ' + (last as LastResult).score : '') + '.' + ((last as LastResult).fix ? ' Fix next: ' + (last as LastResult).fix : ''))}
+                {miraMessage || ('Last pitch: ' + (last as LastResult).label + '.' + ((last as LastResult).fix ? ' Fix next: ' + (last as LastResult).fix : ''))}
               </p>
             </div>
           )}

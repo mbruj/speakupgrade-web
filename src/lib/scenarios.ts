@@ -1,6 +1,5 @@
 // Ready-made practice scenarios for the first run: tap one and you are recording in seconds.
-// Products are fictional on purpose. The facts are the only facts the rep may use,
-// so the grader can check every claim against them.
+// No made-up companies. You sell what you really sell, or play along.
 
 export interface Scenario {
   id: string
@@ -9,39 +8,35 @@ export interface Scenario {
   product: string
   buyer: string
   goal: string
-  facts: string[]
   seconds: number
 }
 
 export const SCENARIOS: Scenario[] = [
   {
-    id: 'cfo-price',
-    title: 'The CFO says your price is too high',
-    sub: 'AuditFlow, $90,000 per year. 3 minutes.',
-    product: 'AuditFlow: automated invoice matching and month-end close ($90,000 per year)',
-    buyer: 'Fortune 500 CFO',
-    goal: 'Get the CFO to agree to a paid pilot',
-    facts: ['Month-end close drops from 9 days to 5 days in pilots', 'Removes about 70% of manual invoice matching', 'Pays back inside 8 months in the pilots', 'SOC 2 Type II certified'],
+    id: 'pen',
+    title: 'Sell me this pen',
+    sub: 'The classic. Your buyers are a CEO, a CFO and a CRO. 3 minutes.',
+    product: 'This pen',
+    buyer: 'A CEO, a CFO and a CRO who are not easily impressed',
+    goal: 'Make them want it, and ask for the sale',
     seconds: 180,
   },
   {
-    id: 'cro-adoption',
-    title: 'The CRO doubts your reps will use it',
-    sub: 'PipelineIQ, $150,000 per year. 3 minutes.',
-    product: 'PipelineIQ: forecasting that flags deals likely to slip ($150,000 per year)',
-    buyer: 'Fortune 500 Chief Revenue Officer',
-    goal: 'Get the CRO to agree to a 6-week rollout',
-    facts: ['Forecast accuracy improved from 71% to 86% in pilots', 'Flags at-risk deals 3 weeks earlier than managers did', 'Needs 12 months of CRM history to start', 'Rollout takes 6 weeks'],
+    id: 'meeting',
+    title: 'Win 20 minutes with a CEO',
+    sub: 'Pitch what you really sell, or invent something. 3 minutes.',
+    product: 'A cold approach: get a Fortune 500 CEO to give you 20 minutes next week',
+    buyer: 'A Fortune 500 CEO who gets 200 pitches a week',
+    goal: 'Get them to agree to a 20-minute meeting next week',
     seconds: 180,
   },
   {
-    id: 'ceo-why-now',
-    title: 'Win a CEO: why now?',
-    sub: 'Shieldline, $240,000 per year. 3 minutes.',
-    product: 'Shieldline: real-time payment fraud detection ($240,000 per year)',
-    buyer: 'Fortune 500 CEO',
-    goal: 'Get the CEO to sponsor a pilot',
-    facts: ['Cut fraud losses by 38% in pilots', 'False declines fell by 22%', 'Decisions in under 80 milliseconds', 'Pricing is flat, not per transaction'],
+    id: 'price',
+    title: 'Defend your price',
+    sub: 'The buyer says you are 20% too expensive. 3 minutes.',
+    product: 'Whatever you sell, at a price the buyer says is 20% too high',
+    buyer: 'A Fortune 500 CFO who says you are 20% too expensive',
+    goal: 'Keep your price and still get the deal',
     seconds: 180,
   },
 ]

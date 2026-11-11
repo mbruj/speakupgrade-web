@@ -97,6 +97,7 @@ export default function NegotiationPage() {
           goal: params!.goal,
           category,
           companyContext,
+          isChallenge: !!(params as any)?.isChallenge,
         }),
       })
       const data = await res.json()
@@ -218,6 +219,7 @@ export default function NegotiationPage() {
             topic: params!.topic,
             goal: params!.goal,
             category,
+            isChallenge: !!(params as any)?.isChallenge,
             qa: finalQa,
             email,
           }),

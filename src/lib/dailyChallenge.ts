@@ -1,50 +1,54 @@
-// Daily challenge: one fictional product per day, 5 minutes to convince the buying committee.
-// Products are fictional on purpose: the facts below are the only facts the rep may use,
-// so the grader can check every claim against them.
+// Daily challenge: a short, playful persuasion game. No made-up companies, no homework.
+// Five minutes is the ceiling. Most people need two.
 
 export interface Challenge {
   id: number
-  name: string
-  line: string
-  price: string
-  facts: string[]
+  title: string
+  setup: string
+  twist?: string
 }
 
 export const CHALLENGE_SECONDS = 5 * 60
-export const CHALLENGE_BUYER = 'Fortune 500 buying committee: CEO, CFO and CRO'
-export const CHALLENGE_GOAL = 'Get the buying committee to agree to buy'
+export const CHALLENGE_BUYER = 'A CEO, a CFO and a CRO who are not easily impressed'
+export const CHALLENGE_GOAL = 'Make them want it, and ask for the sale'
 
 const CHALLENGES: Challenge[] = [
-  { id: 0, name: 'CloseLoop', line: 'AI deal-desk software that approves discounts in minutes', price: '$120,000 per year', facts: ['Average discount approval drops from 4 days to 40 minutes in pilots', 'Pilot customers saw 6% higher average deal size', 'Integrates with Salesforce in 2 weeks', 'Cancel at month 12 with no penalty'] },
-  { id: 1, name: 'AuditFlow', line: 'Automated invoice matching and month-end close', price: '$90,000 per year', facts: ['Month-end close drops from 9 days to 5 days in pilots', 'Removes about 70% of manual invoice matching', 'Pays back inside 8 months in the pilots', 'SOC 2 Type II certified'] },
-  { id: 2, name: 'PipelineIQ', line: 'Forecasting that flags deals likely to slip', price: '$150,000 per year', facts: ['Forecast accuracy improved from 71% to 86% in pilots', 'Flags at-risk deals 3 weeks earlier than managers did', 'Needs 12 months of CRM history to start', 'Rollout takes 6 weeks'] },
-  { id: 3, name: 'Shieldline', line: 'Real-time payment fraud detection', price: '$240,000 per year', facts: ['Cut fraud losses by 38% in pilots', 'False declines fell by 22%', 'Decisions in under 80 milliseconds', 'Pricing is flat, not per transaction'] },
-  { id: 4, name: 'FleetPulse', line: 'Predictive maintenance for truck fleets', price: '$18 per vehicle per month', facts: ['Unplanned downtime down 27% in pilots', 'Fleet of 5,000 vehicles costs about $1.08M per year', 'Installs in 20 minutes per vehicle', 'Works with all major truck brands'] },
-  { id: 5, name: 'TalentScope', line: 'Skills-based hiring platform for large employers', price: '$200,000 per year', facts: ['Time to hire cut from 52 to 34 days in pilots', 'First-year attrition down 11%', 'Replaces two existing vendors for most customers', 'Integrates with Workday and SAP SuccessFactors'] },
-  { id: 6, name: 'CarbonLedger', line: 'Emissions reporting that passes audit', price: '$110,000 per year', facts: ['Report preparation falls from 14 weeks to 4 weeks', 'Meets EU CSRD requirements', 'Audit-ready evidence trail for every number', 'Customers include 3 listed manufacturers (fictional)'] },
-  { id: 7, name: 'SupportCopilot', line: 'AI agent that resolves customer tickets', price: '$0.90 per resolved ticket', facts: ['Resolves 41% of tickets with no human in pilots', 'Customer satisfaction unchanged at 4.4 out of 5', 'Cost per ticket falls from $6.10 to $3.40', 'Hands off to a person when unsure'] },
-  { id: 8, name: 'ContractLens', line: 'Contract review and renewal tracking', price: '$130,000 per year', facts: ['Review time per contract falls from 3 hours to 25 minutes', 'Caught $2.1M of missed auto-renewals in one pilot', 'Legal team signs off on every flagged clause', 'Rollout takes 5 weeks'] },
-  { id: 9, name: 'WarehouseOS', line: 'Pick-path optimisation for distribution centers', price: '$300,000 per year per site', facts: ['Orders picked per hour up 19% in pilots', 'No new hardware needed', 'Payback in about 11 months at a 400-person site', 'Go-live in 8 weeks'] },
-  { id: 10, name: 'CyberDrill', line: 'Continuous phishing and breach simulation', price: '$75,000 per year', facts: ['Click rate on phishing fell from 14% to 3% in 6 months', 'Reduces cyber-insurance premium at 2 of 3 pilot customers', 'Covers up to 50,000 employees', 'Reports go straight to the board'] },
-  { id: 11, name: 'PriceWise', line: 'Dynamic pricing for B2B product catalogs', price: '$260,000 per year', facts: ['Gross margin up 1.8 points in pilots', 'No change in win rate', 'Works on catalogs of 100,000+ SKUs', 'Takes 10 weeks to go live'] },
-  { id: 12, name: 'OnboardNow', line: 'Employee onboarding automation', price: '$60,000 per year', facts: ['New-hire time to first productive week cut from 6 weeks to 4', 'HR admin hours down 35%', 'Used for 20,000 hires per year at one pilot', 'Free for the first 90 days'] },
-  { id: 13, name: 'LeadForge', line: 'Outbound prospecting engine for enterprise sales teams', price: '$180,000 per year', facts: ['Meetings booked per rep per month up from 9 to 14 in pilots', 'Only contacts with a lawful basis under GDPR', 'Cost per meeting down 31%', 'Reps keep full control of messages sent'] },
-  { id: 14, name: 'CashRadar', line: 'Cash-flow forecasting for treasury teams', price: '$100,000 per year', facts: ['Forecast error cut from 12% to 4% in pilots', 'Frees about $18M of trapped working capital at a $5B revenue pilot', 'Connects to 40 bank formats', 'Live in 6 weeks'] },
-  { id: 15, name: 'FieldSense', line: 'Mobile app for field service technicians', price: '$25 per technician per month', facts: ['First-time fix rate up from 74% to 83% in pilots', 'Fewer repeat visits saves about $140 per job', 'Works offline', 'Typical customer has 3,000 technicians'] },
-  { id: 16, name: 'RenewalRadar', line: 'Churn prediction for subscription businesses', price: '$140,000 per year', facts: ['Predicts churn 90 days ahead with 82% precision', 'Retained about 2.3% more annual revenue in pilots', 'Uses data you already have', 'Customer success team gets a ranked list every Monday'] },
-  { id: 17, name: 'ProcureAI', line: 'Spend analysis and supplier negotiation support', price: '$220,000 per year or 10% of savings found', facts: ['Found savings of 4.5% of addressable spend in pilots', 'Pays for itself in about 5 months', 'Reads invoices in 14 languages', 'Savings are verified by your finance team before any fee'] },
-  { id: 18, name: 'SafeSite', line: 'Computer-vision safety monitoring for factories', price: '$40,000 per site per year', facts: ['Recordable incidents down 31% in pilots', 'Cameras you already own work', 'No faces stored, privacy reviewed by works councils', 'Insurer gave a premium credit at one pilot'] },
-  { id: 19, name: 'LearnLoop', line: 'Sales training with AI role-play for large teams', price: '$95 per rep per year', facts: ['New-rep ramp time cut from 5 months to 3.5 in pilots', 'Quota attainment of new hires up 9 points', 'Reps practice 10 minutes a day on their phones', 'Managers see who is practising and who is not'] },
-  { id: 20, name: 'DocuSage', line: 'Document processing for insurance claims', price: '$350,000 per year', facts: ['Claim handling time down from 11 days to 6 in pilots', 'Straight-through processing of 38% of simple claims', 'Every automated decision is auditable', 'Runs inside your own cloud'] },
-  { id: 21, name: 'EnergyMind', line: 'Building energy optimisation', price: '$0 upfront, 20% of savings', facts: ['Energy bills down 17% in pilots', 'No fee if there are no savings', 'Covers 1,200 buildings at one pilot customer', 'Savings verified by an independent engineer'] },
-  { id: 22, name: 'ChannelPilot', line: 'Partner management platform for indirect sales', price: '$160,000 per year', facts: ['Partner-sourced revenue up 24% in pilots', 'Partner onboarding cut from 60 to 21 days', 'Replaces spreadsheets at 80% of customers', 'Partners log in free'] },
-  { id: 23, name: 'RiskRadar', line: 'Third-party and supplier risk monitoring', price: '$185,000 per year', facts: ['Flagged 9 supplier failures an average of 7 weeks early in pilots', 'Monitors 25,000 suppliers', 'Covers sanctions, finances and cyber posture', 'Alerts go to the supplier owner and the CFO'] },
-  { id: 24, name: 'MeetingMint', line: 'Meeting notes and action tracking for executives', price: '$30 per user per month', facts: ['Saves each executive about 4 hours per week in pilots', 'Action items completed on time up from 52% to 71%', 'Data stays in your region', 'Works with Teams, Zoom and Meet'] },
-  { id: 25, name: 'LoadLogic', line: 'Freight procurement marketplace', price: '1.5% of freight spend', facts: ['Freight cost down 6.2% in pilots', 'Access to 2,400 vetted carriers', 'No minimum volume', 'Carriers paid in 7 days, you pay in 45'] },
-  { id: 26, name: 'ClaimGuard', line: 'Warranty claims fraud detection for manufacturers', price: '$125,000 per year', facts: ['Warranty cost down 5.4% in pilots', 'Reviewed claims fall from 100% to 18%', 'Explains every flag in plain language', 'Live in 7 weeks'] },
-  { id: 27, name: 'DealRoom360', line: 'Digital sales room for complex B2B deals', price: '$110,000 per year', facts: ['Sales cycle shortened by 18 days in pilots', 'Win rate on deals above $250k up 5 points', 'Buyers do not need an account', 'Shows which stakeholders opened what'] },
-  { id: 28, name: 'PayrollPilot', line: 'Global payroll consolidation', price: '$12 per employee per month', facts: ['Replaces 11 local providers with one on average', 'Payroll errors down 62% in pilots', 'Covers 90 countries', 'Saves about $1.4M per year at 20,000 employees'] },
-  { id: 29, name: 'ShelfSmart', line: 'Demand forecasting for retail inventory', price: '$280,000 per year', facts: ['Stock-outs down 23% in pilots', 'Excess inventory down 14%', 'Handles promotions and weather', 'Weekly forecasts for 60,000 products'] },
+  { id: 0, title: 'Sell me this pen', setup: 'The classic. I am a CEO who has never owned a pen.' },
+  { id: 1, title: 'Sell me a glass of tap water', setup: 'Luxury price. Make me feel clever for paying it.' },
+  { id: 2, title: 'Convince me to let your dog come to work', setup: 'I am the CEO. Your dog is called Biscuit. He has opinions.' },
+  { id: 3, title: 'Sell a snow shovel in Dubai', setup: 'It is 38 degrees. I am the buyer for a big hardware chain.' },
+  { id: 4, title: 'Convince me to pay €100 for this paperclip', setup: 'It is a normal paperclip. I know it is a normal paperclip.' },
+  { id: 5, title: 'Sell me an umbrella', setup: 'It is sunny and I am in a great mood. Ruin it, politely.' },
+  { id: 6, title: 'Convince me to give you Friday off', setup: 'I am your boss. It is month-end and I am stressed.' },
+  { id: 7, title: 'Sell me the chair I am sitting on', setup: 'I did not know it was for sale. I like it, though.' },
+  { id: 8, title: 'Convince me Monday is the best day of the week', setup: 'I am a CFO. I hate Mondays and I have receipts.' },
+  { id: 9, title: 'Sell me my own phone back', setup: 'It is in my hand. I just paid for it. Make me pay again.' },
+  { id: 10, title: 'Convince me to skip this meeting', setup: 'It is the weekly status meeting. Nobody has ever left it happy.' },
+  { id: 11, title: 'Sell me a pair of socks', setup: 'I only wear sandals and I will never change.' },
+  { id: 12, title: 'Convince me to move the team offsite to a campsite', setup: 'I am the CFO and I have seen the five-star quote. Make the tent win.' },
+  { id: 13, title: 'Sell me ice cream in winter', setup: 'It is minus 5 outside and my office has no freezer.' },
+  { id: 14, title: 'Sell me this pen', setup: 'You cannot say the word "pen".', twist: 'You cannot say the word "pen".' },
+  { id: 15, title: 'Convince me to lend you my car for the weekend', setup: 'It is my car. I named it Gerald. I do not lend Gerald.' },
+  { id: 16, title: 'Sell me a ticket to a boring conference', setup: 'The keynote is about spreadsheets. The coffee is lukewarm.' },
+  { id: 17, title: 'Convince me to adopt a pet rock', setup: 'I am allergic to everything else. The rock has a good personality.' },
+  { id: 18, title: 'Sell me a stapler', setup: 'I have three. I have never used any of them.' },
+  { id: 19, title: 'Convince me to take the stairs', setup: 'I am the CEO, my office is on the 14th floor and I love the lift.' },
+  { id: 20, title: 'Sell me a mirror', setup: 'I already know I look great. Give me a reason to check.' },
+  { id: 21, title: 'Convince me to pay for parking at a place I never go', setup: 'I am the CFO. I will only say yes to an airtight reason.' },
+  { id: 22, title: 'Sell me a calendar for next year', setup: 'It is November. I have a phone. I am not impressed.' },
+  { id: 23, title: 'Convince me pineapple belongs on pizza', setup: 'I am Italian. I am the CEO. I have strong feelings.' },
+  { id: 24, title: 'Sell me a coffee mug', setup: 'Close in under two minutes.', twist: 'Close in under two minutes.' },
+  { id: 25, title: 'Convince me to adopt a four-day week', setup: 'I am the CEO. Clients call on Fridays. Make it work.' },
+  { id: 26, title: 'Sell me a haunted house', setup: 'The ghost pays rent on time. That is the whole pitch.' },
+  { id: 27, title: 'Convince me to switch from coffee to tea', setup: 'I am the CRO. Coffee is my personality.' },
+  { id: 28, title: 'Sell me this pen', setup: 'You cannot mention the price.', twist: 'You cannot mention the price.' },
+  { id: 29, title: 'Convince me to buy a lottery ticket for the whole team', setup: 'I am the CFO. I do not believe in luck.' },
+  { id: 30, title: 'Sell me an alarm clock', setup: 'I wake up at 5 a.m. without one and I am smug about it.' },
+  { id: 31, title: 'Convince me to give you a 20% raise', setup: 'I am your boss. I have the budget. I will not volunteer it.' },
+  { id: 32, title: 'Sell me a notebook', setup: 'I only use my phone. Make paper feel like a power move.' },
+  { id: 33, title: 'Convince me to try the office microwave', setup: 'Last time someone heated fish. I remember.' },
+  { id: 34, title: 'Sell me a bottle of air', setup: 'It is from a mountain. I am sceptical. I am also curious.' },
+  { id: 35, title: 'Convince me to give you my seat at the window', setup: 'I am the CEO. I have had this seat for 11 years.' },
 ]
 
 function pad(n: number) { return n < 10 ? '0' + n : String(n) }

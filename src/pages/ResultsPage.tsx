@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSessionStore, useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
@@ -8,7 +8,6 @@ import LegalFooter from '../components/LegalFooter'
 import BottomNav from '../components/BottomNav'
 import MiraAvatar from '../components/MiraAvatar'
 import { markChallengeDone } from '../lib/dailyChallenge'
-import { pushScore } from '../lib/scoreHistory'
 
 function scoreColor(v: number) {
   return v >= 70 ? '#22C55E' : v >= 50 ? '#F59E0B' : '#EF4444'
@@ -247,45 +246,58 @@ const BUY_STYLE: Record<string, { label: string; color: string; bg: string }> = 
   no: { label: 'Would pass', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
 }
 
-function ExecCard({ m, isPro, onUnlock }: { m: any; isPro: boolean; onUnlock: () => void }) {
-  const [open, setOpen] = useState(false)
+function ExecCard({ m, isPro, playing, loading, onPlay, onUnlock }: {
+  m: any; isPro: boolean; playing: boolean; loading: boolean; onPlay: () => void; onUnlock: () => void
+}) {
+  const [showText, setShowText] = useState(false)
   const bs = BUY_STYLE[m.would_buy] || BUY_STYLE.no
   return (
-    <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '14px 16px' }}>
+    <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{m.role}</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{m.role}</div>
           <div style={{ fontSize: 11, color: '#8B8B94' }}>{ROLE_TITLE[m.role] || ''}</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: bs.color, background: bs.bg, borderRadius: 20, padding: '5px 10px' }}>{bs.label}</span>
-          <span style={{ fontSize: 20, fontWeight: 700, color: scoreColor(m.score), fontFamily: 'ui-monospace, Menlo, monospace' }}>{m.score}</span>
-        </div>
+        <span style={{ fontSize: 11, fontWeight: 700, color: bs.color, background: bs.bg, borderRadius: 20, padding: '5px 10px' }}>{bs.label}</span>
       </div>
-      {m.verdict && <p style={{ margin: '10px 0 0 0', fontSize: 14, lineHeight: 1.55, color: '#e4e4e7', fontStyle: 'italic' }}>"{m.verdict}"</p>}
+
+      {m.verdict && <p style={{ margin: 0, fontSize: 15, lineHeight: 1.55, color: '#f4f4f5', fontStyle: 'italic' }}>"{m.verdict}"</p>}
+
+      {m.spoken && (
+        <div>
+          <button
+            onClick={onPlay}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: playing ? 'rgba(239,68,68,0.12)' : 'rgba(37,99,235,0.14)', border: `1px solid ${playing ? 'rgba(239,68,68,0.4)' : 'rgba(59,130,246,0.45)'}`, color: playing ? '#FCA5A5' : '#93C5FD', fontWeight: 700, fontSize: 14, borderRadius: 12, padding: '12px 14px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 48 }}
+          >
+            <span aria-hidden="true" style={{ fontSize: 14 }}>{playing ? '■' : '▶'}</span>
+            {loading ? 'Getting the ' + m.role + '...' : playing ? 'Stop' : 'Hear the ' + m.role}
+          </button>
+          <button
+            onClick={() => setShowText(t => !t)}
+            style={{ background: 'none', border: 'none', color: '#8B8B94', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0 0 0', minHeight: 32 }}
+          >
+            {showText ? 'Hide the text' : 'Read it instead'}
+          </button>
+          {showText && <p style={{ margin: '4px 0 0 0', fontSize: 14, lineHeight: 1.65, color: '#d4d4d8' }}>{m.spoken}</p>}
+        </div>
+      )}
+
+      {m.what_blocked && <ExecLine label="What stops the yes" color="#EF4444" text={m.what_blocked} />}
+
       {isPro ? (
         <>
-          <button
-            onClick={() => setOpen(o => !o)}
-            style={{ background: 'none', border: 'none', color: '#60A5FA', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: '10px 0 0 0', minHeight: 44 }}
-          >
-            {open ? 'Hide detail' : 'Why, and how to win them'}
-          </button>
-          {open && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
-              {m.what_landed && <ExecLine label="What landed" color="#22C55E" text={m.what_landed} />}
-              {m.what_blocked && <ExecLine label="What blocks the yes" color="#EF4444" text={m.what_blocked} />}
-              {m.would_ask_next && <ExecLine label="They would ask next" color="#A1A1AA" text={m.would_ask_next} />}
-              {m.fix && <ExecLine label="Fix" color="#60A5FA" text={m.fix} />}
-            </div>
-          )}
+          {m.first_impression && <ExecLine label="First impression" color="#A1A1AA" text={m.first_impression} />}
+          {m.what_landed && <ExecLine label="What landed with me" color="#22C55E" text={m.what_landed} />}
+          {m.what_would_make_me_say_yes && <ExecLine label="What would make me say yes" color="#60A5FA" text={m.what_would_make_me_say_yes} />}
+          {m.would_ask_next && <ExecLine label="I would ask you next" color="#A1A1AA" text={m.would_ask_next} />}
+          {m.fix && <ExecLine label="Do this next time" color="#F59E0B" text={m.fix} />}
         </>
       ) : (
         <button
           onClick={onUnlock}
-          style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '10px 0 0 0', minHeight: 44 }}
+          style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0, textAlign: 'left', minHeight: 44 }}
         >
-          See why and how to win them: PRO
+          See everything the {m.role} noticed: PRO
         </button>
       )}
     </div>
@@ -319,9 +331,12 @@ export default function ResultsPage() {
     }
   }, [raw?.trial_unlocked])
 
-  const [voiceEnabled, setVoiceEnabled] = useState(true)
+  const [playingRole, setPlayingRole] = useState<string | null>(null)
+  const [loadingRole, setLoadingRole] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const clipCache = useRef<Record<string, string>>({})
+  const playAllRef = useRef(false)
   const [tryingAgain, setTryingAgain] = useState(false)
-  const [prevScore, setPrevScore] = useState<number | null>(null)
   const [miraInsight, setMiraInsight] = useState<{ message: string; next_session: string } | null>(null)
   const [miraLoading, setMiraLoading] = useState(false)
 
@@ -359,42 +374,85 @@ export default function ResultsPage() {
   const fixText: string = (neg && neg.fix_next) || improvements[0] || ''
   const questions: any[] = (neg && neg.per_question_feedback) || []
   const panel: any[] = (neg && Array.isArray(neg.buyer_panel)) ? neg.buyer_panel : []
-  const panelScore: number = (neg && typeof neg.panel_score === 'number') ? neg.panel_score : 0
   const wouldBuyCount: number = panel.filter(m => m.would_buy === 'yes').length
   const isChallenge = !!(params as any)?.isChallenge
   const [challengeStreak, setChallengeStreak] = useState<number | null>(null)
   const firstOpenIdx = questions.findIndex(q => q.status !== 'handled')
 
-  // Three numbers, plain names. Delivery on camera is inside the pitch details.
-  const qaAvg = neg
-    ? Math.round(((neg.objection_handling_score || 0) + (neg.clarity_score || 0) + (neg.confidence_score || 0)) / 3)
-    : 0
-  const tiles: { label: string; value: number }[] = neg
-    ? [
-        { label: 'Your pitch', value: typeof neg.pitch_score === 'number' ? neg.pitch_score : pitchOverall },
-        { label: 'Tough questions', value: qaAvg },
-        ...(panel.length > 0 ? [{ label: 'The buyers', value: panelScore }] : []),
-      ]
-    : []
-
-  const speakResults = () => {
-    if (!('speechSynthesis' in window)) return
-    window.speechSynthesis.cancel()
-    const text = [
-      headLabel + '.',
-      panel.length > 0 ? wouldBuyCount + ' of 3 executives would buy.' : '',
-      headReason,
-      fixText ? 'Fix this next: ' + fixText : '',
-    ].filter(Boolean).join(' ')
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.rate = 0.95; utterance.lang = 'en-US'
-    window.speechSynthesis.speak(utterance)
+  // ---- Audio: each executive speaks in their own voice ----
+  const stopAudio = () => {
+    playAllRef.current = false
+    const a = audioRef.current
+    if (a) { a.onended = null; a.onerror = null; a.pause() }
+    window.speechSynthesis?.cancel()
+    setPlayingRole(null)
+    setLoadingRole(null)
   }
 
-  const toggleVoice = (enabled: boolean) => {
-    setVoiceEnabled(enabled)
-    if (!enabled) window.speechSynthesis?.cancel()
-    else speakResults()
+  const getClip = async (m: any): Promise<string | null> => {
+    if (clipCache.current[m.role]) return clipCache.current[m.role]
+    try {
+      const res = await fetch(`${API_URL}/negotiate/speak`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role: m.role, text: m.spoken }),
+      })
+      if (!res.ok) return null
+      const url = URL.createObjectURL(await res.blob())
+      clipCache.current[m.role] = url
+      return url
+    } catch { return null }
+  }
+
+  // Backup if the audio service is down: the phone's own voices, tuned differently per executive
+  const speakFallback = (m: any): Promise<void> =>
+    new Promise((resolve) => {
+      if (!('speechSynthesis' in window)) { resolve(); return }
+      const u = new SpeechSynthesisUtterance(m.spoken)
+      u.lang = 'en-US'
+      u.pitch = m.role === 'CEO' ? 0.7 : m.role === 'CRO' ? 1.25 : 1.0
+      u.rate = m.role === 'CEO' ? 0.92 : m.role === 'CRO' ? 1.12 : 0.97
+      u.onend = () => resolve()
+      u.onerror = () => resolve()
+      setPlayingRole(m.role)
+      window.speechSynthesis.speak(u)
+    })
+
+  const playOne = async (m: any): Promise<void> => {
+    if (!m.spoken) return
+    setLoadingRole(m.role)
+    const url = await getClip(m)
+    setLoadingRole(null)
+    if (url) {
+      if (!audioRef.current) audioRef.current = new Audio()
+      const a = audioRef.current
+      await new Promise<void>((resolve) => {
+        a.onended = () => resolve()
+        a.onerror = () => resolve()
+        a.src = url
+        setPlayingRole(m.role)
+        a.play().catch(() => resolve())
+      })
+    } else {
+      await speakFallback(m)
+    }
+    setPlayingRole(null)
+  }
+
+  const handlePlay = async (m: any) => {
+    if (playingRole === m.role || loadingRole === m.role) { stopAudio(); return }
+    stopAudio()
+    await playOne(m)
+  }
+
+  const handlePlayAll = async () => {
+    if (playingRole || loadingRole) { stopAudio(); return }
+    playAllRef.current = true
+    for (const m of panel) {
+      if (!playAllRef.current) break
+      await playOne(m)
+    }
+    playAllRef.current = false
   }
 
   useEffect(() => {
@@ -402,19 +460,12 @@ export default function ResultsPage() {
 
     // Remembered on this device so Home can show "Last: ..." on the next visit
     try {
-      localStorage.setItem('sua_last', JSON.stringify({ label: headLabel, score: overall || null, fix: fixText }))
-    } catch {}
-
-    try {
-      const sid = String(data?.session_id || data?.id || (params.topic + '|' + Math.floor(Date.now() / 60000)))
-      setPrevScore(pushScore(sid, overall))
+      localStorage.setItem('sua_last', JSON.stringify({ label: headLabel, score: null, fix: fixText }))
     } catch {}
 
     if (isChallenge) {
       try { setChallengeStreak(markChallengeDone(overall).streak) } catch {}
     }
-
-    const speakTimer = setTimeout(() => { if (voiceEnabled) speakResults() }, 800)
 
     const fetchMiraInsight = async () => {
       if (!email) return
@@ -443,7 +494,7 @@ export default function ResultsPage() {
     }
     fetchMiraInsight()
 
-    return () => { clearTimeout(speakTimer); window.speechSynthesis?.cancel() }
+    return () => { stopAudio(); Object.values(clipCache.current || {}).forEach(u => URL.revokeObjectURL(u)) }
   }, [])
 
   const handleTryAgain = async () => {
@@ -498,18 +549,9 @@ export default function ResultsPage() {
   return (
     <div style={{ minHeight: '100dvh', background: '#09090B', padding: '28px 20px 110px', maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-      {/* Top line: what was pitched + voice switch */}
+      {/* Top line: what was pitched */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <p style={{ margin: 0, fontSize: 12, color: '#A1A1AA', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{params.topic}</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <span style={{ fontSize: 11, color: '#8B8B94' }}>Read aloud</span>
-          <button
-            onClick={() => toggleVoice(!voiceEnabled)} role="switch" aria-checked={voiceEnabled} aria-label="Read results aloud"
-            style={{ width: 40, height: 24, borderRadius: 12, background: voiceEnabled ? '#2563EB' : '#3f3f46', border: 'none', position: 'relative', cursor: 'pointer', padding: 0 }}
-          >
-            <span style={{ position: 'absolute', top: 3, left: voiceEnabled ? 19 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
-          </button>
-        </div>
       </div>
 
       {/* Trial unlocked banner */}
@@ -530,17 +572,7 @@ export default function ResultsPage() {
 
       {/* Headline: outcome + the one thing to fix */}
       <div style={{ background: headBg, border: `1px solid ${headBorder}`, borderRadius: 18, padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.5px', color: headColor }}>{headLabel}</div>
-          <div style={{ fontSize: 30, fontWeight: 700, fontFamily: 'ui-monospace, Menlo, monospace', color: '#fff' }}>
-            {overall}<span style={{ fontSize: 14, color: '#8B8B94' }}>/100</span>
-          </div>
-        </div>
-        {prevScore !== null && (
-          <div style={{ fontSize: 12, fontWeight: 700, color: overall >= prevScore ? '#22C55E' : '#F59E0B', marginTop: -6 }}>
-            {overall === prevScore ? 'Same as your last pitch' : (overall > prevScore ? '+' : '') + (overall - prevScore) + ' vs your last pitch'}
-          </div>
-        )}
+        <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.5px', color: headColor }}>{headLabel}</div>
         {headReason && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: headText }}>{headReason}</p>}
         {fixText && (
           <>
@@ -560,27 +592,15 @@ export default function ResultsPage() {
           disabled={tryingAgain}
           style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 16, padding: 16, borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52, opacity: tryingAgain ? 0.6 : 1 }}
         >
-          {isChallenge ? 'Back to home' : prevScore !== null || overall > 0 ? 'Beat ' + overall + ': try again' : 'Try again'}
+          {isChallenge ? 'Back to home' : 'Try again'}
         </button>
         <button
-          onClick={() => { window.speechSynthesis?.cancel(); navigate('/setup') }}
+          onClick={() => { stopAudio(); navigate('/setup') }}
           style={{ width: '100%', background: 'transparent', color: '#d4d4d8', fontWeight: 600, fontSize: 15, padding: 15, borderRadius: 12, border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', fontFamily: 'inherit', minHeight: 52 }}
         >
           New pitch
         </button>
       </div>
-
-      {/* The numbers behind the score */}
-      {tiles.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tiles.length}, 1fr)`, gap: 8 }}>
-          {tiles.map(t => (
-            <div key={t.label} style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
-              <p style={{ fontSize: 20, fontWeight: 700, color: scoreColor(t.value), margin: '0 0 2px 0', fontFamily: 'ui-monospace, Menlo, monospace' }}>{t.value}</p>
-              <p style={{ fontSize: 10, color: '#A1A1AA', margin: 0, letterSpacing: '0.02em' }}>{t.label}</p>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* The buying committee: CEO, CFO, CRO */}
       {panel.length > 0 && (
@@ -591,11 +611,25 @@ export default function ResultsPage() {
               {wouldBuyCount} of 3 would buy
             </div>
           </div>
+          {panel.some(m => m.spoken) && (
+            <button
+              onClick={handlePlayAll}
+              style={{ width: '100%', background: '#2563EB', color: '#fff', fontWeight: 700, fontSize: 15, padding: 14, borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', minHeight: 50 }}
+            >
+              {playingRole || loadingRole ? 'Stop' : 'Hear all three in their own voices'}
+            </button>
+          )}
           {panel.map((m, i) => (
-            <ExecCard key={i} m={m} isPro={isPro} onUnlock={() => navigate('/upgrade')} />
+            <ExecCard
+              key={i} m={m} isPro={isPro}
+              playing={playingRole === m.role}
+              loading={loadingRole === m.role}
+              onPlay={() => handlePlay(m)}
+              onUnlock={() => navigate('/upgrade')}
+            />
           ))}
           <p style={{ fontSize: 11, color: '#8B8B94', lineHeight: 1.5, margin: '2px 0 0 0' }}>
-            Judged from each executive's point of view. Typical practice pitches score 35 to 65. Above 80 is rare.
+            Each one judges you from their own seat. They are hard to impress.
           </p>
         </div>
       )}
