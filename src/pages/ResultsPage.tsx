@@ -400,7 +400,7 @@ export default function ResultsPage() {
       const res = await fetch(`${API_URL}/negotiate/speak`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role: m.role, text: m.spoken }),
+        body: JSON.stringify({ email, role: m.role, text: m.spoken, playful: isChallenge }),
       })
       if (!res.ok) return null
       const url = URL.createObjectURL(await res.blob())

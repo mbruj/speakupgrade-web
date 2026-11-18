@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSessionStore } from '../store'
 import { CHALLENGE_SECONDS } from '../lib/dailyChallenge'
+import ExecPanel from '../components/ExecPanel'
 
 // Free/Pro keep the 12-minute cap. Team members (teamSession flag set by SetupPage) get 30 minutes.
 const SOLO_MAX_SECONDS = 12 * 60
@@ -213,13 +214,11 @@ export default function RecordingPage() {
       />
 
       {cameraHidden && (
-        <div style={{ position: 'absolute', inset: 0, background: '#09090B', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, textAlign: 'center', padding: '0 24px' }}>
-          <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', color: '#8B8B94', margin: 0 }}>YOU ARE PITCHING</p>
+        <div style={{ position: 'absolute', inset: 0, background: '#09090B', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 26, textAlign: 'center', padding: '0 24px' }}>
+          <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.14em', color: '#60A5FA', margin: 0 }}>THEY ARE LISTENING</p>
+          <ExecPanel state="listening" size={84} />
           <p style={{ fontSize: 17, fontWeight: 600, color: '#d4d4d8', lineHeight: 1.4, margin: 0, maxWidth: 360 }}>{params?.topic}</p>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(239,68,68,0.12)', border: '2px solid rgba(239,68,68,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 12 }}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#EF4444', animation: 'blink 1.2s ease-in-out infinite' }} />
-          </div>
-          <p style={{ color: '#52525B', fontSize: 12, margin: 0 }}>Preview hidden. The camera is still being analysed.</p>
+          <p style={{ color: '#52525B', fontSize: 12, margin: 0 }}>Your camera is still being analysed.</p>
         </div>
       )}
 
@@ -253,7 +252,7 @@ export default function RecordingPage() {
             onClick={() => setCameraHidden(h => !h)}
             style={{ background: 'rgba(0,0,0,0.55)', color: '#d4d4d8', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, padding: '10px 18px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}
           >
-            {cameraHidden ? 'Show my preview' : 'Hide my preview'}
+            {cameraHidden ? 'Show me instead' : 'Show the buyers'}
           </button>
           <button
             onClick={handleStop}

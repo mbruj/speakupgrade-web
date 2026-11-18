@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useSessionStore, useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
 import { getRankIndex } from '../lib/progress'
+import ExecPanel, { roleForQuestion } from '../components/ExecPanel'
 import { getIndustry } from '../lib/industry'
 import ProgressSteps from '../components/ProgressSteps'
 
@@ -100,7 +101,7 @@ export default function NegotiationPage() {
           category,
           companyContext,
           isChallenge: !!(params as any)?.isChallenge,
-          industry: getIndustry(),
+          industry: (params as any)?.isChallenge ? '' : getIndustry(),
         }),
       })
       const data = await res.json()
@@ -224,7 +225,7 @@ export default function NegotiationPage() {
             category,
             isChallenge: !!(params as any)?.isChallenge,
             level: getRankIndex(),
-            industry: getIndustry(),
+            industry: (params as any)?.isChallenge ? '' : getIndustry(),
             qa: finalQa,
             email,
           }),
@@ -303,6 +304,7 @@ export default function NegotiationPage() {
 
         {phase === 'ready' && (
           <>
+            <div style={{ margin: '0 0 22px 0' }}><ExecPanel size={72} /></div>
             <p style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>
               Buyer Q&amp;A
             </p>
@@ -323,8 +325,11 @@ export default function NegotiationPage() {
 
         {(phase === 'asking' || phase === 'recording') && currentQuestion && (
           <>
+            <div style={{ margin: '4px 0 22px 0' }}>
+              <ExecPanel active={roleForQuestion(qIndex)} state={phase === 'asking' ? 'asking' : 'answering'} size={72} />
+            </div>
             <p style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
-              Buyer question {qIndex + 1} of {questions.length}
+              {roleForQuestion(qIndex)} asks · question {qIndex + 1} of {questions.length}
             </p>
             <div style={{
               background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)',
@@ -337,7 +342,7 @@ export default function NegotiationPage() {
 
             {phase === 'asking' && (
               <p style={{ color: '#A1A1AA', fontSize: 14, animation: 'blink 1.4s ease-in-out infinite' }}>
-                The buyer is asking...
+                {roleForQuestion(qIndex)} is asking...
               </p>
             )}
 

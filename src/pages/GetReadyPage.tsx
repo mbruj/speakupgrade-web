@@ -23,7 +23,7 @@ export default function GetReadyPage() {
   const [slow, setSlow] = useState(false)
 
   const [cameraOn, setCameraOn] = useState(() => {
-    try { return localStorage.getItem(CAMERA_KEY) !== '0' } catch { return true }
+    try { return localStorage.getItem(CAMERA_KEY) === '1' } catch { return false }
   })
   const [micOk, setMicOk] = useState(false)
   const [error, setError] = useState('')
@@ -168,7 +168,7 @@ export default function GetReadyPage() {
         />
         {!cameraOn && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B8B94', fontSize: 14 }}>
-            Camera preview off
+            Your camera still records for analysis. During the pitch you see the three buyers.
           </div>
         )}
       </div>
@@ -176,7 +176,7 @@ export default function GetReadyPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '14px 16px' }}>
         <div>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: '0 0 2px 0' }}>Show camera while I pitch</p>
-          <p style={{ fontSize: 12, color: '#A1A1AA', margin: 0 }}>Your body language is analysed either way.</p>
+          <p style={{ fontSize: 12, color: '#A1A1AA', margin: 0 }}>Off: you see the three buyers. Your body language is analysed either way.</p>
         </div>
         <button
           onClick={toggleCamera}

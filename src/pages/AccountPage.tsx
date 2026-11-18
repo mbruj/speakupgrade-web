@@ -29,7 +29,7 @@ export default function AccountPage() {
   const [checked, setChecked] = useState(false)
   const [coachEmails, setCoachEmails] = useState<boolean | null>(null)
   const [showVideo, setShowVideo] = useState(() => {
-    try { return localStorage.getItem('sua_camera_on') !== '0' } catch { return true }
+    try { return localStorage.getItem('sua_camera_on') === '1' } catch { return false }
   })
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export default function AccountPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
         <div>
           <p style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: '0 0 4px 0' }}>Show my video while I pitch</p>
-          <p style={{ fontSize: 13, color: '#A1A1AA', margin: 0 }}>Off hides your preview. Your delivery is still analysed.</p>
+          <p style={{ fontSize: 13, color: '#A1A1AA', margin: 0 }}>Off shows the three buyers instead. Your delivery is still analysed.</p>
         </div>
         <button
           onClick={toggleShowVideo} role="switch" aria-checked={showVideo} aria-label="Show my video while I pitch"
