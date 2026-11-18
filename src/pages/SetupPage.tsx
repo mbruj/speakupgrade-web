@@ -219,7 +219,8 @@ export default function SetupPage() {
 
   // ---- Daily challenge: 5 minutes to convince the buying committee ----
   const challenge = getTodayChallenge()
-  const challengeDone = isChallengeDoneToday()
+  // Test account: the daily challenge never locks, so it can be replayed any time
+  const challengeDone = (email || '').toLowerCase() === 'm@bruj.com' ? false : isChallengeDoneToday()
   const challengeStreak = getChallengeStreak()
 
   const startChallenge = () => {
