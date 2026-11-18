@@ -243,9 +243,9 @@ const ROLE_TITLE: Record<string, string> = {
   CRO: 'Chief Revenue Officer',
 }
 const BUY_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  yes: { label: 'Would buy', color: '#22C55E', bg: 'rgba(34,197,94,0.12)' },
-  maybe: { label: 'Second meeting', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
-  no: { label: 'Would pass', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
+  yes: { label: 'In', color: '#22C55E', bg: 'rgba(34,197,94,0.12)' },
+  maybe: { label: 'Almost', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+  no: { label: 'Not yet', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
 }
 
 function ExecCard({ m, isPro, playing, loading, onPlay, onUnlock }: {
@@ -617,7 +617,7 @@ export default function ResultsPage() {
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '6px 0 2px 0' }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#A1A1AA' }}>WOULD THEY BUY?</div>
             <div style={{ fontSize: 12, fontWeight: 700, color: wouldBuyCount >= 2 ? '#22C55E' : wouldBuyCount === 1 ? '#F59E0B' : '#EF4444' }}>
-              {wouldBuyCount} of 3 would buy
+              {wouldBuyCount} of 3 are in
             </div>
           </div>
           {panel.some(m => m.spoken) && (
@@ -638,7 +638,7 @@ export default function ResultsPage() {
             />
           ))}
           <p style={{ fontSize: 11, color: '#8B8B94', lineHeight: 1.5, margin: '2px 0 0 0' }}>
-            Each one judges you from their own seat. They are hard to impress.
+            Each one judges you from their own seat.
           </p>
         </div>
       )}

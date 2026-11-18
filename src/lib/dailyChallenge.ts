@@ -8,7 +8,7 @@ export interface Challenge {
   twist?: string
 }
 
-export const CHALLENGE_SECONDS = 5 * 60
+export const CHALLENGE_SECONDS = 2 * 60
 export const CHALLENGE_BUYER = 'A CEO, a CFO and a CRO who are not easily impressed'
 export const CHALLENGE_GOAL = 'Make them want it, and ask for the sale'
 

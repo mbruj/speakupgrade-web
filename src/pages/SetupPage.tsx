@@ -8,6 +8,7 @@ import { getTodayChallenge, isChallengeDoneToday, getChallengeStreak, CHALLENGE_
 import MiraAvatar from '../components/MiraAvatar'
 import ExecFace from '../components/ExecFace'
 import { getRank, timeUntilDrop } from '../lib/progress'
+import { getIndustry } from '../lib/industry'
 import { SCENARIOS, type Scenario } from '../lib/scenarios'
 
 const PITCH_KEY = 'sua_pitch'
@@ -267,7 +268,7 @@ export default function SetupPage() {
   const VERDICT_CHIP: Record<string, { text: string; color: string; bg: string }> = {
     yes: { text: 'in', color: '#22C55E', bg: 'rgba(34,197,94,0.12)' },
     maybe: { text: 'maybe', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
-    no: { text: 'out', color: '#F87171', bg: 'rgba(239,68,68,0.12)' },
+    no: { text: 'not yet', color: '#F87171', bg: 'rgba(239,68,68,0.12)' },
   }
 
   const outOfNotice = outOfSessions && (
@@ -306,6 +307,15 @@ export default function SetupPage() {
           )}
         </div>
       </div>
+
+      <button
+        onClick={() => navigate('/account')}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '10px 14px', marginBottom: 16, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}
+      >
+        <span style={{ fontSize: 12, color: '#A1A1AA' }}>Your buyers work in</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{getIndustry() || 'any industry'}</span>
+        <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: '#60A5FA' }}>Change</span>
+      </button>
 
       {trialExpiry && plan !== 'pro' && (
         <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
@@ -433,7 +443,7 @@ export default function SetupPage() {
           >
             {challengeDone ? 'Pitch the pen' : 'Pitch now'}
           </button>
-          <p style={{ textAlign: 'center', fontSize: 13, color: '#A1A1AA', margin: '10px 0 0 0' }}>Mic and camera on. Up to 5 minutes. Most people need two.</p>
+          <p style={{ textAlign: 'center', fontSize: 13, color: '#A1A1AA', margin: '10px 0 0 0' }}>Mic and camera on. Up to 2 minutes.</p>
 
           <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.14em', color: '#A1A1AA', margin: '22px 0 0 0' }}>MORE WAYS TO PLAY</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>

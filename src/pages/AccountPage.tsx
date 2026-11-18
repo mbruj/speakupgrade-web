@@ -1,3 +1,4 @@
+import { INDUSTRIES, getIndustry, setIndustry } from '../lib/industry'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store'
@@ -22,6 +23,7 @@ function Row({ title, subtitle, onClick }: { title: string; subtitle?: string; o
 export default function AccountPage() {
   const navigate = useNavigate()
   const { email, plan, logout } = useAuthStore()
+  const [industry, setIndustryState] = useState<string>(getIndustry())
   const [orgRole, setOrgRole] = useState<string | null>(null)
   const [orgName, setOrgName] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
@@ -109,6 +111,21 @@ export default function AccountPage() {
         >
           <span style={{ position: 'absolute', top: 3, left: showVideo ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
         </button>
+      </div>
+      <div style={{ background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+        <p style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: '0 0 4px 0' }}>Your buyers' industry</p>
+        <p style={{ fontSize: 13, color: '#A1A1AA', margin: '0 0 12px 0' }}>The CEO, CFO and CRO work in this industry. They will not say your pitch is irrelevant to it.</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {INDUSTRIES.map(ind => (
+            <button
+              key={ind}
+              onClick={() => { const next = industry === ind ? '' : ind; setIndustry(next); setIndustryState(next) }}
+              style={{ minHeight: 40, padding: '0 14px', borderRadius: 20, border: industry === ind ? '1px solid #3B82F6' : '1px solid #27272A', background: industry === ind ? 'rgba(37,99,235,0.18)' : '#09090B', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              {ind}
+            </button>
+          ))}
+        </div>
       </div>
       {coachEmails !== null && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#1A1A1E', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSessionStore } from '../store'
+import { CHALLENGE_SECONDS } from '../lib/dailyChallenge'
 
 // Free/Pro keep the 12-minute cap. Team members (teamSession flag set by SetupPage) get 30 minutes.
 const SOLO_MAX_SECONDS = 12 * 60
@@ -50,7 +51,7 @@ export default function RecordingPage() {
   const isMobile = isMobileDevice()
 
   const isChallenge = !!(params as any)?.isChallenge
-  const maxSeconds = isChallenge ? 5 * 60 : (params as any)?.teamSession ? TEAM_MAX_SECONDS : SOLO_MAX_SECONDS
+  const maxSeconds = isChallenge ? CHALLENGE_SECONDS : (params as any)?.teamSession ? TEAM_MAX_SECONDS : SOLO_MAX_SECONDS
   const frameIntervalMs = Math.round((maxSeconds * 1000) / TARGET_FRAME_COUNT)
 
   useEffect(() => {
@@ -228,7 +229,7 @@ export default function RecordingPage() {
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'blink 1.2s ease-in-out infinite' }} />
         )}
         <span style={{ fontSize: 28, fontWeight: 700, color: '#ffffff', fontFamily: 'monospace', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-          {fmt(elapsed)}{isChallenge ? ' / 5:00' : ''}
+          {fmt(elapsed)}{isChallenge ? ' / ' + fmt(CHALLENGE_SECONDS) : ''}
         </span>
       </div>
 

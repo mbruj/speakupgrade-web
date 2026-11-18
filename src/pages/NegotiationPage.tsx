@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useSessionStore, useAuthStore } from '../store'
 import { API_URL } from '../lib/constants'
 import { getRankIndex } from '../lib/progress'
+import { getIndustry } from '../lib/industry'
 import ProgressSteps from '../components/ProgressSteps'
 
 const ANSWER_SECONDS = 30
@@ -99,6 +100,7 @@ export default function NegotiationPage() {
           category,
           companyContext,
           isChallenge: !!(params as any)?.isChallenge,
+          industry: getIndustry(),
         }),
       })
       const data = await res.json()
@@ -222,6 +224,7 @@ export default function NegotiationPage() {
             category,
             isChallenge: !!(params as any)?.isChallenge,
             level: getRankIndex(),
+            industry: getIndustry(),
             qa: finalQa,
             email,
           }),
